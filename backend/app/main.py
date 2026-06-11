@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db
 from app.routes import auth, sources, chat
 
@@ -25,21 +25,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow frontend origins (hardcoded for reliability)
+# CORS origins used by health endpoint and middleware
 _cors_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://docschats.vercel.app",
 ]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
-# Register routes
+# Register all routes on the FastAPI instance before wrapping
 app.include_router(auth.router)
 app.include_router(sources.router)
 app.include_router(chat.router)
@@ -48,3 +41,16 @@ app.include_router(chat.router)
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "docschat-api", "cors_origins": _cors_origins}
+
+
+# CORS — wrap app at outermost layer so headers appear on ALL responses
+# (including error responses like 401 from ServerErrorMiddleware).
+# Using direct wrapping (not app.add_middleware) places CORSMiddleware
+# outside of FastAPI's internal error middleware stack.
+app = CORSMiddleware(
+    app,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
