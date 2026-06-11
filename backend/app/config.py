@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
     GROQ_API_KEY: str
 
-    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    GOOGLE_EMBEDDING_MODEL: str = "models/text-embedding-004"
     CHUNK_SIZE: int = 500
     CHUNK_OVERLAP: int = 50
     MAX_FILE_SIZE_MB: int = 20

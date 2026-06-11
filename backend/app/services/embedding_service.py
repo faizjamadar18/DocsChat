@@ -1,38 +1,30 @@
-from sentence_transformers import SentenceTransformer
+import google.generativeai as genai
 from app.config import get_settings
-import numpy as np
 
 settings = get_settings()
 
-# Global singleton — loaded once on first import
-_model: SentenceTransformer | None = None
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
 
-def _get_model() -> SentenceTransformer:
-    """Lazy-load the embedding model as a singleton."""
-    global _model
-    if _model is None:
-        print(f"Loading embedding model: {settings.EMBEDDING_MODEL}")
-        _model = SentenceTransformer(settings.EMBEDDING_MODEL)
-        print(f"Embedding model loaded - dimensions: {_model.get_sentence_embedding_dimension()}")
-    return _model
-
-
-def generate_embeddings(texts: list[str]) -> np.ndarray:
+def generate_embeddings(texts: list[str]) -> list[list[float]]:
     """
-    Generate embeddings for a list of text strings.
-    Returns numpy array of shape (n_texts, embedding_dim).
+    Generate embeddings for a list of text strings via Google's embedding API.
+    Returns list of embedding vectors.
     """
-    model = _get_model()
-    embeddings = model.encode(texts, show_progress_bar=False)
-    return embeddings
+    result = genai.embed_content(
+        model=settings.GOOGLE_EMBEDDING_MODEL,
+        content=texts,
+    )
+    return result['embedding']
 
 
-def generate_single_embedding(text: str) -> np.ndarray:
+def generate_single_embedding(text: str) -> list[float]:
     """
-    Generate embedding for a single text string.
-    Returns numpy array of shape (embedding_dim,).
+    Generate embedding for a single text string via Google's embedding API.
+    Returns a single embedding vector.
     """
-    model = _get_model()
-    embedding = model.encode(text, show_progress_bar=False)
-    return embedding
+    result = genai.embed_content(
+        model=settings.GOOGLE_EMBEDDING_MODEL,
+        content=text,
+    )
+    return result['embedding']

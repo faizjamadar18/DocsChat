@@ -72,7 +72,7 @@ def add_documents(user_id: str, chunks: list, source_id: str):
         metadata["chunk_index"] = i
         metadatas.append(metadata)
 
-        embeddings_list.append(embedding.tolist())
+        embeddings_list.append(embedding)
 
     # Batch add — fixed from notebook bug where add was inside the loop
     if ids:
@@ -104,7 +104,7 @@ def query_documents(user_id: str, query: str, top_k: int = 5) -> list[dict]:
     query_embedding = generate_single_embedding(query)
 
     results = collection.query(
-        query_embeddings=[query_embedding.tolist()],
+        query_embeddings=[query_embedding],
         n_results=min(top_k, collection.count()),
     )
 
