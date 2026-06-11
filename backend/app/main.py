@@ -6,6 +6,18 @@ from starlette.responses import JSONResponse
 from app.database import init_db, close_db
 from app.routes import auth, sources, chat
 
+
+async def catch_unhandled_exceptions(request: Request, call_next):
+    """Catch any unhandled exception and return a readable JSON response."""
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(exc), "type": type(exc).__name__},
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
@@ -27,14 +39,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Catch unhandled exceptions and return readable error details."""
-    return JSONResponse(
-        status_code=500,
-        content={"error": str(exc), "type": type(exc).__name__},
-    )
+app.middleware("http")(catch_unhandled_exceptions)
 
 
 # CORS origins used by health endpoint and middleware
