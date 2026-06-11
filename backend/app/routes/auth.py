@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import datetime, timezone
 from bson import ObjectId
 import app.database as database
+from app.database import check_db
 from app.models.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.services.auth_service import hash_password, verify_password, create_access_token
 from app.middleware.auth_middleware import get_current_user
@@ -12,8 +13,10 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate):
     """Register a new user account."""
-    print("Password length:", len(user_data.password))
-    print("Password:", repr(user_data.password))
+    try:
+        check_db()
+    except database.DatabaseNotReadyError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
     existing = await database.users_collection.find_one({"email": user_data.email})
     if existing:
         raise HTTPException(
@@ -41,6 +44,10 @@ async def register(user_data: UserCreate):
 @router.post("/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     """Login and receive a JWT access token."""
+    try:
+        check_db()
+    except database.DatabaseNotReadyError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
     user = await database.users_collection.find_one({"email": credentials.email})
     if not user:
         raise HTTPException(

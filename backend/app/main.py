@@ -43,6 +43,17 @@ async def health_check():
     return {"status": "healthy", "service": "docschat-api", "cors_origins": _cors_origins}
 
 
+@app.get("/health/db")
+async def db_health():
+    """Check database connectivity."""
+    try:
+        import app.database as database
+        database.check_db()
+        return {"status": "connected"}
+    except Exception as e:
+        return {"status": "disconnected", "error": str(e)}
+
+
 # CORS — wrap app at outermost layer so headers appear on ALL responses
 # (including error responses like 401 from ServerErrorMiddleware).
 # Using direct wrapping (not app.add_middleware) places CORSMiddleware
