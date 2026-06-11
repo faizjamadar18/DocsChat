@@ -34,7 +34,7 @@ function LoginForm() {
     <div className="flex h-screen items-center justify-center bg-[#000000]">
       <div className="p-8 sm:p-12 rounded-2xl w-full max-w-md shadow-lg mx-4">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold mb-2 text-white">Welcome Back</h1>
+          <h1 className="text-2xl font-semibold mb-1.5 text-white">Welcome Back</h1>
           <p className="text-white/60 text-sm">Sign in to continue to your notebook</p>
         </div>
 
