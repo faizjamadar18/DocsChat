@@ -2,10 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db, close_db
-from app.config import get_settings
 from app.routes import auth, sources, chat
-
-settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,11 +25,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow frontend origins from env (comma-separated)
-origins = [o.strip() for o in settings.CORS_ORIGINS.split(",")]
+# CORS — allow frontend origins (hardcoded for reliability)
+_cors_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://docschats.vercel.app",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,4 +47,4 @@ app.include_router(chat.router)
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "notebooklm-api"}
+    return {"status": "healthy", "service": "docschat-api", "cors_origins": _cors_origins}
