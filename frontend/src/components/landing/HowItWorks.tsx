@@ -49,7 +49,7 @@ export default function HowItWorks() {
           <p className="text-lg text-white/50 mt-3 max-w-2xl mx-auto">From PDF to answer in under a minute.</p>
         </div>
 
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-0 relative">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-16 lg:gap-0 relative">
           {steps.map((step, i) => (
             <div key={step.number} className="flex items-center w-full lg:w-auto">
               <div

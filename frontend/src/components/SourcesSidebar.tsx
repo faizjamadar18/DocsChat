@@ -63,7 +63,7 @@ export default function SourcesSidebar() {
 
         <button
           onClick={() => setShowUpload(true)}
-          className="w-full bg-white/5 border border-dashed border-white/20 text-white py-1 rounded-xl flex items-center justify-center gap-2 transition-colors duration-200 hover:bg-white/10 cursor-pointer"
+          className="w-full border border-dashed border-white/20 text-white py-1 rounded-xl flex items-center justify-center gap-2 transition-colors duration-200 hover:bg-white/5 cursor-pointer"
         >
           <span className="text-lg">+</span> Add source
         </button>
@@ -80,7 +80,7 @@ export default function SourcesSidebar() {
           </div>
         ) : (
           sources.map(source => (
-            <div key={source.id} className="bg-white/5 rounded-lg p-3 flex items-center justify-between">
+            <div key={source.id} className="rounded-lg p-3 flex items-center justify-between">
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="w-8 h-8 bg-white/10 rounded-md flex items-center justify-center shrink-0">
                   📄
