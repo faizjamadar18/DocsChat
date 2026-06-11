@@ -7,7 +7,7 @@ settings = get_settings()
 
 
 def _get_gemini_llm():
-    """Create a Gemini 2.5 Flash LLM instance."""
+    """Create a Gemini 3.5 Flash LLM instance."""
     return ChatGoogleGenerativeAI(
         model="gemini-3.5-flash",
         google_api_key=settings.GEMINI_API_KEY,
