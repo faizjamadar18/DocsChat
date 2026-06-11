@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Only proxy /api to localhost when NEXT_PUBLIC_API_URL is not set (local dev)
+  // Proxy /api to localhost in local dev (when NEXT_PUBLIC_API_URL is not set or is localhost)
   async rewrites() {
-    if (!process.env.NEXT_PUBLIC_API_URL) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const isLocal = !apiUrl || apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1');
+    if (isLocal) {
       return [
         {
           source: "/api/:path*",
