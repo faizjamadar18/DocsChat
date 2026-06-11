@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-base: #121212;
+  --color-surface: #1F1F1E;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+@keyframes bounce {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1);
+  }
+}

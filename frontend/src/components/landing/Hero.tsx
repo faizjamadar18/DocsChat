@@ -1,0 +1,103 @@
+import Link from 'next/link';
+import SectionLabel from './SectionLabel';
+
+export default function Hero() {
+  return (
+    <section className="border-b border-white/10 overflow-hidden">
+
+      <div
+        aria-hidden
+        className="absolute inset-0 isolate hidden contain-strict lg:block z-[51] pointer-events-none">
+        <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]" />
+        <div className="h-320 absolute left-0 top-0 w-60 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] [translate:5%_-50%]" />
+        <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
+      </div>
+      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-16">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+
+          <div className="max-w-xl">
+            <div className="mb-8">
+              <SectionLabel>AI-Powered Research</SectionLabel>
+            </div>
+            <h1 className="text-[32px] sm:text-5xl lg:text-[56px] font-semibold tracking-tight leading-[1.1] mb-6">
+              Turn Documents into Answers, Instantly
+            </h1>
+            <p className="text-lg sm:text-xl text-white/60 leading-relaxed mb-10 max-w-lg">
+              Upload PDFs, ask questions, and get citeable answers powered by your choice of AI models. Your research workspace, reimagined.
+            </p>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+              <Link
+                href="/register"
+                className="inline-flex items-center h-12 px-7 rounded-xl bg-white text-base font-semibold hover:bg-white/90 transition-colors"
+              >
+                Get started free
+              </Link>
+              <Link
+                href="#how-it-works"
+                className="inline-flex items-center h-12 px-7 rounded-xl border border-white/20 text-white/80 font-medium hover:bg-white/5 transition-colors"
+              >
+                How it works
+              </Link>
+            </div>
+            <p className="text-sm text-white/40 mt-8">No credit card required &middot; Free plan included</p>
+          </div>
+
+          <div className="flex items-center justify-center relative">
+            {/* MacBook mockup */}
+            <div className="relative w-full sm:max-w-[830px]">
+              {/* Screen bezel */}
+              <div className="bg-base rounded-[10px] sm:rounded-[13px] overflow-hidden">
+                {/* Notch */}
+                <div className="relative z-10">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100px] sm:w-[130px] h-[18px] sm:h-[24px] bg-base rounded-b-[10px] sm:rounded-b-[14px] flex items-start justify-center pt-[4px] sm:pt-[6px]">
+                    <div className="w-[7px] sm:w-[9px] h-[7px] sm:h-[9px] rounded-full bg-surface border border-white/10"></div>
+                  </div>
+                </div>
+                {/* Screen content */}
+                <div className="pt-16 sm:pt-10 px-3 sm:px-5 pb-10 sm:pb-4 space-y-3 sm:space-y-4">
+                  {/* Traffic lights */}
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#ff5f57]"></div>
+                    <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#febc2e]"></div>
+                    <div className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#28c840]"></div>
+                    <span className="text-[8px] sm:text-[10px] text-white/50 ml-1 sm:ml-1.5">DocsChat</span>
+                  </div>
+                  {/* User message */}
+                  <div className="flex justify-end mt-20">
+                    <div className="max-w-[78%] px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl rounded-br-sm bg-surface text-[10px] sm:text-xs text-white leading-relaxed">
+                      What are the key findings from this research paper?
+                    </div>
+                  </div>
+                  {/* Assistant response */}
+                  <div className="max-w-[82%] text-[10px] sm:text-xs text-white/80 leading-relaxed">
+                    Based on the paper, the key findings include:
+                  </div>
+                  <div className="max-w-[82%] text-[10px] sm:text-xs text-white/80 leading-relaxed space-y-0.5">
+                    <p>1. RAG systems significantly improve factual accuracy compared to base LLMs</p>
+                    <p>2. Document chunking strategy directly impacts retrieval quality</p>
+                  </div>
+                  {/* Citations */}
+                  <div className="flex gap-1 sm:gap-1.5 flex-wrap">
+                    <span className="text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/50">paper.pdf &middot; p.3</span>
+                    <span className="text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/50">paper.pdf &middot; p.7</span>
+                  </div>
+                  {/* Input bar */}
+                  <div className="flex items-center gap-2 pt-4 border-t border-white/10">
+                    <div className="flex-1 h-6 sm:h-8 rounded-full bg-white/5 border border-white/10"></div>
+                    <div className="w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-surface flex items-center justify-center shrink-0">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/50 sm:w-[13px] sm:h-[13px]">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
