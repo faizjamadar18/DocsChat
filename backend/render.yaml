@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: docschat-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash start.sh
+    envVars:
+      - key: MONGODB_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: http://localhost:3000,https://your-vercel-app.vercel.app
+      - key: CHROMA_PERSISTENT
+        value: "false"
+      - key: DB_NAME
+        value: docschat
+      - key: PYTHON_VERSION
+        value: "3.11.0"
