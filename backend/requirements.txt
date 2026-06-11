@@ -10,11 +10,10 @@ python-dotenv==1.0.1
 langchain==0.3.25
 langchain-core==0.3.61
 langchain-community==0.3.24
-langchain-google-genai==2.1.4
+langchain-google-genai>=2.1.4,<3
 langchain-groq==0.3.2
 langchain-text-splitters==0.3.8
 pypdf==5.1.0
-google-generativeai>=0.8.6
 chromadb==0.6.3
 pydantic>=2.13.0,<3
 pydantic-settings>=2.7.0,<3
