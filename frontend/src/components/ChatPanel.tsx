@@ -72,7 +72,7 @@ export default function ChatPanel() {
             </p>
           </div>
         ) : (
-          <div className="w-full mx-auto">
+          <div className="w-full max-w-full sm:max-w-[800px] mx-auto">
             {messages.map(msg => (
               <ChatMessageBubble key={msg.id} message={msg} />
             ))}

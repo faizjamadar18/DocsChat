@@ -71,10 +71,6 @@ async def db_health():
         return {"status": "disconnected", "error": str(e)}
 
 
-# CORS — wrap app at outermost layer so headers appear on ALL responses
-# (including error responses like 401 from ServerErrorMiddleware).
-# Using direct wrapping (not app.add_middleware) places CORSMiddleware
-# outside of FastAPI's internal error middleware stack.
 app = CORSMiddleware(
     app,
     allow_origins=_cors_origins,
