@@ -17,7 +17,12 @@ export default function Hero() {
 
           <div className="max-w-xl">
             <div className="mb-8">
-              <SectionLabel>AI-Powered Research</SectionLabel>
+              <SectionLabel>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+                AI-Powered Research
+              </SectionLabel>
             </div>
             <h1 className="text-[32px] sm:text-5xl lg:text-[56px] font-semibold tracking-tight leading-[1.1] mb-6">
               Turn Documents into Answers, Instantly
@@ -34,7 +39,7 @@ export default function Hero() {
               </Link>
               <Link
                 href="#how-it-works"
-                className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-7 rounded-xl border border-white/20 text-white text-sm sm:text-base font-medium hover:bg-white/5 transition-colors"
+                className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-7 rounded-xl border border-white/20 text-white text-sm sm:text-white font-medium hover:bg-white/5 transition-colors"
               >
                 How it works
               </Link>
