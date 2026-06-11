@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_MB: int = 20
 
     # Deployment
-    CORS_ORIGINS: str = "http://localhost:3000"
+    CORS_ORIGINS: str = "https://docschats.vercel.app"
     CHROMA_PERSISTENT: bool = True
 
     model_config = SettingsConfigDict(

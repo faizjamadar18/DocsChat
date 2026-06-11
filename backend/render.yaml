@@ -17,7 +17,7 @@ services:
       - key: GROQ_API_KEY
         sync: false
       - key: CORS_ORIGINS
-        value: http://localhost:3000,https://your-vercel-app.vercel.app
+        value: http://localhost:3000,https://docschats.vercel.app
       - key: CHROMA_PERSISTENT
         value: "false"
       - key: DB_NAME
