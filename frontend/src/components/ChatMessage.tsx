@@ -6,7 +6,7 @@ export default function ChatMessageBubble({ message }: { message: ChatMessage })
 
   return (
     <div className={`flex flex-col w-full mb-6 ${isUser ? 'items-end' : 'items-start'}`}>
-      <div className={`max-w-[80%] text-white text-[15px] leading-relaxed ${isUser ? 'px-5 py-4 bg-base rounded-[24px_24px_4px_24px]' : ''}`}>
+      <div className={`max-w-[90%] sm:max-w-[80%] text-[14px] sm:text-[15px] text-white leading-relaxed ${isUser ? 'px-3 sm:px-5 py-2 sm:py-4 bg-base rounded-[20px_20px_4px_20px] sm:rounded-[24px_24px_4px_24px]' : ''}`}>
         {isUser ? (
           <p>{message.content}</p>
         ) : (
@@ -25,7 +25,7 @@ export default function ChatMessageBubble({ message }: { message: ChatMessage })
       </div>
 
       {!isUser && message.sources && message.sources.length > 0 && (
-        <div className="mt-2.5 ml-3 flex flex-wrap gap-1.5 max-w-[80%]">
+        <div className="mt-2 sm:mt-2.5 ml-1 sm:ml-3 flex flex-wrap gap-1 sm:gap-1.5 max-w-[90%] sm:max-w-[80%]">
           {message.sources.map((source, index) => (
             <span
               key={`${source.source_id}-${source.page ?? index}`}
@@ -39,7 +39,7 @@ export default function ChatMessageBubble({ message }: { message: ChatMessage })
       )}
 
       {!isUser && message.model_used && (
-        <div className="mt-2 text-xs text-white/60 ml-3">
+        <div className="mt-1.5 sm:mt-2 text-xs text-white/60 ml-1 sm:ml-3">
           Answered by {message.model_used === 'groq' ? 'Groq Llama 3 70B' : 'Gemini 3.5 Flash'}
         </div>
       )}

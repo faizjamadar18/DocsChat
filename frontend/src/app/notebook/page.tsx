@@ -11,9 +11,9 @@ export default function Notebook() {
 
   return (
     <ProtectedRoute>
-      <div className="h-screen bg-base p-3 sm:p-4 flex flex-col">
-        <div className="flex justify-between items-center px-6 py-3 shrink-0">
-          <div className="flex items-center gap-3">
+      <div className="h-screen bg-base p-2 sm:p-4 flex flex-col">
+        <div className="flex justify-between items-center px-3 sm:px-6 py-2 sm:py-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden w-8 h-8 flex items-center justify-center text-white/60 hover:text-white cursor-pointer"

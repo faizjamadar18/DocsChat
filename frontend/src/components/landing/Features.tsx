@@ -24,7 +24,7 @@ export default function Features() {
         <div className="grid gap-6">
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Card — Ask Anything */}
-            <div className="relative bg-black rounded-2xl p-10 border-2 border-white/[0.12] flex flex-col">
+            <div className="relative bg-black rounded-2xl p-6 sm:p-10 border-2 border-white/[0.12] flex flex-col">
               <CornerBrackets />
               <h3 className="text-lg font-semibold text-white mb-3">Ask Anything</h3>
               <p className="text-sm text-white/50 leading-relaxed mb-6">
@@ -54,7 +54,7 @@ export default function Features() {
             </div>
 
             {/* Card — Multi-Model */}
-            <div className="relative bg-black rounded-2xl p-10 border-2 border-white/[0.12] flex flex-col">
+            <div className="relative bg-black rounded-2xl p-6 sm:p-10 border-2 border-white/[0.12] flex flex-col">
               <CornerBrackets />
               <h3 className="text-lg font-semibold text-white mb-3">Multi-Model</h3>
               <p className="text-sm text-white/50 leading-relaxed mb-6">
@@ -91,13 +91,13 @@ export default function Features() {
           </div>
 
           {/* Full-width card — Upload & Analyze */}
-          <div className="relative bg-black rounded-2xl p-7 border-2 border-white/[0.12] flex flex-col">
+          <div className="relative bg-black rounded-2xl p-5 sm:p-7 border-2 border-white/[0.12] flex flex-col">
             <CornerBrackets />
             <h3 className="text-lg font-semibold text-white mb-6 text-center">Upload & Analyze</h3>
 
 
             {/* Document cards */}
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3.5">
                 <div className="flex items-center gap-3 mb-2.5">
                   <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center text-xs text-white/40">PDF</div>

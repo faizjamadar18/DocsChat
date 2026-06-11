@@ -35,9 +35,9 @@ export default function ChatPanel() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-surface border border-white/10 rounded-2xl overflow-hidden">
-      <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10 shrink-0">
-        <h1 className="text-lg sm:text-xl font-semibold text-white">Chat</h1>
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex justify-between items-center px-3 sm:px-6 py-2 sm:py-4 border-b border-white/10 shrink-0">
+        <h1 className="text-base sm:text-xl font-semibold text-white">Chat</h1>
+        <div className="flex items-center gap-1.5 sm:gap-3">
           {messages.length > 0 && (
             <button
               onClick={handleClearChat}
@@ -57,22 +57,22 @@ export default function ChatPanel() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col min-h-0">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-6 flex flex-col min-h-0">
         {loading ? (
           <div className="m-auto">
             <div className="w-5 h-5 border-3 border-white/10 border-l-white rounded-full animate-spin"></div>
           </div>
         ) : messages.length === 0 ? (
-          <div className="m-auto text-center max-w-[500px]">
-            <div className="text-5xl mb-6">👋</div>
-            <h2 className="text-[28px] font-semibold mb-4 text-white">Let's start your notebook...</h2>
-            <p className="text-white/60 text-base leading-relaxed">
+          <div className="m-auto text-center max-w-[500px] px-4">
+            <div className="text-4xl sm:text-5xl mb-4 sm:mb-6">👋</div>
+            <h2 className="text-2xl sm:text-[28px] font-semibold mb-3 sm:mb-4 text-white">Let's start your notebook...</h2>
+            <p className="text-white/60 text-sm sm:text-base leading-relaxed">
               This is your blank canvas to understand, create, or make progress on something new.
               Upload some PDFs in the sidebar, then ask me questions about them!
             </p>
           </div>
         ) : (
-          <div className="max-w-[800px] w-full mx-auto">
+          <div className="w-full mx-auto">
             {messages.map(msg => (
               <ChatMessageBubble key={msg.id} message={msg} />
             ))}
@@ -81,7 +81,7 @@ export default function ChatPanel() {
         )}
       </div>
 
-      <div className="px-4 sm:px-6 py-4 sm:py-6 shrink-0">
+      <div className="px-3 sm:px-6 py-3 sm:py-6 shrink-0">
         {error && (
           <div className="max-w-[800px] mx-auto mb-3 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
             {error}
