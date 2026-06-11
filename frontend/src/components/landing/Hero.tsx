@@ -25,16 +25,16 @@ export default function Hero() {
             <p className="text-lg sm:text-xl text-white/60 leading-relaxed mb-10 max-w-lg">
               Upload PDFs, ask questions, and get citeable answers powered by your choice of AI models. Your research workspace, reimagined.
             </p>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+            <div className="flex flex-row items-center gap-2 sm:gap-4">
               <Link
                 href="/register"
-                className="inline-flex items-center h-12 px-7 rounded-xl bg-white text-base font-semibold hover:bg-white/90 transition-colors"
+                className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-7 rounded-xl bg-white text-[#121212] text-sm sm:text-base font-semibold hover:bg-white/90 transition-colors"
               >
                 Get started free
               </Link>
               <Link
                 href="#how-it-works"
-                className="inline-flex items-center h-12 px-7 rounded-xl border border-white/20 text-white/80 font-medium hover:bg-white/5 transition-colors"
+                className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-7 rounded-xl border border-white/20 text-white text-sm sm:text-base font-medium hover:bg-white/5 transition-colors"
               >
                 How it works
               </Link>
