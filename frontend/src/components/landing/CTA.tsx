@@ -10,13 +10,13 @@ export default function CTA() {
           <div className="flex flex-row items-center justify-center gap-2 sm:gap-4">
             <Link
               href="/register"
-              className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-8 rounded-xl bg-white text-[#121212] text-sm sm:text-base font-semibold hover:bg-white/90 transition-colors"
+              className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-8 rounded-xl bg-white text-[#121212] text-sm sm:text-base sm:text-[#121212] font-semibold hover:bg-white/90 transition-colors"
             >
               Get started free
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-8 rounded-xl border border-white/20 text-white text-sm sm:text-base font-medium hover:bg-white/5 transition-colors"
+              className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-8 rounded-xl border border-white/20 text-white text-sm sm:text-base sm:text-white font-medium hover:bg-white/5 transition-colors"
             >
               Sign in
             </Link>
