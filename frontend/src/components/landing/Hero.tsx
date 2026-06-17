@@ -49,7 +49,7 @@ export default function Hero() {
 
           <div className="flex items-center justify-center relative">
             {/* MacBook mockup */}
-            <div className="relative w-full sm:max-w-[830px]">
+            <div className="relative w-full sm:max-w-[900px]">
               {/* Surface shadow — device resting on desk */}
               <div className="absolute -bottom-8 left-[5%] right-[5%] h-10 rounded-full bg-black/40 blur-2xl" />
               {/* Outer glow */}
@@ -63,7 +63,7 @@ export default function Hero() {
                   {/* Screen with inner shadow for glass depth */}
                   <div className="rounded-[13px] sm:rounded-[17px] bg-base overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                     {/* Screen content */}
-                    <div className="px-3 sm:px-6 pb-8 sm:pb-10 pt-6 sm:pt-8 space-y-2 sm:space-y-5">
+                    <div className="px-5 sm:px-8 pb-8 sm:pb-10 pt-6 sm:pt-8 space-y-2 sm:space-y-5">
                       {/* Top bar */}
                       <div className="flex items-center justify-between mb-4 sm:mb-5">
                         <div className="flex items-center gap-1.5 sm:gap-2">
