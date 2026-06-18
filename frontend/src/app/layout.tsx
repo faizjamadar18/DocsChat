@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-base">
-      <body className={`${GeistSans.className} bg-base text-white`}>{children}</body>
+      <body className={`${GeistMono.className} bg-base text-white`}>{children}</body>
     </html>
   );
 }
