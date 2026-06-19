@@ -45,8 +45,8 @@ export default function UploadArea({ onUploadComplete }: { onUploadComplete: () 
     <div
       className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
         isDragging
-          ? 'border-white bg-white/10'
-          : 'border-white/10 bg-white/5'
+          ? 'border-white/30 bg-white/[0.08]'
+          : 'border-white/[0.08] bg-white/[0.03]'
       }`}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
@@ -60,31 +60,31 @@ export default function UploadArea({ onUploadComplete }: { onUploadComplete: () 
         className="hidden"
       />
 
-      <div className="mb-4 text-white/60">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="12" y1="18" x2="12" y2="12"></line>
-          <polyline points="9 15 12 12 15 15"></polyline>
+      <div className="mb-4 text-white/30">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="12" y1="18" x2="12" y2="12" />
+          <polyline points="9 15 12 12 15 15" />
         </svg>
       </div>
 
       {isUploading ? (
         <div className="flex flex-col items-center gap-2">
-          <div className="w-5 h-5 border-3 border-white/10 border-l-white rounded-full animate-spin"></div>
-          <p className="text-white">Uploading & Processing...</p>
+          <div className="w-5 h-5 border-2 border-white/[0.06] border-t-white/50 rounded-full animate-spin"></div>
+          <p className="text-sm text-white/60">Uploading & Processing...</p>
         </div>
       ) : (
         <>
-          <p className="mb-4 text-white">
+          <p className="mb-3 text-sm text-white/70">
             Drag & drop a PDF file here
           </p>
-          <p className="mb-4 text-xs text-white/60">
+          <p className="mb-4 text-[11px] text-white/30">
             Maximum file size: 20MB
           </p>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="bg-white/10 text-white px-5 py-2.5 rounded-full font-medium cursor-pointer hover:bg-white/20 transition-colors"
+            className="bg-white/[0.08] text-white/80 px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer hover:bg-white/[0.12] transition-colors"
           >
             Browse Files
           </button>

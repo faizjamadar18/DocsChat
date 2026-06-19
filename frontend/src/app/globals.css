@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-base: #121212;
-  --color-surface: #1F1F1E;
+  --color-base: #131314;
+  --color-surface: #1e1e1f;
+  --color-card: #1c1c1d;
 }
 
 body {
@@ -11,7 +12,7 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -19,19 +20,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
 }
 
-@keyframes bounce {
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
 
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-
-  40% {
-    transform: scale(1);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
