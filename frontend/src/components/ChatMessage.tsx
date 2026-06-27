@@ -36,13 +36,7 @@ export default function ChatMessageBubble({
     <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
       {!isUser && (
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-              <path d="M12 2a4 4 0 0 1 4 4c0 2-2 3-2 3s2 1 2 3a4 4 0 0 1-8 0c0-2 2-3 2-3s-2-1-2-3a4 4 0 0 1 4-4z" />
-              <path d="M12 14v8" />
-              <path d="M9 18h6" />
-            </svg>
-          </div>
+
           <div ref={pickerRef} className="relative">
             <button
               onClick={() => setShowModelPicker(!showModelPicker)}
@@ -62,11 +56,10 @@ export default function ChatMessageBubble({
                       onChangeModel(model.id);
                       setShowModelPicker(false);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
-                      model.id === currentModel
-                        ? 'bg-white/[0.08] text-white'
-                        : 'text-white/60 hover:bg-white/[0.04] hover:text-white/80'
-                    }`}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${model.id === currentModel
+                      ? 'bg-white/[0.08] text-white'
+                      : 'text-white/60 hover:bg-white/[0.04] hover:text-white/80'
+                      }`}
                   >
                     {model.name}
                   </button>
