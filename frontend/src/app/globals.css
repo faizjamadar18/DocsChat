@@ -2,7 +2,7 @@
 
 @theme {
   --color-base: #131314;
-  --color-surface: #1e1e1f;
+  --color-surface: #0D0D0D;
   --color-card: #1c1c1d;
 }
 
@@ -29,6 +29,13 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

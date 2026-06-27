@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { api } from '../lib/api';
 import UploadArea from './UploadArea';
 
@@ -88,9 +89,9 @@ export default function SourcesSidebar({
               </svg>
             </div>
           </div>
-          <span className={`text-md font-semibold text-white/80 group-hover:text-white whitespace-nowrap transition-all duration-300 ${collapsed ? 'opacity-0 max-w-0 overflow-hidden pl-0' : 'opacity-100 max-w-[200px] pl-0'}`}>
+          <Link href="/" className={`text-md font-semibold text-white/80 group-hover:text-white whitespace-nowrap transition-all duration-300 ${collapsed ? 'opacity-0 max-w-0 overflow-hidden pl-0' : 'opacity-100 max-w-[200px] pl-0'}`}>
             DocsChat
-          </span>
+          </Link>
         </button>
 
         {/* Collapse / mobile close buttons — only when expanded */}
@@ -254,7 +255,7 @@ export default function SourcesSidebar({
 
       {showUpload && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-surface p-6 rounded-2xl w-[400px] max-w-[90vw] border border-white/[0.08] shadow-2xl">
+          <div className="bg-black p-6 rounded-2xl w-[400px] max-w-[90vw] border border-white/[0.08] shadow-2xl">
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-base font-medium text-white">Upload PDF</h3>
               <button onClick={() => setShowUpload(false)} className="text-white/40 hover:text-white/70 transition-colors cursor-pointer">

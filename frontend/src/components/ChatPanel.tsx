@@ -107,8 +107,8 @@ export default function ChatPanel({
                       setShowModelPicker(false);
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${model.id === selectedModel
-                        ? 'bg-white/[0.08] text-white'
-                        : 'text-white/60 hover:bg-white/[0.04] hover:text-white/80'
+                      ? 'bg-white/[0.08] text-white'
+                      : 'text-white/60 hover:bg-white/[0.04] hover:text-white/80'
                       }`}
                   >
                     {model.name}
@@ -122,8 +122,8 @@ export default function ChatPanel({
             type="submit"
             disabled={!input.trim() || streaming}
             className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${input.trim() && !streaming
-                ? 'bg-white text-black cursor-pointer hover:bg-white/90'
-                : 'bg-white/[0.04] text-white/20 cursor-not-allowed'
+              ? 'bg-white text-black cursor-pointer hover:bg-white/90'
+              : 'bg-white/[0.04] text-white/20 cursor-not-allowed'
               }`}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
