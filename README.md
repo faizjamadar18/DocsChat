@@ -37,7 +37,7 @@
 
 <div align="center">
 
-[![Watch the DocsChat Demo](https://img.youtube.com/vi/AbhWGvJf2E8/maxresdefault.jpg)](https://www.youtube.com/watch?v=AbhWGvJf2E8)
+[![Watch the DocsChat Demo](https://img.youtube.com/vi/AbhWGvJf2E8/maxresdefault.jpg?v=2)](https://www.youtube.com/watch?v=AbhWGvJf2E8&t=4s)
 
 </div>
 
