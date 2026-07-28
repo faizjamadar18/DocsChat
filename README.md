@@ -33,6 +33,16 @@
 
 <br />
 
+## 📺 Demo Video
+
+<div align="center">
+
+[![Watch the DocsChat Demo](https://img.youtube.com/vi/AbhWGvJf2E8/maxresdefault.jpg)](https://www.youtube.com/watch?v=AbhWGvJf2E8)
+
+</div>
+
+<br />
+
 ## Features
 
 - **RAG-Powered Q&A** — ask natural-language questions against your uploaded documents. Every answer is grounded in your sources.
