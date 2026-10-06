@@ -5,7 +5,8 @@ from typing import Optional
 
 class ChatRequest(BaseModel):
     query: str
-    model: str = "gemini"  # "gemini" or "groq"
+    model: Optional[str] = "groq"
+    workspace_id: Optional[str] = None
 
 
 class Citation(BaseModel):
@@ -18,6 +19,7 @@ class Citation(BaseModel):
 
 class ChatMessage(BaseModel):
     id: str
+    workspace_id: Optional[str] = None
     role: str  # "user" | "assistant"
     content: str
     model_used: Optional[str] = None

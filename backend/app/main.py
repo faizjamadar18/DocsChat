@@ -4,7 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.database import init_db, close_db
-from app.routes import auth, sources, chat
+from app.routes import auth, sources, chat, workspaces
 
 
 async def catch_unhandled_exceptions(request: Request, call_next):
@@ -34,8 +34,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="DocsChat API",
-    description="A RAG-powered document Q&A API with Gemini and Groq support",
-    version="1.0.0",
+    description="A multi-workspace RAG workspace API powered by Groq Llama 3.3 70B",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -51,6 +51,7 @@ _cors_origins = [
 
 # Register all routes on the FastAPI instance before wrapping
 app.include_router(auth.router)
+app.include_router(workspaces.router)
 app.include_router(sources.router)
 app.include_router(chat.router)
 
