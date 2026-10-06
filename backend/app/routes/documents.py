@@ -6,7 +6,7 @@ import hashlib
 
 from app.models.document import DocumentCreate, DocumentUpdate, DocumentResponse, DocumentListResponse
 from app.routes.workspaces import get_workspace_or_404
-from app.database import documents_collection
+import app.database as database
 from app.services.vector_store import add_documents, delete_source_vectors
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document as LangchainDocument
@@ -53,7 +53,7 @@ async def create_document(
         "updated_at": now,
     }
     
-    result = await documents_collection.insert_one(doc_dict)
+    result = await database.documents_collection.insert_one(doc_dict)
     doc_id = str(result.inserted_id)
     doc_dict["id"] = doc_id
     
@@ -64,7 +64,7 @@ async def create_document(
 
 @router.get("", response_model=DocumentListResponse)
 async def list_documents(workspace: dict = Depends(get_workspace_or_404)):
-    cursor = documents_collection.find({"workspace_id": str(workspace["_id"])}).sort("updated_at", -1)
+    cursor = database.documents_collection.find({"workspace_id": str(workspace["_id"])}).sort("updated_at", -1)
     documents = []
     async for doc in cursor:
         doc["id"] = str(doc["_id"])
@@ -74,7 +74,7 @@ async def list_documents(workspace: dict = Depends(get_workspace_or_404)):
 
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(document_id: str, workspace: dict = Depends(get_workspace_or_404)):
-    doc = await documents_collection.find_one({
+    doc = await database.documents_collection.find_one({
         "_id": ObjectId(document_id),
         "workspace_id": str(workspace["_id"])
     })
@@ -92,7 +92,7 @@ async def update_document(
     background_tasks: BackgroundTasks,
     workspace: dict = Depends(get_workspace_or_404)
 ):
-    doc = await documents_collection.find_one({
+    doc = await database.documents_collection.find_one({
         "_id": ObjectId(document_id),
         "workspace_id": str(workspace["_id"])
     })
@@ -113,7 +113,7 @@ async def update_document(
             update_data["content_hash"] = new_hash
             needs_reindex = True
             
-    await documents_collection.update_one({"_id": ObjectId(document_id)}, {"$set": update_data})
+    await database.documents_collection.update_one({"_id": ObjectId(document_id)}, {"$set": update_data})
     
     doc.update(update_data)
     doc["id"] = str(doc["_id"])
@@ -130,14 +130,14 @@ async def delete_document(
     background_tasks: BackgroundTasks,
     workspace: dict = Depends(get_workspace_or_404)
 ):
-    doc = await documents_collection.find_one({
+    doc = await database.documents_collection.find_one({
         "_id": ObjectId(document_id),
         "workspace_id": str(workspace["_id"])
     })
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
         
-    await documents_collection.delete_one({"_id": ObjectId(document_id)})
+    await database.documents_collection.delete_one({"_id": ObjectId(document_id)})
     
     background_tasks.add_task(delete_source_vectors, str(workspace["user_id"]), str(workspace["_id"]), document_id)
     
