@@ -1,0 +1,24 @@
+# Root .gitignore
+
+# IDE / Editor folders
+.vscode/
+.idea/
+.DS_Store
+
+# AI Agent Specific (Do NOT push these)
+.aider*
+.cursor*
+.gemini/
+*.scratch.*
+
+# IMPORTANT: Do NOT ignore the following! 
+# We explicitly want to commit the AI instructions and skills.
+!/.agents/
+!AGENTS.md
+!CLAUDE.md
+!GEMINI.md
+!IMPLEMENTATION_PLAN.md
+
+# Ignore top-level env files just in case
+.env
+.env.local

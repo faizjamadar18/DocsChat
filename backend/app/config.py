@@ -22,9 +22,12 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP: int = 50
     MAX_FILE_SIZE_MB: int = 20
 
+    # Qdrant Configuration
+    QDRANT_URL: str
+    QDRANT_API_KEY: str
+
     # Deployment
     CORS_ORIGINS: str = "https://docschats.vercel.app"
-    CHROMA_PERSISTENT: bool = True
 
     model_config = SettingsConfigDict(
         env_file=_env_path if os.path.isfile(_env_path) else None,
