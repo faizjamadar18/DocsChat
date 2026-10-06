@@ -15,15 +15,17 @@ When instructed to add a new feature or execute a phase from `IMPLEMENTATION_PLA
 ## 2. Prepare Branch
 - Create a new branch following the format: `feature/short-description` (or `feature/phase-N-description`).
 
-## 3. Implement (Code First)
-- Write the application code to fulfill the requirement.
-- Make small, atomic commits using Conventional Commits (e.g., `feat: add Google OAuth endpoint`).
-- Do not make major architectural deviations without communicating.
+## 3. Test-Driven Development (TDD) - Write Tests FIRST
+- **CRITICAL**: Before writing any implementation code for the backend, you MUST write the `pytest` file in `backend/tests/`.
+- Run the test autonomously via the terminal. It should fail.
+- DO NOT start implementing the feature until the tests are written and clearly define the expected success and error responses.
 
-## 4. Test (Backend) & Lint (Frontend)
-- Write or update `pytest` tests for the backend code you touched.
-- Ensure all backend tests pass (`pytest`).
-- Ensure frontend lints pass (`npm run lint` in frontend dir). No frontend unit tests are required at this time.
+## 4. Implement & Verify
+- Write the application code to fulfill the requirement and make the tests pass.
+- Run `pytest` again and autonomously debug until you achieve a 100% pass rate.
+- Self-test your work using terminal scripts if necessary to ensure it works end-to-end. No babysitting by the user!
+- Ensure frontend lints pass (`npm run lint`).
+- Make small, atomic commits using Conventional Commits.
 
 ## 5. Review & PR
 - Call the `review-changes` skill to audit your own work.

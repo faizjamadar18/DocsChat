@@ -5,7 +5,8 @@ description: Guidelines for writing tests and checking code quality.
 
 # Write Tests and Quality Checks
 
-## Backend Testing (Python)
+## Backend Testing (Python) - TDD Required
+- **Test-Driven Development**: You MUST write the `pytest` test script BEFORE you write the actual code implementation.
 - **Framework**: `pytest` and `pytest-asyncio` for async endpoints.
 - **Location**: Write tests in a `tests/` directory within `backend/` or alongside the code.
 - **Scope**: Ensure new API endpoints have at least one success path test and one error path test.
