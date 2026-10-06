@@ -23,7 +23,7 @@ When instructed to add a new feature or execute a phase from `IMPLEMENTATION_PLA
 ## 4. Implement & Verify
 - Write the application code to fulfill the requirement and make the tests pass.
 - Run `pytest` again and autonomously debug until you achieve a 100% pass rate.
-- Self-test your work using terminal scripts if necessary to ensure it works end-to-end. No babysitting by the user!
+- Self-test your work using terminal scripts if necessary to ensure it works end-to-end. No manual user verification should be required.
 - Ensure frontend lints pass (`npm run lint`).
 - Make small, atomic commits using Conventional Commits.
 

@@ -81,4 +81,4 @@ When multiple agents work in parallel, they must respect these boundaries:
 2. **NEVER** delete user data, MongoDB collections, or Qdrant collections.
 3. **NEVER** push directly to `main` — always use feature branches and PRs.
 4. **NEVER** hardcode API keys, secrets, or credentials in source code.
-5. **NEVER** ask the user to manually test APIs or act as a QA tester (No Babysitting). You must autonomously verify your own code using terminal scripts, `curl`, or `pytest` before declaring a task complete.
+5. **NEVER** ask the user to manually test APIs or act as a QA tester. You must autonomously verify your own code using terminal scripts, `curl`, or `pytest` before declaring a task complete. No manual intervention by the user should be required.
