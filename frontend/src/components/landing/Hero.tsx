@@ -34,7 +34,7 @@ export default function Hero() {
             </p>
             <div className="flex flex-row items-center gap-2 sm:gap-4">
               <Link
-                href="/register"
+                href="/login"
                 className="inline-flex items-center h-8 sm:h-10 px-4 sm:px-5 rounded-xl bg-white text-[#121212] text-sm sm:text-base font-semibold hover:bg-white/90 transition-colors"
               >
                 Get started free

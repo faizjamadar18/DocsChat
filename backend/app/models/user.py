@@ -3,21 +3,16 @@ from datetime import datetime
 from typing import Optional
 
 
-class UserCreate(BaseModel):
-    username: str = Field(..., min_length=2, max_length=50)
-    email: str = Field(..., min_length=3, max_length=254)
-    password: str = Field(..., min_length=6)
-
-
-class UserLogin(BaseModel):
-    email: str = Field(..., min_length=3, max_length=254)
-    password: str
+class GoogleAuthRequest(BaseModel):
+    credential: str = Field(..., description="Google ID Token")
 
 
 class UserInDB(BaseModel):
     id: str
     username: str
     email: str
+    auth_provider: str = "google"
+    picture: Optional[str] = None
     created_at: datetime
 
 
@@ -25,6 +20,8 @@ class UserResponse(BaseModel):
     id: str
     username: str
     email: str
+    auth_provider: str = "google"
+    picture: Optional[str] = None
     created_at: datetime
 
 

@@ -18,7 +18,7 @@ export default function CTA() {
             <p className="text-lg text-white/60 mb-10 max-w-lg mx-auto">Start for free, upgrade when you need more. No credit card required.</p>
             <div className="flex flex-row items-center justify-center gap-2 sm:gap-4">
               <Link
-                href="/register"
+                href="/login"
                 className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-8 rounded-xl bg-white text-[#121212] text-sm sm:text-base sm:text-[#121212] font-semibold hover:bg-white/90 transition-colors"
               >
                 Get started free

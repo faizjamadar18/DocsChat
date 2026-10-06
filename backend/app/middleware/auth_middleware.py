@@ -58,5 +58,7 @@ async def get_current_user(
         "id": str(user["_id"]),
         "username": user["username"],
         "email": user["email"],
+        "auth_provider": user.get("auth_provider", "google"),
+        "picture": user.get("picture"),
         "created_at": user["created_at"],
     }

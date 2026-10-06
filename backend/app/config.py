@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
+    
+    GOOGLE_CLIENT_ID: str = "placeholder_client_id"
 
     GEMINI_API_KEY: str
     GROQ_API_KEY: str
