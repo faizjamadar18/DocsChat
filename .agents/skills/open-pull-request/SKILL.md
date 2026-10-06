@@ -37,6 +37,7 @@ Implementation Plan Phase: [Insert Phase Number or "N/A"]
 ## Checklist
 - [ ] Code follows project conventions
 - [ ] Backend tests pass and frontend lints pass
+- [ ] Self-tested via terminal scripts/pytest (NO manual user babysitting required)
 - [ ] No hardcoded secrets
 - [ ] Self-reviewed against the `review-changes` skill
 ```
