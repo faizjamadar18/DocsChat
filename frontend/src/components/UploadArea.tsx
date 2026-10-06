@@ -45,8 +45,8 @@ export default function UploadArea({ workspaceId, onUploadComplete }: { workspac
     <div
       className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
         isDragging
-          ? 'border-white/30 bg-white/[0.08]'
-          : 'border-white/[0.08] bg-white/[0.03]'
+          ? 'border-white/30 bg-white/8'
+          : 'border-white/8 bg-white/3'
       }`}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
@@ -71,7 +71,7 @@ export default function UploadArea({ workspaceId, onUploadComplete }: { workspac
 
       {isUploading ? (
         <div className="flex flex-col items-center gap-2">
-          <div className="w-5 h-5 border-2 border-white/[0.06] border-t-white/50 rounded-full animate-spin"></div>
+          <div className="w-5 h-5 border-2 border-white/6 border-t-white/50 rounded-full animate-spin"></div>
           <p className="text-sm text-white/60">Uploading & Processing...</p>
         </div>
       ) : (
@@ -84,7 +84,7 @@ export default function UploadArea({ workspaceId, onUploadComplete }: { workspac
           </p>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="bg-white/[0.08] text-white/80 px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer hover:bg-white/[0.12] transition-colors"
+            className="bg-white/8 text-white/80 px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer hover:bg-white/12 transition-colors"
           >
             Browse Files
           </button>

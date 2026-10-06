@@ -22,7 +22,7 @@ export default function Notebook() {
       <div className="h-screen bg-base flex flex-col">
         <div className="flex flex-1 min-h-0">
           {/* Desktop sidebar */}
-          <div className={`hidden lg:flex ${sidebarCollapsed ? 'w-[56px]' : 'w-[280px]'} shrink-0 flex-col border-r border-white/[0.06] transition-all duration-300 ease-in-out overflow-hidden`}>
+          <div className={`hidden lg:flex ${sidebarCollapsed ? 'w-14' : 'w-70'} shrink-0 flex-col border-r border-white/6 transition-all duration-300 ease-in-out overflow-hidden`}>
             <SourcesSidebar
               workspaceId={workspaceId}
               user={user}
@@ -36,7 +36,7 @@ export default function Notebook() {
           {sidebarOpen && (
             <div className="fixed inset-0 z-50 lg:hidden">
               <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
-              <div className="absolute left-0 top-0 bottom-0 w-[85vw] max-w-[300px] bg-base">
+              <div className="absolute left-0 top-0 bottom-0 w-[85vw] max-w-75 bg-base">
                 <SourcesSidebar workspaceId={workspaceId} user={user} collapsed={false} onCloseMobile={() => setSidebarOpen(false)} />
               </div>
             </div>
