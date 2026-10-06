@@ -7,7 +7,7 @@ export default function Hero() {
 
       <div
         aria-hidden
-        className="absolute inset-0 isolate hidden contain-strict lg:block z-[51] pointer-events-none">
+        className="absolute inset-0 isolate hidden contain-strict lg:block z-51 pointer-events-none">
         <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]" />
         <div className="h-320 absolute left-0 top-0 w-60 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] [translate:5%_-50%]" />
         <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
@@ -17,7 +17,7 @@ export default function Hero() {
 
           <div className="relative max-w-xl">
             {/* White spotlight behind text */}
-            <div className="absolute -top-20 -left-20 w-[500px] h-[500px] rounded-full bg-[radial-gradient(ellipse_at_center,hsla(0, 5%, 92%, 0.10)_0%,hsla(0,0%,100%,0.03)_40%,transparent_70%)] blur-3xl pointer-events-none" />
+            <div className="absolute -top-20 -left-20 w-125 h-125 rounded-full bg-[radial-gradient(ellipse_at_center,hsla(0, 5%, 92%, 0.10)_0%,hsla(0,0%,100%,0.03)_40%,transparent_70%)] blur-3xl pointer-events-none" />
             <div className="mb-8">
               <SectionLabel>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -51,17 +51,17 @@ export default function Hero() {
 
           <div className="flex items-center justify-center relative">
             {/* MacBook mockup */}
-            <div className="relative w-full sm:max-w-[900px]">
+            <div className="relative w-full sm:max-w-225">
               {/* Surface shadow — device resting on desk */}
               <div className="absolute -bottom-8 left-[5%] right-[5%] h-10 rounded-full bg-black/40 blur-2xl" />
               {/* Outer glow */}
-              <div className="absolute -inset-8 rounded-[24px] bg-gradient-to-br from-white/[0.06] via-transparent to-white/[0.01] blur-3xl" />
+              <div className="absolute -inset-8 rounded-3xl bg-linear-to-br from-white/6 via-transparent to-white/1 blur-3xl" />
               {/* Glass reflection overlay */}
-              <div className="absolute -top-12 left-[20%] right-[20%] h-20 bg-gradient-to-b from-white/[0.03] to-transparent blur-3xl rounded-full pointer-events-none" />
+              <div className="absolute -top-12 left-[20%] right-[20%] h-20 bg-linear-to-b from-white/3 to-transparent blur-3xl rounded-full pointer-events-none" />
               {/* SaaS product frame */}
-              <div className="relative rounded-[16px] sm:rounded-[20px] bg-gradient-to-b from-white/[0.08] to-white/[0.01] p-[1px] shadow-[0_0_30px_rgba(0,0,0,0.4),0_20px_60px_-10px_rgba(0,0,0,0.5)]">
+              <div className="relative rounded-2xl sm:rounded-[20px] bg-linear-to-b from-white/8 to-white/1 p-px shadow-[0_0_30px_rgba(0,0,0,0.4),0_20px_60px_-10px_rgba(0,0,0,0.5)]">
                 {/* Device bezel */}
-                <div className="rounded-[15px] sm:rounded-[19px] bg-[#1a1a1a] p-[2px] shadow-inner shadow-black/50">
+                <div className="rounded-[15px] sm:rounded-[19px] bg-[#1a1a1a] p-0.5 shadow-inner shadow-black/50">
                   {/* Screen with inner shadow for glass depth */}
                   <div className="rounded-[13px] sm:rounded-[17px] bg-base overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                     {/* Screen content */}
@@ -77,7 +77,7 @@ export default function Hero() {
                       </div>
                       {/* User message */}
                       <div className="flex justify-end mt-5 sm:mt-7">
-                        <div className="max-w-[82%] sm:max-w-[78%] px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-2xl rounded-br-sm bg-white/[0.08] text-[9px] sm:text-xs text-white leading-relaxed border border-white/5 shadow-sm">
+                        <div className="max-w-[82%] sm:max-w-[78%] px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-2xl rounded-br-sm bg-white/8 text-[9px] sm:text-xs text-white leading-relaxed border border-white/5 shadow-sm">
                           What are the key findings from this research paper?
                         </div>
                       </div>
@@ -91,14 +91,14 @@ export default function Hero() {
                       </div>
                       {/* Citations */}
                       <div className="flex gap-1 sm:gap-1.5 flex-wrap">
-                        <span className="text-[7px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.07] text-white/50">paper.pdf &middot; p.3</span>
-                        <span className="text-[7px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.07] text-white/50">paper.pdf &middot; p.7</span>
+                        <span className="text-[7px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full bg-white/4 border border-white/[0.07] text-white/50">paper.pdf &middot; p.3</span>
+                        <span className="text-[7px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full bg-white/4 border border-white/[0.07] text-white/50">paper.pdf &middot; p.7</span>
                       </div>
                       {/* Input bar */}
-                      <div className="flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-white/[0.06]">
-                        <div className="flex-1 h-6 sm:h-9 rounded-full bg-white/[0.04] border border-white/[0.07]"></div>
-                        <div className="w-6 sm:w-9 h-6 sm:h-9 rounded-full bg-white/[0.08] border border-white/5 flex items-center justify-center shrink-0">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/50 sm:w-[14px] sm:h-[14px]">
+                      <div className="flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-white/6">
+                        <div className="flex-1 h-6 sm:h-9 rounded-full bg-white/4 border border-white/[0.07]"></div>
+                        <div className="w-6 sm:w-9 h-6 sm:h-9 rounded-full bg-white/8 border border-white/5 flex items-center justify-center shrink-0">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/50 sm:w-3.5 sm:h-3.5">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                             <polyline points="12 5 19 12 12 19"></polyline>
                           </svg>
