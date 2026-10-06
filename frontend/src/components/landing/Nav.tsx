@@ -25,7 +25,7 @@ export default function Nav() {
             ) : (
               <>
                 <Link href="/login" className="text-sm text-white/60 hover:text-white px-4 py-2 rounded-lg transition-colors">Sign in</Link>
-                <Link href="/register" className="text-sm bg-white text-base px-3 py-1 rounded-lg font-medium hover:bg-white/90 transition-colors">Get started</Link>
+                <Link href="/login" className="text-sm bg-white text-base px-3 py-1 rounded-lg font-medium hover:bg-white/90 transition-colors">Get started</Link>
               </>
             )}
           </div>
