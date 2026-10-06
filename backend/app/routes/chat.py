@@ -9,18 +9,20 @@ from app.models.chat import ChatRequest, ChatMessage, ChatHistoryResponse
 from app.middleware.auth_middleware import get_current_user
 from app.services.rag_service import ask_question
 
-router = APIRouter(prefix="/api/chat", tags=["Chat"])
+from app.routes.workspaces import get_workspace_or_404
+
+router = APIRouter(prefix="/api/workspaces/{workspace_id}/chat", tags=["Chat"])
 
 
 @router.get("/history", response_model=ChatHistoryResponse)
-async def get_chat_history(current_user: dict = Depends(get_current_user)):
-    """Get the full chat history for the current user, ordered by time."""
+async def get_chat_history(workspace: dict = Depends(get_workspace_or_404)):
+    """Get the full chat history for the current workspace, ordered by time."""
     try:
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
     cursor = database.messages_collection.find(
-        {"user_id": current_user["id"]}
+        {"workspace_id": str(workspace["_id"])}
     ).sort("created_at", 1)
 
     messages = []
@@ -41,7 +43,7 @@ VALID_MODELS = {"gemini", "groq"}
 
 
 @router.post("/ask")
-async def ask(request: ChatRequest, current_user: dict = Depends(get_current_user)):
+async def ask(request: ChatRequest, workspace: dict = Depends(get_workspace_or_404)):
     """
     Ask a question using the RAG pipeline. Streams the response via SSE.
     Both the user message and assistant response are saved to MongoDB.
@@ -52,7 +54,8 @@ async def ask(request: ChatRequest, current_user: dict = Depends(get_current_use
             detail=f"Invalid model. Choose one of: {', '.join(sorted(VALID_MODELS))}",
         )
 
-    user_id = current_user["id"]
+    user_id = str(workspace["user_id"])
+    workspace_id = str(workspace["_id"])
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -60,11 +63,12 @@ async def ask(request: ChatRequest, current_user: dict = Depends(get_current_use
 
     # Retrieve context and citations once before streaming
     from app.services.rag_service import retrieve_for_query
-    context, citations = await retrieve_for_query(user_id, request.query)
+    context, citations = await retrieve_for_query(user_id, workspace_id, request.query)
 
     # Save user message to MongoDB
     user_msg = {
         "user_id": user_id,
+        "workspace_id": workspace_id,
         "role": "user",
         "content": request.query,
         "model_used": None,
@@ -77,7 +81,7 @@ async def ask(request: ChatRequest, current_user: dict = Depends(get_current_use
         full_response = ""
         try:
             async for token in ask_question(
-                user_id, request.query, request.model, context=context
+                user_id, workspace_id, request.query, request.model, context=context, persona=request.persona
             ):
                 full_response += token
                 data = json.dumps({"token": token, "done": False})
@@ -88,6 +92,7 @@ async def ask(request: ChatRequest, current_user: dict = Depends(get_current_use
 
             assistant_msg = {
                 "user_id": user_id,
+                "workspace_id": workspace_id,
                 "role": "assistant",
                 "content": full_response,
                 "model_used": request.model,
@@ -112,11 +117,11 @@ async def ask(request: ChatRequest, current_user: dict = Depends(get_current_use
 
 
 @router.delete("/clear", status_code=status.HTTP_200_OK)
-async def clear_chat(current_user: dict = Depends(get_current_user)):
-    """Clear all chat history for the current user."""
+async def clear_chat(workspace: dict = Depends(get_workspace_or_404)):
+    """Clear all chat history for the current workspace."""
     try:
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
-    result = await database.messages_collection.delete_many({"user_id": current_user["id"]})
+    result = await database.messages_collection.delete_many({"workspace_id": str(workspace["_id"])})
     return {"message": "Chat history cleared", "deleted_count": result.deleted_count}

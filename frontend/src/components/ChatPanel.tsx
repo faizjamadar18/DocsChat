@@ -9,15 +9,17 @@ const MODELS = [
 ];
 
 export default function ChatPanel({
+  workspaceId,
   user,
   onLogout,
   onToggleSidebar,
 }: {
+  workspaceId: string;
   user?: { username?: string } | null;
   onLogout?: () => void;
   onToggleSidebar?: () => void;
 }) {
-  const { messages, loading, streaming, error, askQuestion, clearHistory } = useChat();
+  const { messages, loading, streaming, error, askQuestion, clearHistory } = useChat(workspaceId);
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState('gemini');
   const [showModelPicker, setShowModelPicker] = useState(false);
@@ -118,6 +120,26 @@ export default function ChatPanel({
             )}
           </div>
           <div className="w-px h-6 bg-white/[0.06] mx-1.5 shrink-0" />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (!input.trim() || streaming) return;
+              askQuestion(input, selectedModel, 'ora');
+              setInput('');
+            }}
+            disabled={!input.trim() || streaming}
+            className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 mr-1.5 ${input.trim() && !streaming
+              ? 'bg-purple-500/20 text-purple-400 cursor-pointer hover:bg-purple-500/30'
+              : 'bg-white/[0.04] text-white/20 cursor-not-allowed'
+              }`}
+            title="Ask Ora (Specialized AI)"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+          </button>
           <button
             type="submit"
             disabled={!input.trim() || streaming}

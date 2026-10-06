@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { api } from '../lib/api';
 
-export default function UploadArea({ onUploadComplete }: { onUploadComplete: () => void }) {
+export default function UploadArea({ workspaceId, onUploadComplete }: { workspaceId: string, onUploadComplete: () => void }) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function UploadArea({ onUploadComplete }: { onUploadComplete: () 
       const formData = new FormData();
       formData.append('file', file);
 
-      await api.post('/sources/upload', formData);
+      await api.post(`/workspaces/${workspaceId}/sources/upload`, formData);
       onUploadComplete();
     } catch (err: any) {
       setError(err.message || "Failed to upload file");

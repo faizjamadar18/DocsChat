@@ -11,18 +11,20 @@ from app.services.rag_service import process_pdf, UPLOADS_DIR
 from app.services import vector_store as vs
 from app.config import get_settings
 
+from app.routes.workspaces import get_workspace_or_404
+
 settings = get_settings()
-router = APIRouter(prefix="/api/sources", tags=["Sources"])
+router = APIRouter(prefix="/api/workspaces/{workspace_id}/sources", tags=["Sources"])
 
 
 @router.get("", response_model=SourceListResponse)
-async def list_sources(current_user: dict = Depends(get_current_user)):
-    """List all uploaded PDF sources for the current user."""
+async def list_sources(workspace: dict = Depends(get_workspace_or_404)):
+    """List all uploaded PDF sources for the current workspace."""
     try:
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
-    cursor = database.sources_collection.find({"user_id": current_user["id"]}).sort("uploaded_at", -1)
+    cursor = database.sources_collection.find({"workspace_id": str(workspace["_id"])}).sort("uploaded_at", -1)
     sources = []
     async for doc in cursor:
         sources.append(SourceResponse(
@@ -42,7 +44,7 @@ async def list_sources(current_user: dict = Depends(get_current_user)):
 async def upload_pdf(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user),
+    workspace: dict = Depends(get_workspace_or_404),
 ):
     """
     Upload a PDF file. The file is saved to disk and a background task
@@ -65,7 +67,7 @@ async def upload_pdf(
         )
 
     # Create user-specific upload directory
-    user_upload_dir = os.path.join(UPLOADS_DIR, current_user["id"])
+    user_upload_dir = os.path.join(UPLOADS_DIR, str(workspace["user_id"]))
     os.makedirs(user_upload_dir, exist_ok=True)
 
     # Save file with unique name to avoid collisions
@@ -75,9 +77,9 @@ async def upload_pdf(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    # Create source record in MongoDB with "processing" status
     source_doc = {
-        "user_id": current_user["id"],
+        "user_id": str(workspace["user_id"]),
+        "workspace_id": str(workspace["_id"]),
         "filename": file.filename,
         "file_path": file_path,
         "file_size": len(content),
@@ -95,7 +97,7 @@ async def upload_pdf(
     source_id = str(result.inserted_id)
 
     # Process PDF in the background (non-blocking)
-    background_tasks.add_task(process_pdf, current_user["id"], source_id, file_path)
+    background_tasks.add_task(process_pdf, str(workspace["user_id"]), str(workspace["_id"]), source_id, file_path)
 
     return SourceResponse(
         id=source_id,
@@ -109,7 +111,7 @@ async def upload_pdf(
 
 
 @router.get("/{source_id}", response_model=SourceResponse)
-async def get_source(source_id: str, current_user: dict = Depends(get_current_user)):
+async def get_source(source_id: str, workspace: dict = Depends(get_workspace_or_404)):
     """Get a specific source's details (useful for polling processing status)."""
     try:
         check_db()
@@ -117,7 +119,7 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
     source = await database.sources_collection.find_one({
         "_id": ObjectId(source_id),
-        "user_id": current_user["id"],
+        "workspace_id": str(workspace["_id"]),
     })
 
     if not source:
@@ -135,7 +137,7 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
 
 
 @router.delete("/{source_id}", status_code=status.HTTP_200_OK)
-async def delete_source(source_id: str, current_user: dict = Depends(get_current_user)):
+async def delete_source(source_id: str, workspace: dict = Depends(get_workspace_or_404)):
     """Delete a source: remove vectors from Qdrant, file from disk, and record from MongoDB."""
     try:
         check_db()
@@ -143,7 +145,7 @@ async def delete_source(source_id: str, current_user: dict = Depends(get_current
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
     source = await database.sources_collection.find_one({
         "_id": ObjectId(source_id),
-        "user_id": current_user["id"],
+        "workspace_id": str(workspace["_id"]),
     })
 
     if not source:
@@ -151,7 +153,7 @@ async def delete_source(source_id: str, current_user: dict = Depends(get_current
 
     # Delete vectors from Qdrant
     deleted_vectors = await asyncio.to_thread(
-        vs.delete_source_vectors, current_user["id"], source_id
+        vs.delete_source_vectors, str(workspace["user_id"]), str(workspace["_id"]), source_id
     )
 
     # Delete file from disk

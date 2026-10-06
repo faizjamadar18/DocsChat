@@ -46,6 +46,11 @@ def _ensure_collection_exists():
                 field_name="source_id",
                 field_schema=models.PayloadSchemaType.KEYWORD,
             )
+            _qdrant_client.create_payload_index(
+                collection_name=COLLECTION_NAME,
+                field_name="workspace_id",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+            )
     except Exception as e:
         logger.error("Error ensuring collection exists: %s", e)
 
@@ -59,7 +64,7 @@ def get_or_create_collection(user_id: str):
     return None # We don't return a specific collection object to operate on
 
 
-def add_documents(user_id: str, chunks: list, source_id: str):
+def add_documents(user_id: str, workspace_id: str, chunks: list, source_id: str, source_type: str = "pdf"):
     """
     Add document chunks to the Qdrant store.
     """
@@ -81,6 +86,8 @@ def add_documents(user_id: str, chunks: list, source_id: str):
                     metadata[key] = value
                     
         metadata["source_id"] = source_id
+        metadata["source_type"] = source_type
+        metadata["workspace_id"] = workspace_id
         metadata["user_id"] = user_id
         metadata["chunk_index"] = i
         metadata["page_content"] = chunk.page_content # Store text in payload
@@ -105,9 +112,9 @@ def add_documents(user_id: str, chunks: list, source_id: str):
     return len(points)
 
 
-def query_documents(user_id: str, query: str, top_k: int = 5) -> list[dict]:
+def query_documents(user_id: str, workspace_id: str, query: str, top_k: int = 5) -> list[dict]:
     """
-    Query the vector store with a text query, filtered by user_id.
+    Query the vector store with a text query, filtered by user_id and workspace_id.
     """
     _ensure_collection_exists()
     if not _qdrant_client:
@@ -123,6 +130,10 @@ def query_documents(user_id: str, query: str, top_k: int = 5) -> list[dict]:
                 models.FieldCondition(
                     key="user_id",
                     match=models.MatchValue(value=user_id)
+                ),
+                models.FieldCondition(
+                    key="workspace_id",
+                    match=models.MatchValue(value=workspace_id)
                 )
             ]
         ),
@@ -143,7 +154,7 @@ def query_documents(user_id: str, query: str, top_k: int = 5) -> list[dict]:
     return retrieved
 
 
-def delete_source_vectors(user_id: str, source_id: str):
+def delete_source_vectors(user_id: str, workspace_id: str, source_id: str):
     """Delete all vectors belonging to a specific source for a user."""
     _ensure_collection_exists()
     if not _qdrant_client:
@@ -160,6 +171,10 @@ def delete_source_vectors(user_id: str, source_id: str):
                             match=models.MatchValue(value=user_id)
                         ),
                         models.FieldCondition(
+                            key="workspace_id",
+                            match=models.MatchValue(value=workspace_id)
+                        ),
+                        models.FieldCondition(
                             key="source_id",
                             match=models.MatchValue(value=source_id)
                         )
@@ -173,8 +188,8 @@ def delete_source_vectors(user_id: str, source_id: str):
     return 0
 
 
-def get_collection_count(user_id: str) -> int:
-    """Get the number of vectors for a user."""
+def get_collection_count(user_id: str, workspace_id: str) -> int:
+    """Get the number of vectors for a user and workspace."""
     _ensure_collection_exists()
     if not _qdrant_client:
         return 0
@@ -187,6 +202,10 @@ def get_collection_count(user_id: str) -> int:
                     models.FieldCondition(
                         key="user_id",
                         match=models.MatchValue(value=user_id)
+                    ),
+                    models.FieldCondition(
+                        key="workspace_id",
+                        match=models.MatchValue(value=workspace_id)
                     )
                 ]
             )
@@ -195,3 +214,29 @@ def get_collection_count(user_id: str) -> int:
     except Exception as e:
         logger.warning("Failed to get collection count for user %s: %s", user_id, e)
         return 0
+
+def delete_workspace_vectors(workspace_id: str):
+    """Delete all vectors belonging to a specific workspace."""
+    _ensure_collection_exists()
+    if not _qdrant_client:
+        return 0
+
+    try:
+        _qdrant_client.delete(
+            collection_name=COLLECTION_NAME,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="workspace_id",
+                            match=models.MatchValue(value=workspace_id)
+                        )
+                    ]
+                )
+            )
+        )
+        return 1
+    except Exception as e:
+        logger.warning("Failed to delete vectors for workspace %s: %s", workspace_id, e)
+    return 0
+

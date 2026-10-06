@@ -11,6 +11,7 @@ class SourceResponse(BaseModel):
     chunk_count: int
     status: str  # "processing" | "ready" | "error"
     uploaded_at: datetime
+    workspace_id: str
 
 
 class SourceListResponse(BaseModel):

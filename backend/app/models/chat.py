@@ -5,7 +5,9 @@ from typing import Optional
 
 class ChatRequest(BaseModel):
     query: str
-    model: str = "gemini"  # "gemini" or "groq"
+    model: str = "gemini"
+    persona: Optional[str] = "assistant"  # "gemini" or "groq"
+    workspace_id: str
 
 
 class Citation(BaseModel):
@@ -23,6 +25,7 @@ class ChatMessage(BaseModel):
     model_used: Optional[str] = None
     sources: Optional[list[Citation]] = None
     created_at: datetime
+    workspace_id: str
 
 
 class ChatHistoryResponse(BaseModel):

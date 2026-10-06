@@ -32,7 +32,7 @@ def test_query_documents_success(mock_qdrant_client, mock_embedding_service):
     mock_qdrant_client.query_points.return_value = mock_response
 
     # Execute
-    results = query_documents("user1", "test query", top_k=1)
+    results = query_documents("user1", "workspace1", "test query", top_k=1)
 
     # Verify
     assert len(results) == 1
@@ -43,17 +43,17 @@ def test_query_documents_success(mock_qdrant_client, mock_embedding_service):
 def test_query_documents_no_client():
     # If client is None, should return empty list
     with patch("app.services.vector_store._qdrant_client", None):
-        results = query_documents("user1", "test query", top_k=1)
+        results = query_documents("user1", "workspace1", "test query", top_k=1)
         assert results == []
 
 def test_add_documents_success(mock_qdrant_client, mock_embedding_service):
     chunks = [DummyChunk("page 1", {"page": 1})]
-    count = add_documents("user1", chunks, "source1")
+    count = add_documents("user1", "workspace1", chunks, "source1")
     
     assert count == 1
     mock_qdrant_client.upsert.assert_called_once()
 
 def test_delete_source_vectors(mock_qdrant_client):
-    result = delete_source_vectors("user1", "source1")
+    result = delete_source_vectors("user1", "workspace1", "source1")
     assert result == 1
     mock_qdrant_client.delete.assert_called_once()

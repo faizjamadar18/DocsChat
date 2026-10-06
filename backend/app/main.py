@@ -4,7 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.database import init_db, close_db
-from app.routes import auth, sources, chat
+from app.routes import auth, sources, chat, workspaces, documents
 
 
 async def catch_unhandled_exceptions(request: Request, call_next):
@@ -51,6 +51,8 @@ _cors_origins = [
 
 # Register all routes on the FastAPI instance before wrapping
 app.include_router(auth.router)
+app.include_router(workspaces.router)
+app.include_router(documents.router)
 app.include_router(sources.router)
 app.include_router(chat.router)
 
@@ -71,8 +73,8 @@ async def db_health():
         return {"status": "disconnected", "error": str(e)}
 
 
-app = CORSMiddleware(
-    app,
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],

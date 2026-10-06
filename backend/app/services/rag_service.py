@@ -49,7 +49,7 @@ def _load_and_chunk_pdf(file_path: str) -> tuple[list, int]:
     return chunks, page_count
 
 
-async def process_pdf(user_id: str, source_id: str, file_path: str):
+async def process_pdf(user_id: str, workspace_id: str, source_id: str, file_path: str):
     """
     Full PDF processing pipeline: load → chunk → embed → store.
     Updates source status in MongoDB as it progresses.
@@ -60,7 +60,7 @@ async def process_pdf(user_id: str, source_id: str, file_path: str):
         chunks, page_count = await asyncio.to_thread(_load_and_chunk_pdf, file_path)
 
         # Store embeddings in vector store (also CPU-bound)
-        chunk_count = await asyncio.to_thread(vs.add_documents, user_id, chunks, source_id)
+        chunk_count = await asyncio.to_thread(vs.add_documents, user_id, workspace_id, chunks, source_id)
 
         # Update source status to ready
         await database.sources_collection.update_one(
@@ -91,21 +91,32 @@ async def _resolve_citations(user_id: str, results: list[dict]) -> list[dict]:
     for doc in results:
         metadata = doc.get("metadata", {})
         source_id = metadata.get("source_id")
+        source_type = metadata.get("source_type", "pdf")
         if not source_id:
             continue
 
         page = metadata.get("page")
         page_num = int(page) + 1 if isinstance(page, int) else None
-        dedupe_key = (source_id, page_num)
+        dedupe_key = (source_id, source_type, page_num)
         if dedupe_key in seen:
             continue
         seen.add(dedupe_key)
 
-        source = await database.sources_collection.find_one({
-            "_id": ObjectId(source_id),
-            "user_id": user_id,
-        })
-        filename = source["filename"] if source else "Unknown source"
+        filename = "Unknown source"
+        if source_type == "document":
+            doc_record = await database.documents_collection.find_one({
+                "_id": ObjectId(source_id),
+                "user_id": user_id,
+            })
+            if doc_record:
+                filename = doc_record.get("title", "Untitled Document")
+        else:
+            source = await database.sources_collection.find_one({
+                "_id": ObjectId(source_id),
+                "user_id": user_id,
+            })
+            if source:
+                filename = source.get("filename", "Unknown source")
         snippet = doc["document"][:200].strip()
         if len(doc["document"]) > 200:
             snippet += "..."
@@ -123,6 +134,7 @@ async def _resolve_citations(user_id: str, results: list[dict]) -> list[dict]:
 
 async def retrieve_for_query(
     user_id: str,
+    workspace_id: str,
     query: str,
     top_k: int = 5,
 ) -> tuple[str | None, list[dict]]:
@@ -130,7 +142,7 @@ async def retrieve_for_query(
     Retrieve relevant chunks and build context + citations for a query.
     Returns (context_string, citations). context is None when no documents exist.
     """
-    results = await asyncio.to_thread(vs.query_documents, user_id, query, top_k)
+    results = await asyncio.to_thread(vs.query_documents, user_id, workspace_id, query, top_k)
 
     if not results:
         return None, []
@@ -142,9 +154,11 @@ async def retrieve_for_query(
 
 async def ask_question(
     user_id: str,
+    workspace_id: str,
     query: str,
     model: str = "gemini",
     context: str | None = None,
+    persona: str = "assistant",
 ) -> AsyncGenerator[str, None]:
     """
     Full RAG pipeline: retrieve relevant chunks → build prompt → stream LLM response.
@@ -152,13 +166,18 @@ async def ask_question(
     If context is provided, skips retrieval (used when route already retrieved).
     """
     if context is None:
-        context, _ = await retrieve_for_query(user_id, query)
+        context, _ = await retrieve_for_query(user_id, workspace_id, query)
 
     if not context:
         yield NO_DOCUMENTS_MESSAGE
         return
 
-    prompt = SYSTEM_PROMPT.format(context=context, query=query)
+    if persona == "ora":
+        system_prompt = "You are Ora, a highly advanced and specialized AI assistant. " + SYSTEM_PROMPT
+    else:
+        system_prompt = SYSTEM_PROMPT
+
+    prompt = system_prompt.format(context=context, query=query)
 
     async for token in stream_response(prompt, model):
         yield token

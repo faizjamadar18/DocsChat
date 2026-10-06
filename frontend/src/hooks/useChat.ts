@@ -29,31 +29,33 @@ function parseSseLine(line: string): Record<string, unknown> | null {
   }
 }
 
-export function useChat() {
+export function useChat(workspaceId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
+    if (!workspaceId) return;
     setLoading(true);
     try {
-      const data = await api.get('/chat/history');
+      const data = await api.get(`/workspaces/${workspaceId}/chat/history`);
       setMessages(data.messages || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load chat history');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [workspaceId]);
 
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
 
   const clearHistory = async () => {
+    if (!workspaceId) return;
     try {
-      await api.delete('/chat/clear');
+      await api.delete(`/workspaces/${workspaceId}/chat/clear`);
       setMessages([]);
       setError(null);
     } catch (err: any) {
@@ -61,7 +63,7 @@ export function useChat() {
     }
   };
 
-  const askQuestion = async (query: string, model: string) => {
+  const askQuestion = async (query: string, model: string, persona: string = 'assistant') => {
     if (!query.trim() || streaming) return;
 
     setError(null);
@@ -79,13 +81,13 @@ export function useChat() {
     try {
       const token = auth.getToken();
       
-      const response = await fetch(`${API_BASE_URL}/chat/ask`, {
+      const response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/chat/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ query, model })
+        body: JSON.stringify({ query, model, persona })
       });
 
       if (!response.ok) {
