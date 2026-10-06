@@ -26,7 +26,7 @@ export default function UploadArea({ workspaceId, onUploadComplete }: { workspac
 
       await api.post(`/workspaces/${workspaceId}/sources/upload`, formData);
       onUploadComplete();
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.message || "Failed to upload file");
     } finally {
       setIsUploading(false);

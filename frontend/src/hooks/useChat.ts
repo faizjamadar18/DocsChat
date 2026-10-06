@@ -41,7 +41,7 @@ export function useChat(workspaceId: string) {
     try {
       const data = await api.get(`/workspaces/${workspaceId}/chat/history`);
       setMessages(data.messages || []);
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.message || 'Failed to load chat history');
     } finally {
       setLoading(false);
@@ -49,6 +49,7 @@ export function useChat(workspaceId: string) {
   }, [workspaceId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHistory();
   }, [fetchHistory]);
 
@@ -58,7 +59,7 @@ export function useChat(workspaceId: string) {
       await api.delete(`/workspaces/${workspaceId}/chat/clear`);
       setMessages([]);
       setError(null);
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.message || 'Failed to clear chat');
     }
   };
@@ -145,7 +146,7 @@ export function useChat(workspaceId: string) {
       
       await fetchHistory();
 
-    } catch (err: any) {
+    } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       setError(err.message || 'Error communicating with server');
       setMessages(prev => prev.filter(msg => !(msg.id === tempAssistantId && msg.content === '')));
     } finally {

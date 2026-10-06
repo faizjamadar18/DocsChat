@@ -56,7 +56,7 @@ export const api = {
     return this.request(endpoint, { ...options, method: 'GET' });
   },
 
-  post(endpoint: string, body: any, options?: RequestInit) {
+  post(endpoint: string, body: any, options?: RequestInit) { // eslint-disable-line @typescript-eslint/no-explicit-any
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,

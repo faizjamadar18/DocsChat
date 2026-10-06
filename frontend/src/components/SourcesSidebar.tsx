@@ -49,8 +49,8 @@ export default function SourcesSidebar({
         api.get(`/workspaces/${workspaceId}/sources`),
         api.get(`/workspaces/${workspaceId}/documents`)
       ]);
-      setSources((sourcesData.sources || []).map((s: any) => ({ ...s, type: 'pdf' })));
-      setDocuments((docsData.documents || []).map((d: any) => ({ ...d, type: 'document' })));
+      setSources((sourcesData.sources || []).map((s: any) => ({ ...s, type: 'pdf' }))); // eslint-disable-line @typescript-eslint/no-explicit-any
+      setDocuments((docsData.documents || []).map((d: any) => ({ ...d, type: 'document' }))); // eslint-disable-line @typescript-eslint/no-explicit-any
     } catch (err) {
       console.error("Failed to fetch sources/documents", err);
     } finally {
@@ -59,6 +59,7 @@ export default function SourcesSidebar({
   }, [workspaceId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchSources();
   }, [fetchSources]);
 

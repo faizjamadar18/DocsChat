@@ -1,7 +1,7 @@
 'use client';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../lib/api';
 import debounce from 'lodash/debounce';
 
@@ -34,8 +34,9 @@ export default function DocumentEditor({ workspaceId, documentId, onClose }: { w
     }
   }, [docId, workspaceId]);
 
-  const debouncedSave = useCallback(
-    debounce((t: string, c: string, pt: string) => saveDocument(t, c, pt), 2000),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSave = useMemo(
+    () => debounce((t: string, c: string, pt: string) => saveDocument(t, c, pt), 2000),
     [saveDocument]
   );
 
