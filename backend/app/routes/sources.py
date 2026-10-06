@@ -136,7 +136,7 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
 
 @router.delete("/{source_id}", status_code=status.HTTP_200_OK)
 async def delete_source(source_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete a source: remove vectors from ChromaDB, file from disk, and record from MongoDB."""
+    """Delete a source: remove vectors from Qdrant, file from disk, and record from MongoDB."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -149,7 +149,7 @@ async def delete_source(source_id: str, current_user: dict = Depends(get_current
     if not source:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
 
-    # Delete vectors from ChromaDB
+    # Delete vectors from Qdrant
     deleted_vectors = await asyncio.to_thread(
         vs.delete_source_vectors, current_user["id"], source_id
     )

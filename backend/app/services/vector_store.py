@@ -1,147 +1,197 @@
-import os
 import logging
-import chromadb
 import uuid
+from qdrant_client import QdrantClient, models
 from app.config import get_settings
 from app.services.embedding_service import generate_embeddings, generate_single_embedding
 
 logger = logging.getLogger(__name__)
-
 settings = get_settings()
 
-if settings.CHROMA_PERSISTENT:
-    _VECTOR_DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "vector_data")
-    os.makedirs(_VECTOR_DATA_DIR, exist_ok=True)
-    _chroma_client = chromadb.PersistentClient(path=_VECTOR_DATA_DIR)
-    logger.info("ChromaDB: persistent mode (%s)", _VECTOR_DATA_DIR)
-else:
-    _chroma_client = chromadb.Client()
-    logger.info("ChromaDB: in-memory mode (data lost on restart)")
+COLLECTION_NAME = "docschat_shared_collection_v2"
+
+# Initialize Qdrant Client
+try:
+    _qdrant_client = QdrantClient(
+        url=settings.QDRANT_URL,
+        api_key=settings.QDRANT_API_KEY,
+    )
+    logger.info("QdrantClient initialized successfully.")
+except Exception as e:
+    logger.error("Failed to initialize QdrantClient: %s", e)
+    _qdrant_client = None
 
 
-def _get_collection_name(user_id: str) -> str:
-    """Each user gets their own ChromaDB collection for data isolation."""
-    return f"user_{user_id}"
+def _ensure_collection_exists():
+    """Ensure the shared Qdrant collection exists."""
+    if not _qdrant_client:
+        return
+    try:
+        if not _qdrant_client.collection_exists(COLLECTION_NAME):
+            logger.info("Creating Qdrant collection: %s", COLLECTION_NAME)
+            _qdrant_client.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=models.VectorParams(
+                    size=3072,  # The current embedding model outputs 3072 dimensions
+                    distance=models.Distance.COSINE,
+                ),
+            )
+            # Create payload index for user_id and source_id for faster filtering
+            _qdrant_client.create_payload_index(
+                collection_name=COLLECTION_NAME,
+                field_name="user_id",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+            )
+            _qdrant_client.create_payload_index(
+                collection_name=COLLECTION_NAME,
+                field_name="source_id",
+                field_schema=models.PayloadSchemaType.KEYWORD,
+            )
+    except Exception as e:
+        logger.error("Error ensuring collection exists: %s", e)
 
 
 def get_or_create_collection(user_id: str):
-    """Get or create a ChromaDB collection for a user."""
-    collection_name = _get_collection_name(user_id)
-    collection = _chroma_client.get_or_create_collection(
-        name=collection_name,
-        metadata={"description": f"Vector store for user {user_id}"}
-    )
-    return collection
+    """
+    Legacy method name to maintain compatibility.
+    Now we use a single shared collection and filter by user_id.
+    """
+    _ensure_collection_exists()
+    return None # We don't return a specific collection object to operate on
 
 
 def add_documents(user_id: str, chunks: list, source_id: str):
     """
-    Add document chunks to a user's vector store.
-
-    Args:
-        user_id: The user who owns this data
-        chunks: List of LangChain Document objects (with page_content and metadata)
-        source_id: The source (PDF) ID for filtering/deletion later
+    Add document chunks to the Qdrant store.
     """
-    collection = get_or_create_collection(user_id)
+    _ensure_collection_exists()
+    if not _qdrant_client:
+        return 0
 
-    ids = []
-    documents = []
-    metadatas = []
-    embeddings_list = []
-
-    # Extract texts for batch embedding
+    points = []
     texts = [chunk.page_content for chunk in chunks]
-
-    # Generate all embeddings in one batch (much faster than one-by-one)
     embeddings = generate_embeddings(texts)
 
     for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-        doc_id = f"chunk_{uuid.uuid4()}"
-        ids.append(doc_id)
-        documents.append(chunk.page_content)
-
-        # Store metadata with source_id for targeted deletion
+        doc_id = str(uuid.uuid4())
+        
         metadata = {}
         if hasattr(chunk, "metadata") and chunk.metadata:
-            # Only keep serializable metadata fields
             for key, value in chunk.metadata.items():
                 if isinstance(value, (str, int, float, bool)):
                     metadata[key] = value
+                    
         metadata["source_id"] = source_id
+        metadata["user_id"] = user_id
         metadata["chunk_index"] = i
-        metadatas.append(metadata)
+        metadata["page_content"] = chunk.page_content # Store text in payload
 
-        embeddings_list.append(embedding)
+        points.append(
+            models.PointStruct(
+                id=doc_id,
+                vector=embedding,
+                payload=metadata
+            )
+        )
 
-    # Batch add — fixed from notebook bug where add was inside the loop
-    if ids:
-        # ChromaDB has a batch limit, add in chunks of 500
+    if points:
         batch_size = 500
-        for start in range(0, len(ids), batch_size):
+        for start in range(0, len(points), batch_size):
             end = start + batch_size
-            collection.add(
-                ids=ids[start:end],
-                documents=documents[start:end],
-                metadatas=metadatas[start:end],
-                embeddings=embeddings_list[start:end],
+            _qdrant_client.upsert(
+                collection_name=COLLECTION_NAME,
+                points=points[start:end]
             )
 
-    return len(ids)
+    return len(points)
 
 
 def query_documents(user_id: str, query: str, top_k: int = 5) -> list[dict]:
     """
-    Query a user's vector store with a text query.
-    Returns list of dicts with document content, metadata, and similarity score.
+    Query the vector store with a text query, filtered by user_id.
     """
-    collection = get_or_create_collection(user_id)
-
-    if collection.count() == 0:
+    _ensure_collection_exists()
+    if not _qdrant_client:
         return []
 
-    # Generate query embedding
     query_embedding = generate_single_embedding(query)
 
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=min(top_k, collection.count()),
+    search_result = _qdrant_client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_embedding,
+        query_filter=models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="user_id",
+                    match=models.MatchValue(value=user_id)
+                )
+            ]
+        ),
+        limit=top_k,
+        with_payload=True
     )
 
     retrieved = []
-    if results["documents"] and results["documents"][0]:
-        for i, (doc, metadata, distance) in enumerate(
-            zip(results["documents"][0], results["metadatas"][0], results["distances"][0])
-        ):
-            similarity = 1 - distance
-            retrieved.append({
-                "document": doc,
-                "metadata": metadata,
-                "similarity_score": similarity,
-                "rank": i + 1,
-            })
+    for i, point in enumerate(search_result.points):
+        # Qdrant's score is cosine similarity directly (0 to 1, higher is better) for COSINE distance.
+        retrieved.append({
+            "document": point.payload.get("page_content", ""),
+            "metadata": point.payload,
+            "similarity_score": point.score,
+            "rank": i + 1,
+        })
 
     return retrieved
 
 
 def delete_source_vectors(user_id: str, source_id: str):
-    """Delete all vectors belonging to a specific source from a user's collection."""
-    collection = get_or_create_collection(user_id)
+    """Delete all vectors belonging to a specific source for a user."""
+    _ensure_collection_exists()
+    if not _qdrant_client:
+        return 0
 
     try:
-        # Get all document IDs with this source_id
-        results = collection.get(
-            where={"source_id": source_id}
+        _qdrant_client.delete(
+            collection_name=COLLECTION_NAME,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="user_id",
+                            match=models.MatchValue(value=user_id)
+                        ),
+                        models.FieldCondition(
+                            key="source_id",
+                            match=models.MatchValue(value=source_id)
+                        )
+                    ]
+                )
+            )
         )
-        if results["ids"]:
-            collection.delete(ids=results["ids"])
-            return len(results["ids"])
+        return 1
     except Exception as e:
         logger.warning("Failed to delete vectors for source %s: %s", source_id, e)
     return 0
 
 
 def get_collection_count(user_id: str) -> int:
-    """Get the number of vectors in a user's collection."""
-    collection = get_or_create_collection(user_id)
-    return collection.count()
+    """Get the number of vectors for a user."""
+    _ensure_collection_exists()
+    if not _qdrant_client:
+        return 0
+        
+    try:
+        count_result = _qdrant_client.count(
+            collection_name=COLLECTION_NAME,
+            count_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="user_id",
+                        match=models.MatchValue(value=user_id)
+                    )
+                ]
+            )
+        )
+        return count_result.count
+    except Exception as e:
+        logger.warning("Failed to get collection count for user %s: %s", user_id, e)
+        return 0
