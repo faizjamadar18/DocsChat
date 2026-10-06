@@ -409,11 +409,17 @@ export function EditorCanvas({
 
 ## 6. Phased Implementation Roadmap
 
+> **Branching & Delivery Strategy**:
+> - All phases are developed cumulatively on **one single unified branch** (`feature/ora-workspace-transformation`).
+> - **DO NOT** create a separate branch for each individual phase.
+> - Each phase is committed atomically with Conventional Commits indicating the phase (e.g. `feat(phase-2): ...`).
+> - `main` remains untouched until all 8 roadmap phases are completed, integrated, and verified end-to-end locally. Only then is a final Pull Request opened into `main`.
+
 Every phase follows the structured `.agents` AI workflow:
 1. **Research & Plan**: Re-verify APIs and design reference images.
 2. **Implement**: Code changes respecting subagent boundaries.
-3. **Verify**: Autonomously test via `pytest` or terminal curl checks before marking complete.
-4. **Review & PR**: Run security checks and submit feature branch PR.
+3. **Verify**: Autonomously test via `pytest` or terminal build checks before marking complete.
+4. **Review & Commit**: Run security and quality checks against `review-changes`, then make atomic conventional commits to the unified branch.
 
 ### Phase 1: Multi-Workspace Data Model, Auto-Provisioning & Migration
 **Goal**: Establish scalable multi-workspace MongoDB models, migration hook, Qdrant payload filters, and clean up Gemini chat code.
