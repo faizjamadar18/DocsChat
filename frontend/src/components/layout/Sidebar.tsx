@@ -1,0 +1,276 @@
+/* eslint-disable @next/next/no-img-element */
+'use client';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  Home,
+  FileEdit,
+  Folder,
+  Settings,
+  ChevronDown,
+  ChevronsUpDown,
+  LogOut,
+  MessageSquare,
+} from 'lucide-react';
+import { useWorkspace } from '../../context/WorkspaceContext';
+import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../lib/api';
+
+interface HistoryMessage {
+  role: string;
+  content: string;
+}
+
+export default function Sidebar({
+  mobileOpen,
+  onCloseMobile,
+}: {
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}) {
+  const pathname = usePathname();
+  const { currentWorkspace, sidebarCollapsed } = useWorkspace();
+  const { user, logout } = useAuth();
+
+  const [chatsOpen, setChatsOpen] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [recentChats, setRecentChats] = useState<{ id: string; title: string }[]>([]);
+
+  // Fetch recent chat titles for the CHATS section
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRecentChats() {
+      try {
+        const data = await api.get('/chat/history');
+        if (cancelled) return;
+        if (data && data.messages && data.messages.length > 0) {
+          const firstUserMsg = (data.messages as HistoryMessage[]).find((m) => m.role === 'user');
+          if (firstUserMsg) {
+            setRecentChats([{ id: 'active', title: firstUserMsg.content.slice(0, 24) + '...' }]);
+          } else {
+            setRecentChats([{ id: 'default', title: 'Workspace Document Coun...' }]);
+          }
+        } else {
+          setRecentChats([{ id: 'default', title: 'Workspace Document Coun...' }]);
+        }
+      } catch {
+        if (!cancelled) {
+          setRecentChats([{ id: 'default', title: 'Workspace Document Coun...' }]);
+        }
+      }
+    }
+
+    void loadRecentChats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const navItems = [
+    { label: 'Home', href: '/home', icon: Home },
+    { label: 'Studio', href: '/studio', icon: FileEdit },
+    { label: 'Assets', href: '/assets', icon: Folder },
+    { label: 'Settings', href: '/settings', icon: Settings },
+  ];
+
+  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'DocsChat HQ');
+
+  const content = (
+    <aside
+      className={`h-full w-64 bg-[#F7F7F9] border-r border-[#ECECEE] flex flex-col justify-between select-none transition-all duration-200 ${
+        sidebarCollapsed ? 'lg:-ml-64' : 'lg:ml-0'
+      }`}
+    >
+      {/* Top section: Workspace header & Navigation */}
+      <div className="flex flex-col flex-1 min-h-0">
+        {/* Workspace Brand / Header */}
+        <div className="h-14 px-4 flex items-center justify-between border-b border-[#ECECEE]/60">
+          <button
+            type="button"
+            className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity text-left w-full cursor-pointer"
+          >
+            {/* Logo Mark: rounded black square with custom orange/red ribbon motif */}
+            <div className="w-6 h-6 rounded-md bg-[#111113] flex items-center justify-center shrink-0 shadow-xs overflow-hidden">
+              {currentWorkspace?.logo_url ? (
+                <img
+                  src={currentWorkspace.logo_url}
+                  alt={workspaceName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-white"
+                >
+                  <path
+                    d="M6 4h8a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4H8a4 4 0 0 0-4 4v1a4 4 0 0 0 4 4h10"
+                    stroke="#FF5533"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+
+            <span className="text-sm font-semibold text-[#111827] truncate flex-1">
+              {workspaceName}
+            </span>
+
+            <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+          </button>
+        </div>
+
+        {/* Navigation list */}
+        <nav className="p-3 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/home' && pathname?.startsWith(item.href));
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onCloseMobile}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  isActive
+                    ? 'bg-[#EFEAFC] text-[#5B45B2]'
+                    : 'text-[#6B7280] hover:text-[#111827] hover:bg-[#EFEFF2]'
+                }`}
+              >
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${
+                    isActive ? 'text-[#5B45B2]' : 'text-[#6B7280]'
+                  }`}
+                />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Collapsible CHATS section */}
+        <div className="px-3 pt-3">
+          <button
+            type="button"
+            onClick={() => setChatsOpen(!chatsOpen)}
+            className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-[#9CA3AF] tracking-wider uppercase hover:text-[#4B5563] transition-colors"
+          >
+            <span>CHATS</span>
+            <ChevronDown
+              className={`w-3 h-3 text-[#9CA3AF] transition-transform duration-200 ${
+                chatsOpen ? '' : '-rotate-90'
+              }`}
+            />
+          </button>
+
+          {chatsOpen && (
+            <div className="mt-1 space-y-0.5">
+              {recentChats.map((chat) => (
+                <div
+                  key={chat.id}
+                  className="px-3 py-1.5 rounded-md text-xs text-[#6B7280] hover:text-[#111827] hover:bg-[#EFEFF2] cursor-pointer truncate transition-colors flex items-center gap-2"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                  <span className="truncate">{chat.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* User profile footer */}
+      <div className="p-3 border-t border-[#ECECEE]/80 relative">
+        <div
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+          className="flex items-center justify-between p-2 rounded-lg hover:bg-[#EFEFF2] cursor-pointer transition-colors"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* Avatar */}
+            {user?.picture ? (
+              <img
+                src={user.picture}
+                alt={user.username || 'User'}
+                className="w-7 h-7 rounded-full object-cover shrink-0 border border-[#E5E7EB]"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-[#111827] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                {(user?.username || 'U')[0].toUpperCase()}
+              </div>
+            )}
+
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-[#111827] truncate leading-tight">
+                {user?.username || 'user'}
+              </p>
+              <p className="text-[11px] text-[#6B7280] truncate leading-tight">
+                {user?.email || ''}
+              </p>
+            </div>
+          </div>
+
+          <ChevronsUpDown className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0 ml-1" />
+        </div>
+
+        {/* Dropdown Menu */}
+        {userMenuOpen && (
+          <div className="absolute bottom-16 left-3 right-3 bg-white rounded-xl shadow-lg border border-[#ECECEE] p-1 z-30 animate-fade-in">
+            <Link
+              href="/settings"
+              onClick={() => {
+                setUserMenuOpen(false);
+                onCloseMobile?.();
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-xs text-[#111827] hover:bg-[#F7F7F9] rounded-lg transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5 text-[#6B7280]" />
+              Settings
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setUserMenuOpen(false);
+                logout();
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-600" />
+              Sign Out
+            </button>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block h-full shrink-0">
+        {content}
+      </div>
+
+      {/* Mobile Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-xs transition-opacity"
+            onClick={onCloseMobile}
+          />
+          <div className="absolute left-0 top-0 bottom-0 z-10">
+            {content}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

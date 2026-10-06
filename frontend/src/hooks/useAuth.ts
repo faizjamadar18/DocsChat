@@ -7,6 +7,9 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  auth_provider?: string;
+  picture?: string | null;
+  active_workspace_id?: string | null;
   created_at: string;
 }
 

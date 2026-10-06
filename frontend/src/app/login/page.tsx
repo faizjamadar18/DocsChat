@@ -23,7 +23,7 @@ function LoginForm() {
     try {
       const data = await api.post('/auth/google', { credential: credentialResponse.credential });
       auth.setToken(data.access_token);
-      router.push('/notebook');
+      router.push('/home');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
       setError(errorMessage);

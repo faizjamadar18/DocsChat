@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import AuthProvider from "../components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "DocsChat",
-  description: "AI-powered document research assistant",
+  description: "AI-powered workspace and document research assistant",
 };
 
 export default function RootLayout({
@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-base">
-      <body className={`${GeistMono.className} bg-base text-white`}>
+    <html lang="en">
+      <body className={`${GeistSans.className} bg-[#FBFBFD] text-[#111827] antialiased min-h-screen`}>
         <AuthProvider>
           {children}
         </AuthProvider>
