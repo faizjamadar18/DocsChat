@@ -4,9 +4,17 @@ import { Search, Plus, File, MoreVertical, Download, Trash2 } from 'lucide-react
 import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
-import AssetPreview, { Source } from '@/components/assets/AssetPreview';
 import UploadBanner, { UploadState } from '@/components/assets/UploadBanner';
 import OraSidebar, { OraLogoMark } from '@/components/layout/OraSidebar';
+
+export interface Source {
+  id: string;
+  filename: string;
+  status: string;
+  page_count: number;
+  uploaded_at: string;
+  file_size: number;
+}
 
 function formatFileSize(bytes: number): string {
   if (!bytes) return '0 B';
@@ -52,8 +60,18 @@ export default function AssetsPage() {
   // Asset action dropdown state
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
+  // Ora scope: null = query across ALL assets (default), string[] = narrowed subset.
+  // Row click narrows to single for preview parity; Ora header button resets to All.
+  const [oraScopeIds, setOraScopeIds] = useState<string[] | null>(null);
+
   // Ora sidebar drawer state (open by default in Assets workspace)
   const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(true);
+
+  const availableAssetScopes = sources.map((s) => ({
+    id: s.id,
+    title: s.filename,
+    type: 'asset' as const,
+  }));
 
   useEffect(() => {
     const handleToggle = () => setIsOraDrawerOpen((prev) => !prev);
@@ -233,6 +251,12 @@ export default function AssetsPage() {
       if (selectedAsset?.id === assetToDelete.id) {
         setSelectedAsset(null);
       }
+      // Drop the deleted asset from the narrowed scope; empty collapses to All.
+      setOraScopeIds((prev) => {
+        if (!prev) return prev;
+        const next = prev.filter((id) => id !== (assetToDelete?.id ?? ''));
+        return next.length === 0 ? null : next;
+      });
       await fetchSources();
     } catch (err) {
       console.error('Failed to delete source:', err);
@@ -289,7 +313,13 @@ export default function AssetsPage() {
           <div className="flex items-center gap-3 self-end sm:self-auto">
             <button
               type="button"
-              onClick={() => setIsOraDrawerOpen((prev) => !prev)}
+              onClick={() => {
+                setIsOraDrawerOpen((prev) => {
+                  // Reset to All-assets query when opening via header.
+                  if (!prev) setOraScopeIds(null);
+                  return !prev;
+                });
+              }}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
                 isOraDrawerOpen
                   ? 'bg-accent/10 text-accent border border-accent/20'
@@ -311,10 +341,8 @@ export default function AssetsPage() {
           </div>
         </div>
 
-        {/* Main Content: Asset List + Optional Side Preview */}
-        <div className="flex flex-col lg:flex-row items-start gap-8">
-          {/* Asset List Column */}
-          <div className="flex-1 min-w-0 w-full space-y-3">
+        {/* Main Content: Asset List */}
+        <div className="w-full space-y-3">
             {/* Upload Progress / Success Banner (Image 1 & Image 2) */}
             {uploadState && (
               <UploadBanner
@@ -347,7 +375,11 @@ export default function AssetsPage() {
                       );
                       e.dataTransfer.effectAllowed = 'copy';
                     }}
-                    onClick={() => setSelectedAsset(source)}
+                    onClick={() => {
+                      setSelectedAsset(source);
+                      // Narrow Ora to this single asset; chip X restores All.
+                      setOraScopeIds([source.id]);
+                    }}
                     title="Click to select or drag into Ora to ask questions"
                     className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group active:cursor-grabbing ${
                       isSelected
@@ -424,18 +456,7 @@ export default function AssetsPage() {
               })
             )}
           </div>
-
-          {/* Preview Panel Column (matching 03-assets2.png) */}
-          {selectedAsset && (
-            <AssetPreview
-              asset={selectedAsset}
-              onClose={() => setSelectedAsset(null)}
-              onDownload={handleDownload}
-              onDelete={(asset) => setAssetToDelete(asset)}
-            />
-          )}
         </div>
-      </div>
 
       {/* Mounted In-Flow Ora Assistant Sidebar (matches 03-assets.png and 03-assets2.png verbatim) */}
       <OraSidebar
@@ -443,8 +464,25 @@ export default function AssetsPage() {
         onClose={() => setIsOraDrawerOpen(false)}
         initialScope={selectedAsset ? { id: selectedAsset.id, title: selectedAsset.filename, type: 'asset' } : null}
         mode="assets"
+        availableScopes={availableAssetScopes}
+        activeScopeIds={oraScopeIds}
+        onScopeChange={(ids) => {
+          setOraScopeIds(ids);
+          // Keep preview in sync when narrowed to a single asset.
+          if (ids && ids.length === 1) {
+            const match = sources.find((s) => s.id === ids[0]);
+            if (match) setSelectedAsset(match);
+          }
+        }}
         onSelectThreadDocument={(scope) => {
+          // All-assets threads carry attached_name "All N assets" but only the
+          // first id in attached_scope — restore them to All mode.
+          if (scope.title.startsWith('All ')) {
+            setOraScopeIds(null);
+            return;
+          }
           // Restore the associated document context: select + preview/open it.
+          setOraScopeIds([scope.id]);
           const match = sources.find((s) => s.id === scope.id);
           if (match) {
             setSelectedAsset(match);

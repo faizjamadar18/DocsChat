@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Plus,
   MessageSquare,
+  Layers,
 } from 'lucide-react';
 import { useChat, AskQuestionOptions } from '../../hooks/useChat';
 import { useChatThreads, ChatThread } from '../../hooks/useChatThreads';
@@ -89,7 +90,17 @@ export interface OraSidebarProps {
   initialScope?: MentionItem | null;
   mode?: 'universal' | 'assets' | 'studio';
   onSelectThreadDocument?: (scope: MentionItem) => void;
+  /**
+   * Assets multi-scope (controlled). `null` = query across ALL assets
+   * (default). `string[]` = narrowed subset. When omitted, falls back to
+   * legacy single `initialScope` / `attachedScope` behaviour.
+   */
+  availableScopes?: MentionItem[];
+  activeScopeIds?: string[] | null;
+  onScopeChange?: (ids: string[] | null) => void;
 }
+
+const MAX_SCOPE_IDS = 200;
 
 export default function OraSidebar({
   isOpen,
@@ -97,6 +108,9 @@ export default function OraSidebar({
   initialScope,
   mode = 'universal',
   onSelectThreadDocument,
+  availableScopes,
+  activeScopeIds,
+  onScopeChange,
 }: OraSidebarProps) {
   const { currentWorkspace } = useWorkspace();
   const {
@@ -116,6 +130,8 @@ export default function OraSidebar({
 
   const [input, setInput] = useState('');
   const [attachedScope, setAttachedScope] = useState<MentionItem | null>(null);
+  const [isScopeSelectorOpen, setIsScopeSelectorOpen] = useState(false);
+  const scopeSelectorRef = useRef<HTMLDivElement>(null);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -129,21 +145,26 @@ export default function OraSidebar({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Track open state transitions and initialScope prop updates cleanly
+  // Track open state transitions and initialScope prop updates cleanly.
+  // Skipped in controlled Assets mode: the parent owns scope via
+  // activeScopeIds/onScopeChange (preview selection ≠ query scope).
   const [prevInitialScopeId, setPrevInitialScopeId] = useState(initialScope?.id);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const skipLegacyScopeSync = mode === 'assets' && activeScopeIds !== undefined;
 
-  if (isOpen !== prevIsOpen) {
+  if (!skipLegacyScopeSync && isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen && initialScope) {
       setAttachedScope(initialScope);
       setPrevInitialScopeId(initialScope.id);
     }
-  } else if (initialScope?.id !== prevInitialScopeId) {
+  } else if (!skipLegacyScopeSync && initialScope?.id !== prevInitialScopeId) {
     setPrevInitialScopeId(initialScope?.id);
     if (initialScope) {
       setAttachedScope(initialScope);
     }
+  } else if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
   }
 
   // Keyboard shortcut toggle ⌘. / Ctrl+.
@@ -220,6 +241,94 @@ export default function OraSidebar({
   );
   const allFilteredMentions = [...filteredDocs, ...filteredAssets];
 
+  // ---- Assets multi-scope model (controlled All-assets default) ----
+  // Parent-owned when `activeScopeIds` is provided (Assets page); otherwise
+  // legacy single-scope behaviour (Studio / universal / uncontrolled).
+  const isAssetsControlled = mode === 'assets' && activeScopeIds !== undefined;
+  const scopeCatalog: MentionItem[] = availableScopes ?? assets;
+  const isAllAssetsMode =
+    mode === 'assets' &&
+    (isAssetsControlled ? activeScopeIds === null : !attachedScope);
+  const narrowedAssets: MentionItem[] = isAssetsControlled
+    ? scopeCatalog.filter((s) => activeScopeIds?.includes(s.id))
+    : attachedScope
+      ? [attachedScope]
+      : [];
+  // Display scope: All chip, narrowed chips, or legacy single attachment.
+  const displayScope: MentionItem | null = attachedScope;
+  const assetsScopeLabel: string | null =
+    mode !== 'assets'
+      ? null
+      : isAllAssetsMode
+        ? scopeCatalog.length > 0
+          ? `All ${scopeCatalog.length} asset${scopeCatalog.length === 1 ? '' : 's'}`
+          : null
+        : narrowedAssets.length === 1
+          ? narrowedAssets[0].title
+          : narrowedAssets.length > 1
+            ? `${narrowedAssets.length} assets`
+            : null;
+
+  const resolveAssetsSubmitScope = (): { scopeIds: string[]; attachedName?: string } => {
+    if (scopeCatalog.length === 0) return { scopeIds: [] };
+    if (isAllAssetsMode) {
+      const allIds = scopeCatalog.map((s) => s.id).slice(0, MAX_SCOPE_IDS);
+      return {
+        scopeIds: allIds,
+        attachedName: `All ${scopeCatalog.length} asset${scopeCatalog.length === 1 ? '' : 's'}`,
+      };
+    }
+    // Stale ids (e.g. asset deleted mid-session) fall back to All, never to
+    // an empty list — empty would trigger workspace-wide retrieval.
+    if (narrowedAssets.length === 0) {
+      const allIds = scopeCatalog.map((s) => s.id).slice(0, MAX_SCOPE_IDS);
+      return {
+        scopeIds: allIds,
+        attachedName: `All ${scopeCatalog.length} asset${scopeCatalog.length === 1 ? '' : 's'}`,
+      };
+    }
+    const ids = narrowedAssets.map((s) => s.id).slice(0, MAX_SCOPE_IDS);
+    const name =
+      narrowedAssets.length === 1 ? narrowedAssets[0].title : `${narrowedAssets.length} assets`;
+    return { scopeIds: ids, attachedName: name };
+  };
+
+  const setAssetsScope = (ids: string[] | null) => {
+    onScopeChange?.(ids);
+    // Keep legacy single-scope display in sync for compat.
+    if (!ids) {
+      setAttachedScope(null);
+    } else if (ids.length === 1) {
+      const match = scopeCatalog.find((s) => s.id === ids[0]);
+      if (match) setAttachedScope(match);
+    }
+    setIsScopeSelectorOpen(false);
+  };
+
+  const toggleScopeId = (id: string) => {
+    if (!isAssetsControlled && !availableScopes) return;
+    const current: string[] | null = isAssetsControlled
+      ? activeScopeIds ?? null
+      : attachedScope
+        ? [attachedScope.id]
+        : null;
+    if (current === null) {
+      // Narrow down from All by excluding the toggled asset.
+      const next = scopeCatalog.map((s) => s.id).filter((sid) => sid !== id);
+      setAssetsScope(next.length === scopeCatalog.length ? null : next);
+      return;
+    }
+    const next = current.includes(id)
+      ? current.filter((sid) => sid !== id)
+      : [...current, id];
+    // Selecting every asset (or clearing all) collapses back to All mode.
+    if (next.length === 0 || next.length >= scopeCatalog.length) {
+      setAssetsScope(null);
+      return;
+    }
+    setAssetsScope(next);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInput(val);
@@ -239,6 +348,10 @@ export default function OraSidebar({
 
   const handleSelectMention = useCallback(
     (item: MentionItem) => {
+      // In controlled Assets mode, @ mention narrows the query to one asset.
+      if (mode === 'assets' && activeScopeIds !== undefined) {
+        onScopeChange?.([item.id]);
+      }
       setAttachedScope(item);
       const lastAtIndex = input.lastIndexOf('@');
       if (lastAtIndex !== -1) {
@@ -248,7 +361,7 @@ export default function OraSidebar({
       setMentionQuery('');
       inputRef.current?.focus();
     },
-    [input]
+    [input, mode, activeScopeIds, onScopeChange]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -332,6 +445,9 @@ export default function OraSidebar({
       if (rawData) {
         const parsed = JSON.parse(rawData);
         if (parsed.id && parsed.title) {
+          if (mode === 'assets' && activeScopeIds !== undefined) {
+            onScopeChange?.([parsed.id]);
+          }
           setAttachedScope({
             id: parsed.id,
             title: parsed.title,
@@ -349,8 +465,30 @@ export default function OraSidebar({
     if (!input.trim() || streaming) return;
 
     const queryToSend = input.trim();
+
+    // Assets: default to ALL assets (expanded id list, capped). Only strict
+    // when the library is empty — otherwise an empty query would leak into
+    // Studio docs via workspace-wide retrieval.
+    if (mode === 'assets') {
+      const { scopeIds, attachedName } = resolveAssetsSubmitScope();
+      const scopeOptions: AskQuestionOptions = {
+        workspaceId: currentWorkspace?.id,
+        requireScope: scopeCatalog.length === 0,
+        mode,
+      };
+      if (scopeIds.length > 0) {
+        scopeOptions.scopeIds = scopeIds;
+        scopeOptions.attachedName = attachedName;
+      }
+      askQuestion(queryToSend, scopeOptions);
+      setInput('');
+      setShowMentions(false);
+      setIsScopeSelectorOpen(false);
+      return;
+    }
+
     const activeScope = attachedScope;
-    const isStrictScope = mode === 'assets' || mode === 'studio';
+    const isStrictScope = mode === 'studio';
 
     const scopeOptions: AskQuestionOptions = {
       workspaceId: currentWorkspace?.id,
@@ -399,14 +537,42 @@ export default function OraSidebar({
     };
   }, [isHistoryDropdownOpen]);
 
+  useEffect(() => {
+    if (!isScopeSelectorOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (scopeSelectorRef.current && !scopeSelectorRef.current.contains(e.target as Node)) {
+        setIsScopeSelectorOpen(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsScopeSelectorOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isScopeSelectorOpen]);
+
   const handleSelectThread = (thread: ChatThread) => {
     // Guard: never load a thread from another pipeline into this sidebar.
     if (thread.mode && thread.mode !== mode) return;
     switchThread(thread.id);
     if (thread.attached_scope) {
-      setAttachedScope(thread.attached_scope as MentionItem);
-      onSelectThreadDocument?.(thread.attached_scope as MentionItem);
+      const scope = thread.attached_scope as MentionItem;
+      // All-assets threads persist only the first id with an "All N assets"
+      // label — restore those to All mode instead of a single asset.
+      if (mode === 'assets' && activeScopeIds !== undefined) {
+        const title = (scope as { title?: string }).title || '';
+        onScopeChange?.(title.startsWith('All ') ? null : [scope.id]);
+      }
+      setAttachedScope(scope);
+      onSelectThreadDocument?.(scope);
     } else {
+      if (mode === 'assets' && activeScopeIds !== undefined) {
+        onScopeChange?.(null);
+      }
       setAttachedScope(null);
     }
     setIsHistoryDropdownOpen(false);
@@ -414,6 +580,10 @@ export default function OraSidebar({
 
   const handleNewChat = () => {
     switchThread(null);
+    if (mode === 'assets' && activeScopeIds !== undefined) {
+      // New chat in Assets resets to All-assets query.
+      onScopeChange?.(null);
+    }
     setAttachedScope(null);
     setIsHistoryDropdownOpen(false);
   };
@@ -422,6 +592,9 @@ export default function OraSidebar({
     await deleteThread(threadId);
     if (currentThreadId === threadId) {
       switchThread(null);
+      if (mode === 'assets' && activeScopeIds !== undefined) {
+        onScopeChange?.(null);
+      }
       setAttachedScope(null);
     }
   };
@@ -514,17 +687,17 @@ export default function OraSidebar({
         </div>
       </div>
 
-      {/* Notion-style History Dropdown Menu (matching user image) */}
+      {/* Ora History Dropdown Menu — light-mode compliant (see DESIGN.md > Components > dropdown) */}
       {isHistoryDropdownOpen && (
         <div
           ref={dropdownRef}
-          className="absolute top-14 left-3 right-3 bg-[#1e1e20] text-zinc-100 rounded-2xl shadow-2xl border border-white/10 p-2.5 z-50 animate-fade-in max-h-96 flex flex-col overflow-hidden"
+          className="absolute top-14 left-3 right-3 bg-white text-text-primary rounded-2xl shadow-xl border border-border p-2.5 z-50 animate-fade-in max-h-96 flex flex-col overflow-hidden"
         >
           {/* Top action: New chat */}
           <button
             type="button"
             onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer mb-2 border border-white/5 bg-white/5 shrink-0"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-text-primary hover:bg-sidebar transition-colors cursor-pointer mb-2 border border-border bg-sidebar shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New chat</span>
@@ -532,14 +705,14 @@ export default function OraSidebar({
 
           <div className="flex-1 overflow-y-auto space-y-3 pr-1 -mr-1">
             {threads.length === 0 ? (
-              <div className="py-6 text-center text-xs text-zinc-400">
+              <div className="py-6 text-center text-xs text-text-muted">
                 No conversation history yet
               </div>
             ) : (
               <>
                 {todayThreads.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-semibold text-zinc-400 px-2 py-1 uppercase tracking-wider">
+                    <div className="text-[10px] font-semibold text-text-muted px-2 py-1 uppercase tracking-wider">
                       Today
                     </div>
                     <div className="space-y-0.5">
@@ -549,23 +722,23 @@ export default function OraSidebar({
                           onClick={() => handleSelectThread(thread)}
                           className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors ${
                             currentThreadId === thread.id
-                              ? 'bg-white/15 text-white font-medium'
-                              : 'text-zinc-300 hover:bg-white/8 hover:text-white'
+                              ? 'bg-accent-subtle text-accent-hover font-medium'
+                              : 'text-text-secondary hover:bg-sidebar hover:text-text-primary'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <MessageSquare className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white shrink-0" />
+                            <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${currentThreadId === thread.id ? 'text-accent-hover' : 'text-text-muted group-hover:text-text-primary'}`} />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-xs">{thread.title}</p>
                               {thread.attached_scope && (
-                                <p className="truncate text-[10px] text-zinc-400 mt-0.5">
+                                <p className="truncate text-[10px] text-text-muted mt-0.5">
                                   {thread.attached_scope.title}
                                 </p>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400">
+                            <span className="text-[10px] text-text-muted">
                               {formatShortTime(thread.updated_at || thread.created_at)}
                             </span>
                             <button
@@ -574,7 +747,7 @@ export default function OraSidebar({
                                 e.stopPropagation();
                                 void handleDeleteThread(thread.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 rounded transition-all cursor-pointer"
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all cursor-pointer"
                               title="Delete chat"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -588,7 +761,7 @@ export default function OraSidebar({
 
                 {olderThreads.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-semibold text-zinc-400 px-2 py-1 uppercase tracking-wider">
+                    <div className="text-[10px] font-semibold text-text-muted px-2 py-1 uppercase tracking-wider">
                       Older
                     </div>
                     <div className="space-y-0.5">
@@ -598,23 +771,23 @@ export default function OraSidebar({
                           onClick={() => handleSelectThread(thread)}
                           className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors ${
                             currentThreadId === thread.id
-                              ? 'bg-white/15 text-white font-medium'
-                              : 'text-zinc-300 hover:bg-white/8 hover:text-white'
+                              ? 'bg-accent-subtle text-accent-hover font-medium'
+                              : 'text-text-secondary hover:bg-sidebar hover:text-text-primary'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <MessageSquare className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white shrink-0" />
+                            <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${currentThreadId === thread.id ? 'text-accent-hover' : 'text-text-muted group-hover:text-text-primary'}`} />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-xs">{thread.title}</p>
                               {thread.attached_scope && (
-                                <p className="truncate text-[10px] text-zinc-400 mt-0.5">
+                                <p className="truncate text-[10px] text-text-muted mt-0.5">
                                   {thread.attached_scope.title}
                                 </p>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400">
+                            <span className="text-[10px] text-text-muted">
                               {formatShortTime(thread.updated_at || thread.created_at)}
                             </span>
                             <button
@@ -623,7 +796,7 @@ export default function OraSidebar({
                                 e.stopPropagation();
                                 void handleDeleteThread(thread.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 rounded transition-all cursor-pointer"
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all cursor-pointer"
                               title="Delete chat"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -693,45 +866,51 @@ export default function OraSidebar({
               </div>
             </div>
           ) : mode === 'assets' ? (
-            /* Assets Scoped Empty State */
+            /* Assets Scoped Empty State — All-assets default, narrow via chip/@/rows */
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto">
               <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1 shadow-2xs">
                 <FileText className="w-5 h-5 text-[#765D96]" />
               </div>
               <h3 className="text-sm font-semibold text-text-primary truncate max-w-xs">
-                {attachedScope ? attachedScope.title : 'Asset Assistant'}
+                {assetsScopeLabel ?? displayScope?.title ?? 'Asset Assistant'}
               </h3>
               <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
-                {attachedScope
-                  ? 'Ask questions or extract insights strictly from this attached PDF.'
-                  : 'Drag and drop a PDF here or select one from the assets table to begin.'}
+                {scopeCatalog.length === 0
+                  ? 'Upload your first PDF to start asking questions.'
+                  : isAllAssetsMode
+                    ? `Ask questions across all ${scopeCatalog.length} PDFs, or type @ to narrow to one.`
+                    : narrowedAssets.length > 1
+                      ? `Asking across ${narrowedAssets.length} selected PDFs. Click the scope chip to adjust.`
+                      : 'Ask questions or extract insights strictly from this attached PDF.'}
               </p>
-              {attachedScope ? (
+              {scopeCatalog.length > 0 ? (
                 <div className="pt-2 flex flex-wrap gap-1.5 justify-center">
                   <button
                     type="button"
                     onClick={() => {
+                      const { scopeIds, attachedName } = resolveAssetsSubmitScope();
                       askQuestion('Summarize this document', {
                         workspaceId: currentWorkspace?.id,
-                        requireScope: true,
+                        requireScope: false,
                         mode,
-                        scopeIds: [attachedScope.id],
-                        attachedName: attachedScope.title,
+                        scopeIds,
+                        attachedName,
                       });
                     }}
                     className="px-2.5 py-1 text-xs rounded-full bg-[#ECE8F4] text-[#765D96] hover:bg-[#E2D9EE] transition-colors cursor-pointer"
                   >
-                    Summarize document
+                    Summarize {isAllAssetsMode ? 'all' : 'document'}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
+                      const { scopeIds, attachedName } = resolveAssetsSubmitScope();
                       askQuestion('What are the key points in this document?', {
                         workspaceId: currentWorkspace?.id,
-                        requireScope: true,
+                        requireScope: false,
                         mode,
-                        scopeIds: [attachedScope.id],
-                        attachedName: attachedScope.title,
+                        scopeIds,
+                        attachedName,
                       });
                     }}
                     className="px-2.5 py-1 text-xs rounded-full bg-[#ECE8F4] text-[#765D96] hover:bg-[#E2D9EE] transition-colors cursor-pointer"
@@ -933,9 +1112,38 @@ export default function OraSidebar({
       )}
 
       {/* Input Form at Bottom (matching User Images 1 & 2) */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-border/80 bg-white shrink-0">
-        {/* Attached Scope Chip above/inside Input */}
-        {attachedScope && (
+      <form onSubmit={handleSubmit} className="p-3 border-t border-border/80 bg-white shrink-0 relative">
+        {/* Assets scope chip: single All-chip + count, expands to multi-select */}
+        {mode === 'assets' && assetsScopeLabel ? (
+          <div className="mb-2 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsScopeSelectorOpen((prev) => !prev)}
+              title={isAllAssetsMode ? 'Querying all assets — click to narrow' : 'Click to adjust queried assets'}
+              className="flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] pl-2.5 pr-2 py-1 rounded-full text-xs font-medium hover:bg-[#E2D9EE] transition-colors cursor-pointer max-w-full"
+            >
+              {isAllAssetsMode ? (
+                <Layers className="w-3 h-3 text-[#765D96] shrink-0" />
+              ) : (
+                <FileText className="w-3 h-3 text-[#765D96] shrink-0" />
+              )}
+              <span className="truncate max-w-55">{assetsScopeLabel}</span>
+              <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isScopeSelectorOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {!isAllAssetsMode && (
+              <button
+                type="button"
+                onClick={() => setAssetsScope(null)}
+                className="text-[11px] text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+                title="Reset to all assets"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        ) : null}
+        {/* Legacy single-attachment chip (studio / universal / uncontrolled) */}
+        {mode !== 'assets' && attachedScope ? (
           <div className="mb-2 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-2.5 py-1 rounded-full text-xs font-medium">
             <FileText className="w-3 h-3 text-[#765D96]" />
             <span className="truncate max-w-55">{attachedScope.title}</span>
@@ -948,7 +1156,49 @@ export default function OraSidebar({
               <X className="w-3 h-3" />
             </button>
           </div>
-        )}
+        ) : null}
+
+        {/* Assets scope selector popover (light-mode compliant) */}
+        {mode === 'assets' && isScopeSelectorOpen && scopeCatalog.length > 0 ? (
+          <div
+            ref={scopeSelectorRef}
+            className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-2xl shadow-xl border border-border p-2 max-h-64 overflow-y-auto z-50 animate-fade-in text-xs"
+          >
+            <button
+              type="button"
+              onClick={() => setAssetsScope(null)}
+              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left cursor-pointer transition-colors ${
+                isAllAssetsMode
+                  ? 'bg-accent-subtle text-accent-hover font-medium'
+                  : 'hover:bg-[#F3F4F6] text-text-primary'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate flex-1">All {scopeCatalog.length} assets</span>
+              {isAllAssetsMode && <Check className="w-3.5 h-3.5 shrink-0" />}
+            </button>
+            <div className="px-2 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+              Narrow to specific PDFs
+            </div>
+            {scopeCatalog.map((s) => {
+              const checked = isAllAssetsMode || narrowedAssets.some((n) => n.id === s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => toggleScopeId(s.id)}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#F3F4F6] text-text-primary text-left cursor-pointer transition-colors"
+                >
+                  <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${checked ? 'bg-accent border-accent text-white' : 'border-border text-transparent'}`}>
+                    <Check className="w-3 h-3" />
+                  </span>
+                  <FileText className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                  <span className="truncate flex-1">{s.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F4F4F6] border border-transparent focus-within:border-border transition-all">
           <input
@@ -961,7 +1211,9 @@ export default function OraSidebar({
               mode === 'studio'
                 ? (attachedScope ? `Ask about ${attachedScope.title}...` : 'Ask about this document...')
                 : mode === 'assets'
-                ? (attachedScope ? `Ask about ${attachedScope.title}...` : 'Attach a PDF to ask questions...')
+                ? (scopeCatalog.length === 0
+                    ? 'Upload a PDF to get started...'
+                    : (assetsScopeLabel ? `Ask across ${assetsScopeLabel}... or type @` : 'Ask across your assets... or type @'))
                 : 'Ask Ora... or type @'
             }
             disabled={streaming}
