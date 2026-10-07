@@ -121,7 +121,7 @@ export default function AssetsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Search input */}

@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+'use client';
+import React, { useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { X, UploadCloud, File, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+
+const emptySubscribe = () => () => {};
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -9,12 +13,13 @@ interface UploadModalProps {
 }
 
 export default function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalProps) {
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isMounted) return null;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -78,24 +83,40 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-      <div className="bg-surface w-full max-w-md rounded-2xl shadow-xl border border-border overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Full-screen backdrop */}
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Modal Card */}
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-border overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/70">
           <h3 className="text-sm font-semibold text-text-primary">Upload Asset</h3>
-          <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-base transition-colors cursor-pointer"
+            aria-label="Close"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Content */}
         <div className="p-6">
           {!file ? (
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${
-                isDragging ? 'border-accent bg-accent/5' : 'border-border hover:bg-base'
+              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                isDragging
+                  ? 'border-accent bg-accent/5'
+                  : 'border-border/80 bg-sidebar/40 hover:bg-sidebar/80 hover:border-[#D1D5DB]'
               }`}
             >
               <input
@@ -106,28 +127,30 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
                 onChange={handleFileSelect}
               />
               <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-base flex items-center justify-center text-text-secondary mb-4">
-                  <UploadCloud className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-white border border-border/80 flex items-center justify-center text-text-secondary mb-3 shadow-2xs">
+                  <UploadCloud className="w-6 h-6 text-text-secondary" />
                 </div>
                 <p className="text-sm font-medium text-text-primary mb-1">Click to upload or drag and drop</p>
-                <p className="text-xs text-text-muted">PDF (max. 20MB)</p>
+                <p className="text-xs text-text-muted">PDF files only (max. 20MB)</p>
               </label>
             </div>
           ) : (
-            <div className="bg-base border border-border rounded-xl p-4 flex items-center justify-between">
+            <div className="bg-sidebar/50 border border-border rounded-xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-text-secondary shrink-0">
-                  <File className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-lg bg-white border border-border/80 flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
+                  <File className="w-5 h-5 text-text-secondary" />
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-sm font-medium text-text-primary truncate">{file.name}</p>
-                  <p className="text-xs text-text-muted">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                  <p className="text-xs text-text-muted mt-0.5">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setFile(null)}
-                className="p-1.5 text-text-muted hover:text-red-600 transition-colors"
+                className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
                 disabled={uploading}
+                aria-label="Remove file"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -135,25 +158,28 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
           )}
 
           {error && (
-            <div className="mt-4 flex items-center gap-2 text-xs text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
+            <div className="mt-4 flex items-center gap-2 text-xs text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-border flex items-center justify-end gap-3 bg-base/50">
+        {/* Footer */}
+        <div className="px-6 py-4 bg-sidebar/50 border-t border-border/70 flex items-center justify-end gap-3">
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
+            className="px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-white hover:bg-base border border-border rounded-xl transition-colors cursor-pointer"
             disabled={uploading}
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleUpload}
             disabled={!file || uploading}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-[#111113] hover:bg-black text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-[#111113] hover:bg-black text-white rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploading ? (
               <>
@@ -166,6 +192,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
