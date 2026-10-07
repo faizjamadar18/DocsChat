@@ -1,10 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Home,
+  Sparkles,
   FileEdit,
   Folder,
   Settings,
@@ -12,15 +13,12 @@ import {
   ChevronsUpDown,
   LogOut,
   MessageSquare,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
-import { api } from '../../lib/api';
-
-interface HistoryMessage {
-  role: string;
-  content: string;
-}
+import { useChatThreads } from '../../hooks/useChatThreads';
 
 export default function Sidebar({
   mobileOpen,
@@ -30,47 +28,25 @@ export default function Sidebar({
   onCloseMobile?: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentThreadId = searchParams.get('thread_id');
+
   const { currentWorkspace, sidebarCollapsed } = useWorkspace();
   const { user, logout } = useAuth();
+  const { threads, deleteThread } = useChatThreads(currentWorkspace?.id);
 
   const [chatsOpen, setChatsOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [recentChats, setRecentChats] = useState<{ id: string; title: string }[]>([]);
 
-  // Fetch recent chat titles for the CHATS section
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadRecentChats() {
-      try {
-        const data = await api.get('/chat/history');
-        if (cancelled) return;
-        if (data && data.messages && data.messages.length > 0) {
-          const firstUserMsg = (data.messages as HistoryMessage[]).find((m) => m.role === 'user');
-          if (firstUserMsg) {
-            setRecentChats([{ id: 'active', title: firstUserMsg.content.slice(0, 24) + '...' }]);
-          } else {
-            setRecentChats([{ id: 'default', title: 'Workspace Document Coun...' }]);
-          }
-        } else {
-          setRecentChats([{ id: 'default', title: 'Workspace Document Coun...' }]);
-        }
-      } catch {
-        if (!cancelled) {
-          setRecentChats([{ id: 'default', title: 'Workspace Document Coun...' }]);
-        }
-      }
-    }
-
-    void loadRecentChats();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const handleNewChat = () => {
+    router.push('/playground');
+    onCloseMobile?.();
+  };
 
   const navItems = [
     { label: 'Home', href: '/home', icon: Home },
+    { label: 'Ora', href: '/playground', icon: Sparkles },
     { label: 'Studio', href: '/studio', icon: FileEdit },
     { label: 'Assets', href: '/assets', icon: Folder },
     { label: 'Settings', href: '/settings', icon: Settings },
@@ -158,31 +134,81 @@ export default function Sidebar({
         </nav>
 
         {/* Collapsible CHATS section */}
-        <div className="px-3 pt-3">
-          <button
-            type="button"
-            onClick={() => setChatsOpen(!chatsOpen)}
-            className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-text-muted tracking-wider uppercase hover:text-[#4B5563] transition-colors"
-          >
-            <span>CHATS</span>
-            <ChevronDown
-              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${
-                chatsOpen ? '' : '-rotate-90'
-              }`}
-            />
-          </button>
+        <div className="px-3 pt-3 flex-1 flex flex-col min-h-0">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <button
+              type="button"
+              onClick={() => setChatsOpen(!chatsOpen)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-text-muted tracking-wider uppercase hover:text-text-primary transition-colors cursor-pointer"
+            >
+              <span>CHATS</span>
+              <ChevronDown
+                className={`w-3 h-3 text-text-muted transition-transform duration-200 ${
+                  chatsOpen ? '' : '-rotate-90'
+                }`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={handleNewChat}
+              title="New Chat"
+              className="p-1 rounded-md hover:bg-[#EFEFF2] text-text-muted hover:text-text-primary transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           {chatsOpen && (
-            <div className="mt-1 space-y-0.5">
-              {recentChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  className="px-3 py-1.5 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] cursor-pointer truncate transition-colors flex items-center gap-2"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                  <span className="truncate">{chat.title}</span>
+            <div className="mt-1 space-y-0.5 overflow-y-auto max-h-60 pr-1">
+              {threads.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-text-muted italic">
+                  No conversations yet
                 </div>
-              ))}
+              ) : (
+                threads.map((thread) => {
+                  const isActive =
+                    pathname === '/playground' && currentThreadId === thread.id;
+                  return (
+                    <div
+                      key={thread.id}
+                      onClick={() => {
+                        router.push(`/playground?thread_id=${thread.id}`);
+                        onCloseMobile?.();
+                      }}
+                      className={`group px-3 py-1.5 rounded-md text-xs truncate transition-colors flex items-center justify-between cursor-pointer ${
+                        isActive
+                          ? 'bg-accent-subtle text-accent-hover font-medium'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
+                        <MessageSquare
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            isActive ? 'text-accent-hover' : 'text-text-muted'
+                          }`}
+                        />
+                        <span className="truncate">{thread.title}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Delete this conversation?')) {
+                            void deleteThread(thread.id);
+                            if (currentThreadId === thread.id) {
+                              router.push('/playground');
+                            }
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
+                        title="Delete chat"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
             </div>
           )}
         </div>

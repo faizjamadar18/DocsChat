@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Plus, File, MoreVertical, Download, Trash2 } from 'lucide-react';
+import { Search, Plus, File, MoreVertical, Download, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
@@ -74,9 +74,9 @@ export default function AssetsPage() {
       const readyList = (data.sources || []).filter((s: Source) => s.status === 'ready');
       setSources(readyList);
       setSelectedAsset((prev) => {
-        if (!prev) return readyList.length > 0 ? readyList[0] : null;
+        if (!prev) return readyList[0] || null;
         const exists = readyList.find((s: Source) => s.id === prev.id);
-        return exists || (readyList.length > 0 ? readyList[0] : null);
+        return exists || readyList[0] || null;
       });
     } catch (err) {
       console.error('Failed to fetch sources:', err);
@@ -93,7 +93,10 @@ export default function AssetsPage() {
         if (active) {
           const readyList = (data.sources || []).filter((s: Source) => s.status === 'ready');
           setSources(readyList);
-          setSelectedAsset((prev) => prev ?? (readyList.length > 0 ? readyList[0] : null));
+          setSelectedAsset((prev) => {
+            if (!prev) return readyList[0] || null;
+            return readyList.find((s: Source) => s.id === prev.id) || readyList[0] || null;
+          });
         }
       } catch (err) {
         if (active) {
@@ -282,16 +285,8 @@ export default function AssetsPage() {
             />
           </div>
 
-          {/* Right controls: Sort dropdown, Ora trigger, Upload button */}
+          {/* Right controls: Ora trigger, Upload button */}
           <div className="flex items-center gap-3 self-end sm:self-auto">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-surface border border-border rounded-xl transition-colors cursor-pointer"
-            >
-              <span>Recent</span>
-              <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
-            </button>
-            
             <button
               type="button"
               onClick={() => setIsOraDrawerOpen((prev) => !prev)}
@@ -340,8 +335,21 @@ export default function AssetsPage() {
                 return (
                   <div
                     key={source.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(
+                        'application/json',
+                        JSON.stringify({
+                          id: source.id,
+                          title: source.filename,
+                          type: 'asset',
+                        })
+                      );
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
                     onClick={() => setSelectedAsset(source)}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group ${
+                    title="Click to select or drag into Ora to ask questions"
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group active:cursor-grabbing ${
                       isSelected
                         ? 'bg-[#F3F4F6] border-border shadow-2xs'
                         : 'bg-surface hover:bg-[#F9F9FB] border-border/60 hover:border-border'
@@ -433,6 +441,8 @@ export default function AssetsPage() {
       <OraSidebar
         isOpen={isOraDrawerOpen}
         onClose={() => setIsOraDrawerOpen(false)}
+        initialScope={selectedAsset ? { id: selectedAsset.id, title: selectedAsset.filename, type: 'asset' } : null}
+        mode="assets"
       />
 
       {/* Modals */}

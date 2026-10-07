@@ -1,7 +1,20 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ArrowUp, Square, Trash2, Copy, Check, FileText, File } from 'lucide-react';
-import { useChat } from '../../hooks/useChat';
+import {
+  X,
+  ArrowUp,
+  Square,
+  Trash2,
+  Copy,
+  Check,
+  FileText,
+  File,
+  Sparkles,
+  Wand2,
+  HelpCircle,
+  CheckCheck,
+} from 'lucide-react';
+import { useChat, AskQuestionOptions } from '../../hooks/useChat';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { api } from '../../lib/api';
 
@@ -10,11 +23,11 @@ export function OraLogoMark({ className = 'w-4 h-4' }: { className?: string }) {
     <svg className={className} viewBox="0 0 20 20" fill="currentColor">
       <path
         d="M6 3.5C4.62 3.5 3.5 4.62 3.5 6v7c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V6C8.5 4.62 7.38 3.5 6 3.5z"
-        className="fill-current text-[#111827]"
+        className="fill-current text-text-primary"
       />
       <path
         d="M13.5 5C12.12 5 11 6.12 11 7.5v7c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5v-7c0-1.38-1.12-2.5-2.5-2.5z"
-        className="fill-current text-[#111827]"
+        className="fill-current text-text-primary"
       />
     </svg>
   );
@@ -26,12 +39,19 @@ export interface MentionItem {
   type: 'document' | 'asset';
 }
 
-interface OraSidebarProps {
+export interface OraSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  initialScope?: MentionItem | null;
+  mode?: 'universal' | 'assets' | 'studio';
 }
 
-export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
+export default function OraSidebar({
+  isOpen,
+  onClose,
+  initialScope,
+  mode = 'universal',
+}: OraSidebarProps) {
   const { currentWorkspace } = useWorkspace();
   const {
     messages,
@@ -47,6 +67,7 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const [docs, setDocs] = useState<MentionItem[]>([]);
   const [assets, setAssets] = useState<MentionItem[]>([]);
@@ -55,6 +76,23 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Track open state transitions and initialScope prop updates cleanly
+  const [prevInitialScopeId, setPrevInitialScopeId] = useState(initialScope?.id);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen && initialScope) {
+      setAttachedScope(initialScope);
+      setPrevInitialScopeId(initialScope.id);
+    }
+  } else if (initialScope?.id !== prevInitialScopeId) {
+    setPrevInitialScopeId(initialScope?.id);
+    if (initialScope) {
+      setAttachedScope(initialScope);
+    }
+  }
 
   // Keyboard shortcut toggle ⌘. / Ctrl+.
   useEffect(() => {
@@ -183,24 +221,99 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
     }
   };
 
+  const studioPrompts = [
+    {
+      label: 'Summarize this',
+      description: 'Create a concise summary of this document',
+      prompt: 'Summarize this document concisely and highlight the main takeaways.',
+      icon: Sparkles,
+    },
+    {
+      label: 'Improve writing',
+      description: 'Enhance vocabulary, flow, and tone',
+      prompt: 'Improve the writing and clarity of this document while preserving its core meaning.',
+      icon: Wand2,
+    },
+    {
+      label: 'Explain this',
+      description: 'Break down complex concepts simply',
+      prompt: 'Explain the key concepts and ideas in this document clearly.',
+      icon: HelpCircle,
+    },
+    {
+      label: 'Fix grammar',
+      description: 'Correct spelling and grammatical errors',
+      prompt: 'Fix grammar, spelling, and phrasing issues throughout this document.',
+      icon: CheckCheck,
+    },
+  ];
+
+  const handleStudioPrompt = (promptText: string) => {
+    if (streaming) return;
+    const activeScope = attachedScope || initialScope;
+    askQuestion(promptText, {
+      workspaceId: currentWorkspace?.id,
+      requireScope: true,
+      scopeIds: activeScope ? [activeScope.id] : [],
+      attachedName: activeScope?.title,
+    });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    if (!isDragOver) setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    try {
+      const rawData = e.dataTransfer.getData('application/json');
+      if (rawData) {
+        const parsed = JSON.parse(rawData);
+        if (parsed.id && parsed.title) {
+          setAttachedScope({
+            id: parsed.id,
+            title: parsed.title,
+            type: parsed.type || 'asset',
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to parse dropped asset:', err);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || streaming) return;
 
     const queryToSend = input.trim();
-    const scopeOptions = attachedScope
-      ? {
-          workspaceId: currentWorkspace?.id,
-          scopeIds: [attachedScope.id],
-          attachedName: attachedScope.title,
-        }
-      : {
-          workspaceId: currentWorkspace?.id,
-        };
+    const activeScope = attachedScope;
+    const isStrictScope = mode === 'assets' || mode === 'studio';
+
+    const scopeOptions: AskQuestionOptions = {
+      workspaceId: currentWorkspace?.id,
+      requireScope: isStrictScope,
+    };
+
+    if (activeScope) {
+      scopeOptions.scopeIds = [activeScope.id];
+      scopeOptions.attachedName = activeScope.title;
+    }
 
     askQuestion(queryToSend, scopeOptions);
     setInput('');
-    setAttachedScope(null);
+    if (mode === 'universal') {
+      setAttachedScope(null);
+    }
     setShowMentions(false);
   };
 
@@ -220,15 +333,39 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <aside className="w-80 sm:w-96 shrink-0 h-full bg-white border-l border-border flex flex-col select-none relative z-20">
-      {/* Top Header (matching 04-ora-assistant-sidebar.png and user reference) */}
+    <aside
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`shrink-0 h-full bg-white flex flex-col select-none relative z-20 transition-all duration-300 ease-in-out overflow-hidden ${
+        isOpen
+          ? 'w-80 sm:w-96 opacity-100 border-l border-border'
+          : 'w-0 opacity-0 border-l-0 pointer-events-none'
+      }`}
+    >
+      {/* Drag & Drop Visual Target Overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 bg-[#ECE8F4]/90 backdrop-blur-xs border-2 border-dashed border-[#765D96] rounded-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in pointer-events-none">
+          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3">
+            <FileText className="w-6 h-6 text-[#765D96]" />
+          </div>
+          <span className="text-sm font-semibold text-text-primary">Drop PDF to attach</span>
+          <span className="text-xs text-text-secondary mt-1">Ora will focus solely on this document</span>
+        </div>
+      )}
+
+      <div className="w-80 sm:w-96 h-full flex flex-col shrink-0">
+        {/* Top Header (matching 04-ora-assistant-sidebar.png and user reference) */}
       <div className="h-14 px-4 flex items-center justify-between border-b border-border/80 shrink-0 bg-white">
         <div className="flex items-center gap-2">
           <OraLogoMark className="w-4 h-4 text-text-primary" />
           <span className="text-sm font-semibold text-text-primary tracking-tight">Ora</span>
+          {mode !== 'universal' && (
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-[#765D96] bg-[#ECE8F4] px-2 py-0.5 rounded-full">
+              {mode}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -257,28 +394,122 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
             Loading chat...
           </div>
         ) : messages.length === 0 ? (
-          /* Empty State (matching 04-ora-assistant-sidebar.png verbatim) */
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto">
-            <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1">
-              <OraLogoMark className="w-5 h-5 text-text-secondary" />
+          mode === 'studio' ? (
+            /* Studio Notion-Style Prompt Helper Empty State */
+            <div className="flex-1 flex flex-col justify-center items-center p-5 space-y-4 my-auto">
+              <div className="text-center space-y-1">
+                <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2 shadow-2xs">
+                  <Sparkles className="w-5 h-5 text-[#765D96]" />
+                </div>
+                <h3 className="text-sm font-semibold text-text-primary">Studio Assistant</h3>
+                <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
+                  {attachedScope?.title ? (
+                    <span>
+                      Working on <strong className="font-medium text-text-primary">{attachedScope.title}</strong>
+                    </span>
+                  ) : (
+                    'Choose a quick action to edit or analyze your document'
+                  )}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 w-full max-w-xs pt-1">
+                {studioPrompts.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => handleStudioPrompt(item.prompt)}
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-border/80 bg-white hover:bg-[#F9F9FB] hover:border-[#765D96]/40 text-left transition-all shadow-2xs group cursor-pointer"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-[#ECE8F4] text-[#765D96] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Icon className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-medium text-text-primary block truncate">
+                          {item.label}
+                        </span>
+                        <span className="text-[10px] text-text-muted block truncate">
+                          {item.description}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <h3 className="text-sm font-semibold text-text-primary">Ask Ora anything</h3>
-            <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
-              Type{' '}
-              <span className="bg-[#F3F4F6] text-text-primary px-1.5 py-0.5 rounded border border-border font-mono text-[11px]">
-                @
-              </span>{' '}
-              to reference a document or asset
-            </p>
-            <div className="pt-2">
-              <span className="text-[11px] text-text-muted">
-                Toggle with{' '}
-                <kbd className="px-1.5 py-0.5 bg-[#F3F4F6] border border-border rounded font-mono text-[10px]">
-                  ⌘.
-                </kbd>
-              </span>
+          ) : mode === 'assets' ? (
+            /* Assets Scoped Empty State */
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto">
+              <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1 shadow-2xs">
+                <FileText className="w-5 h-5 text-[#765D96]" />
+              </div>
+              <h3 className="text-sm font-semibold text-text-primary truncate max-w-xs">
+                {attachedScope ? attachedScope.title : 'Asset Assistant'}
+              </h3>
+              <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
+                {attachedScope
+                  ? 'Ask questions or extract insights strictly from this attached PDF.'
+                  : 'Drag and drop a PDF here or select one from the assets table to begin.'}
+              </p>
+              {attachedScope ? (
+                <div className="pt-2 flex flex-wrap gap-1.5 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      askQuestion('Summarize this document', {
+                        workspaceId: currentWorkspace?.id,
+                        requireScope: true,
+                        scopeIds: [attachedScope.id],
+                        attachedName: attachedScope.title,
+                      });
+                    }}
+                    className="px-2.5 py-1 text-xs rounded-full bg-[#ECE8F4] text-[#765D96] hover:bg-[#E2D9EE] transition-colors cursor-pointer"
+                  >
+                    Summarize document
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      askQuestion('What are the key points in this document?', {
+                        workspaceId: currentWorkspace?.id,
+                        requireScope: true,
+                        scopeIds: [attachedScope.id],
+                        attachedName: attachedScope.title,
+                      });
+                    }}
+                    className="px-2.5 py-1 text-xs rounded-full bg-[#ECE8F4] text-[#765D96] hover:bg-[#E2D9EE] transition-colors cursor-pointer"
+                  >
+                    Key takeaways
+                  </button>
+                </div>
+              ) : null}
             </div>
-          </div>
+          ) : (
+            /* Universal Playground / Workspace Empty State (matching 04-ora-assistant-sidebar.png verbatim) */
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto">
+              <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1">
+                <OraLogoMark className="w-5 h-5 text-text-secondary" />
+              </div>
+              <h3 className="text-sm font-semibold text-text-primary">Ask Ora anything</h3>
+              <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
+                Type{' '}
+                <span className="bg-[#F3F4F6] text-text-primary px-1.5 py-0.5 rounded border border-border font-mono text-[11px]">
+                  @
+                </span>{' '}
+                to reference a document or asset
+              </p>
+              <div className="pt-2">
+                <span className="text-[11px] text-text-muted">
+                  Toggle with{' '}
+                  <kbd className="px-1.5 py-0.5 bg-[#F3F4F6] border border-border rounded font-mono text-[10px]">
+                    ⌘.
+                  </kbd>
+                </span>
+              </div>
+            </div>
+          )
         ) : (
           /* Chat Messages Flow */
           <div className="space-y-4 flex-1">
@@ -299,7 +530,7 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
                       {(msg.attached_name || (msg.scope_ids && msg.scope_ids.length > 0)) && (
                         <div className="bg-white/20 text-white text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit">
                           <FileText className="w-3 h-3 text-white/90" />
-                          <span className="truncate max-w-[200px]">
+                          <span className="truncate max-w-50">
                             {msg.attached_name || 'Referenced Document'}
                           </span>
                         </div>
@@ -452,7 +683,7 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
         {attachedScope && (
           <div className="mb-2 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-2.5 py-1 rounded-full text-xs font-medium">
             <FileText className="w-3 h-3 text-[#765D96]" />
-            <span className="truncate max-w-[220px]">{attachedScope.title}</span>
+            <span className="truncate max-w-55">{attachedScope.title}</span>
             <button
               type="button"
               onClick={() => setAttachedScope(null)}
@@ -471,7 +702,13 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Ora... or type @"
+            placeholder={
+              mode === 'studio'
+                ? (attachedScope ? `Ask about ${attachedScope.title}...` : 'Ask about this document...')
+                : mode === 'assets'
+                ? (attachedScope ? `Ask about ${attachedScope.title}...` : 'Attach a PDF to ask questions...')
+                : 'Ask Ora... or type @'
+            }
             disabled={streaming}
             className="flex-1 bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
           />
@@ -499,6 +736,7 @@ export default function OraSidebar({ isOpen, onClose }: OraSidebarProps) {
           )}
         </div>
       </form>
+      </div>
     </aside>
   );
 }

@@ -9,6 +9,8 @@ class ChatRequest(BaseModel):
     workspace_id: Optional[str] = None
     scope_ids: Optional[list[str]] = None
     attached_name: Optional[str] = None
+    thread_id: Optional[str] = None
+    require_scope: Optional[bool] = False
 
 
 class Citation(BaseModel):
@@ -21,6 +23,7 @@ class Citation(BaseModel):
 
 class ChatMessage(BaseModel):
     id: str
+    thread_id: Optional[str] = None
     workspace_id: Optional[str] = None
     role: str  # "user" | "assistant"
     content: str
@@ -33,4 +36,27 @@ class ChatMessage(BaseModel):
 
 class ChatHistoryResponse(BaseModel):
     messages: list[ChatMessage]
+    total: int
+
+
+class ChatThreadCreate(BaseModel):
+    workspace_id: Optional[str] = None
+    title: Optional[str] = "New Conversation"
+
+
+class ChatThreadUpdate(BaseModel):
+    title: str
+
+
+class ChatThreadResponse(BaseModel):
+    id: str
+    workspace_id: str
+    user_id: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ChatThreadListResponse(BaseModel):
+    threads: list[ChatThreadResponse]
     total: int

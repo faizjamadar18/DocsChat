@@ -19,7 +19,9 @@ export default function Header({
   // Compute breadcrumb segments
   const getBreadcrumbs = () => {
     const parts = [{ label: workspaceName, href: '/home' }];
-    if (pathname?.startsWith('/studio')) {
+    if (pathname?.startsWith('/playground')) {
+      parts.push({ label: 'Ora', href: '/playground' });
+    } else if (pathname?.startsWith('/studio')) {
       parts.push({ label: 'Studio', href: '/studio' });
       if (activeDocTitle) {
         parts.push({ label: activeDocTitle, href: '/studio' });

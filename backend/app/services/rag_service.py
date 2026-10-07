@@ -19,11 +19,19 @@ NO_DOCUMENTS_MESSAGE = (
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-SYSTEM_PROMPT = """You are a helpful research assistant. Answer the user's question 
-based ONLY on the provided context from their uploaded documents and workspace notes. 
-If the context doesn't contain enough information to answer, say so clearly.
-Do not make up information or use knowledge outside the provided context.
-Provide clear, well-structured answers with proper formatting.
+SYSTEM_PROMPT = """You are Ora, an intelligent workspace AI assistant.
+Answer the user's question clearly, accurately, and helpfully based on the workspace catalog and document context provided below.
+
+Guidelines:
+1. WORKSPACE INVENTORY & CATALOG QUESTIONS:
+   If the user asks questions about what documents, assets, or files exist in the workspace, their count, total numbers, or list of names (e.g. "How many assets and docs do I have?", "List my files", "What documents are in my workspace?"), answer directly and accurately using the Workspace Inventory Catalog.
+2. CONTENT QUESTIONS:
+   If the user asks about specific information, skills, project details, or facts inside documents, answer based on the Context from documents provided below.
+3. CONVERSATIONAL & HELP:
+   If the user greets you or asks general workspace questions, be polite, professional, and clear.
+
+Workspace Inventory Catalog:
+{workspace_catalog}
 
 Context from documents:
 {context}
@@ -198,6 +206,55 @@ async def retrieve_for_query(
     return context, citations
 
 
+async def get_workspace_catalog(user_id: str, workspace_id: Optional[str] = None) -> tuple[str, int, int]:
+    """
+    Fetch the catalog/manifest of all documents and uploaded assets in the workspace.
+    Returns (formatted_summary_str, doc_count, asset_count).
+    """
+    if database.documents_collection is None or database.sources_collection is None:
+        return "Workspace catalog is currently unavailable.", 0, 0
+
+    doc_filter: dict = {"user_id": user_id}
+    source_filter: dict = {"user_id": user_id, "status": "ready"}
+    if workspace_id:
+        doc_filter["workspace_id"] = workspace_id
+        source_filter["workspace_id"] = workspace_id
+
+    # Fetch Studio documents
+    doc_titles = []
+    try:
+        doc_cursor = database.documents_collection.find(doc_filter, {"title": 1})
+        async for d in doc_cursor:
+            title = d.get("title") or "Untitled Document"
+            doc_titles.append(title)
+    except Exception:
+        pass
+
+    # Fetch Uploaded Assets (sources)
+    asset_names = []
+    try:
+        source_cursor = database.sources_collection.find(source_filter, {"filename": 1, "page_count": 1})
+        async for s in source_cursor:
+            name = s.get("filename") or "Untitled Asset"
+            pages = s.get("page_count")
+            if pages:
+                asset_names.append(f"{name} ({pages} pages)")
+            else:
+                asset_names.append(name)
+    except Exception:
+        pass
+
+    doc_count = len(doc_titles)
+    asset_count = len(asset_names)
+
+    catalog_lines = [
+        f"- Studio Documents ({doc_count} total): {', '.join(doc_titles) if doc_titles else 'None'}",
+        f"- Uploaded Assets ({asset_count} total): {', '.join(asset_names) if asset_names else 'None'}",
+    ]
+    catalog_summary = "\n".join(catalog_lines)
+    return catalog_summary, doc_count, asset_count
+
+
 async def ask_question(
     user_id: str,
     query: str,
@@ -206,17 +263,25 @@ async def ask_question(
     workspace_id: Optional[str] = None,
 ) -> AsyncGenerator[str, None]:
     """
-    Full RAG pipeline: retrieve relevant chunks → build prompt → stream LLM response using Groq.
+    Full RAG pipeline: retrieve relevant chunks → build prompt with workspace catalog → stream LLM response using Groq.
     Yields tokens as they come for SSE streaming.
     """
+    catalog_summary, doc_count, asset_count = await get_workspace_catalog(user_id, workspace_id)
+
     if context is None:
         context, _ = await retrieve_for_query(user_id, query, workspace_id=workspace_id)
 
-    if not context:
+    # Only show NO_DOCUMENTS_MESSAGE if there are truly no documents/assets AND no context
+    if not context and (doc_count == 0 and asset_count == 0):
         yield NO_DOCUMENTS_MESSAGE
         return
 
-    prompt = SYSTEM_PROMPT.format(context=context, query=query)
+    effective_context = context if context else "No specific document text chunks matched this search query."
+    prompt = SYSTEM_PROMPT.format(
+        workspace_catalog=catalog_summary,
+        context=effective_context,
+        query=query,
+    )
 
     async for token in stream_response(prompt, model="groq"):
         yield token

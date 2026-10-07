@@ -378,6 +378,8 @@ export default function StudioPage() {
         <OraSidebar
           isOpen={isOraDrawerOpen}
           onClose={() => setIsOraDrawerOpen(false)}
+          initialScope={activeDoc ? { id: activeDoc.id, title: activeDoc.title, type: 'document' } : null}
+          mode="studio"
         />
       </div>
 

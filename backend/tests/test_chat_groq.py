@@ -15,9 +15,12 @@ WORKSPACE_ID = str(ObjectId())
 @pytest.fixture
 def mock_db():
     with patch("app.database.users_collection") as mock_users, \
-         patch("app.database.messages_collection") as mock_messages:
+         patch("app.database.messages_collection") as mock_messages, \
+         patch("app.database.chat_threads_collection") as mock_threads:
         with patch("app.routes.chat.check_db"):
-            yield {"users": mock_users, "messages": mock_messages}
+            mock_threads.find_one = AsyncMock(return_value=None)
+            mock_threads.insert_one = AsyncMock(return_value=AsyncMock(inserted_id=ObjectId()))
+            yield {"users": mock_users, "messages": mock_messages, "threads": mock_threads}
 
 def test_chat_ask_accepts_gemini_and_routes_to_groq(mock_db):
     mock_db["users"].find_one = AsyncMock(return_value={

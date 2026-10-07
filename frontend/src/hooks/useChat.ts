@@ -28,6 +28,8 @@ export interface AskQuestionOptions {
   workspaceId?: string;
   scopeIds?: string[];
   attachedName?: string;
+  threadId?: string;
+  requireScope?: boolean;
 }
 
 function parseSseLine(line: string): Record<string, unknown> | null {
@@ -39,37 +41,61 @@ function parseSseLine(line: string): Record<string, unknown> | null {
   }
 }
 
-export function useChat(activeWorkspaceId?: string) {
+export function useChat(activeWorkspaceId?: string, activeThreadId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdThreadId, setCreatedThreadId] = useState<string | null>(null);
+  const currentThreadId = activeThreadId || createdThreadId;
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchHistory = useCallback(async (wsId?: string) => {
+  const fetchHistory = useCallback(async (wsId?: string, tId?: string) => {
     const targetWs = wsId || activeWorkspaceId;
+    const targetThread = tId !== undefined ? tId : activeThreadId;
+
+    if (targetThread === '') {
+      // Empty string means a fresh new thread
+      setMessages([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const endpoint = targetWs ? `/chat/history?workspace_id=${targetWs}` : '/chat/history';
-      const data = await api.get(endpoint, {
-        headers: targetWs ? { 'X-Workspace-Id': targetWs } : {},
-      });
+      setLoading(true);
+      let data;
+      if (targetThread) {
+        data = await api.get(`/chat/threads/${targetThread}/messages`);
+      } else {
+        const endpoint = targetWs ? `/chat/history?workspace_id=${targetWs}` : '/chat/history';
+        data = await api.get(endpoint, {
+          headers: targetWs ? { 'X-Workspace-Id': targetWs } : {},
+        });
+      }
       setMessages(data.messages || []);
+      setError(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load chat history';
       setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [activeWorkspaceId]);
+  }, [activeWorkspaceId, activeThreadId]);
 
   useEffect(() => {
-    void fetchHistory(activeWorkspaceId);
-  }, [fetchHistory, activeWorkspaceId]);
+    void fetchHistory(activeWorkspaceId, activeThreadId);
+  }, [fetchHistory, activeWorkspaceId, activeThreadId]);
 
-  const clearHistory = async (wsId?: string) => {
+  const clearHistory = async (wsId?: string, tId?: string) => {
     const targetWs = wsId || activeWorkspaceId;
+    const targetThread = tId !== undefined ? tId : currentThreadId;
     try {
-      const endpoint = targetWs ? `/chat/clear?workspace_id=${targetWs}` : '/chat/clear';
+      let endpoint = '/chat/clear';
+      if (targetThread) {
+        endpoint += `?thread_id=${targetThread}`;
+      } else if (targetWs) {
+        endpoint += `?workspace_id=${targetWs}`;
+      }
       await api.delete(endpoint, {
         headers: targetWs ? { 'X-Workspace-Id': targetWs } : {},
       });
@@ -141,8 +167,10 @@ export function useChat(activeWorkspaceId?: string) {
           query,
           model: 'groq',
           workspace_id: targetWs,
+          thread_id: parsedOptions.threadId || currentThreadId || undefined,
           scope_ids: parsedOptions.scopeIds,
           attached_name: parsedOptions.attachedName,
+          require_scope: parsedOptions.requireScope,
         }),
         signal: controller.signal,
       });
@@ -176,8 +204,25 @@ export function useChat(activeWorkspaceId?: string) {
           const data = parseSseLine(line);
           if (!data) continue;
 
+          if (data.type === 'thread_info' && data.thread_id) {
+            const newTid = String(data.thread_id);
+            setCreatedThreadId(newTid);
+            window.dispatchEvent(
+              new CustomEvent('chat-threads-updated', { detail: data })
+            );
+            continue;
+          }
+
           if (data.error) {
-            setError(String(data.error));
+            const errStr = String(data.error);
+            setError(errStr);
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === tempAssistantId
+                  ? { ...msg, content: `Error: ${errStr}` }
+                  : msg
+              )
+            );
             break;
           }
           if (data.done) {
@@ -232,7 +277,11 @@ export function useChat(activeWorkspaceId?: string) {
       const msg = err instanceof Error ? err.message : 'Error communicating with server';
       setError(msg);
       setMessages((prev) =>
-        prev.filter((msg) => !(msg.id === tempAssistantId && msg.content === ''))
+        prev.map((m) =>
+          m.id === tempAssistantId && !m.content
+            ? { ...m, content: `Error: ${msg}` }
+            : m
+        )
       );
     } finally {
       abortControllerRef.current = null;
@@ -242,9 +291,12 @@ export function useChat(activeWorkspaceId?: string) {
 
   return {
     messages,
+    setMessages,
     loading,
     streaming,
     error,
+    currentThreadId,
+    setCreatedThreadId,
     askQuestion,
     stopGenerating,
     clearHistory,
