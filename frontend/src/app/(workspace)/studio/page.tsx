@@ -1,13 +1,16 @@
 'use client';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Cloud, Check, Loader2 } from 'lucide-react';
+import { Cloud, Check, Loader2, PanelLeft } from 'lucide-react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
 import { api } from '../../../lib/api';
 import { StudioDocumentsSidebar, StudioDoc } from '../../../components/studio/StudioDocumentsSidebar';
 import { EditorCanvas } from '../../../components/studio/EditorCanvas';
+import OraSidebarDrawer, { OraLogoMark } from '../../../components/layout/OraSidebarDrawer';
 
 export default function StudioPage() {
   const { currentWorkspace, setActiveDocTitle } = useWorkspace();
+  const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [documents, setDocuments] = useState<StudioDoc[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [activeDoc, setActiveDoc] = useState<StudioDoc | null>(null);
@@ -95,6 +98,12 @@ export default function StudioPage() {
       if (titleSaveTimeoutRef.current) clearTimeout(titleSaveTimeoutRef.current);
     };
   }, [currentWorkspace?.id, setActiveDocTitle]);
+
+  useEffect(() => {
+    const handleToggle = () => setIsOraDrawerOpen((prev) => !prev);
+    window.addEventListener('toggle-ora-sidebar', handleToggle);
+    return () => window.removeEventListener('toggle-ora-sidebar', handleToggle);
+  }, []);
 
   // Select a document from sidebar
   const handleSelectDoc = (id: string) => {
@@ -254,79 +263,117 @@ export default function StudioPage() {
   }
 
   return (
-    <div className="relative flex h-full w-full bg-base overflow-hidden">
-      {/* Studio Sub-sidebar (Left Documents Column) */}
-      <StudioDocumentsSidebar
-        documents={documents}
-        activeDocId={activeDocId}
-        onSelectDoc={handleSelectDoc}
-        onCreateDoc={() => handleCreateDoc()}
-        onRenameDoc={handleRenameDoc}
-        onDeleteDoc={handleDeleteDoc}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        isCreating={isCreating}
-      />
+    <div className="relative flex flex-col h-full w-full bg-surface overflow-hidden">
+      {/* Studio Top Sub-Bar (matching 02-studio-editor.png verbatim) */}
+      <div className="h-11 border-b border-border bg-surface px-4 flex items-center justify-between shrink-0 select-none">
+        {/* Left: Sidebar toggle icon + Current active document title */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen((prev) => !prev)}
+            title={isSidebarOpen ? 'Collapse documents sidebar' : 'Expand documents sidebar'}
+            className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+          >
+            <PanelLeft className="w-4 h-4" />
+          </button>
+          <span className="text-xs sm:text-sm font-semibold text-text-primary truncate">
+            {activeDoc?.title || 'Documents'}
+          </span>
+        </div>
 
-      {/* Studio Canvas Area (Right Editor Column) */}
-      <main className="flex-1 flex flex-col h-full overflow-y-auto bg-surface">
-        {activeDoc ? (
-          <div className="w-full max-w-3xl mx-auto px-6 sm:px-12 py-8 flex-1 flex flex-col">
-            {/* Top Canvas Header: Cloud Sync Indicator */}
-            <div className="flex items-center justify-end mb-6 select-none">
-              {/* Cloud Auto-save Sync Status */}
-              <div
-                className="flex items-center gap-1.5 text-text-muted text-xs transition-colors"
-                title={
-                  saveStatus === 'saving'
-                    ? 'Saving changes...'
-                    : saveStatus === 'synced'
-                    ? 'Synced to Qdrant'
-                    : 'All changes saved'
-                }
-              >
-                {saveStatus === 'saving' ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-accent" />
-                ) : saveStatus === 'synced' ? (
-                  <Check className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <Cloud className="w-4 h-4 text-text-muted hover:text-text-secondary cursor-help" />
-                )}
+        {/* Right: Ora button & Cloud sync indicator */}
+        <div className="flex items-center gap-3">
+          {/* Ora Assistant Trigger Button */}
+          <button
+            type="button"
+            onClick={() => setIsOraDrawerOpen((prev) => !prev)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+              isOraDrawerOpen
+                ? 'bg-accent/10 text-accent font-semibold'
+                : 'text-text-primary hover:bg-[#F3F4F6]'
+            }`}
+            title="Ora Assistant"
+          >
+            <OraLogoMark className="w-3.5 h-3.5" />
+            <span>Ora</span>
+          </button>
+
+          {/* Cloud Auto-save Sync Status */}
+          <div
+            className="flex items-center text-text-muted hover:text-text-secondary cursor-help transition-colors"
+            title={
+              saveStatus === 'saving'
+                ? 'Saving changes...'
+                : saveStatus === 'synced'
+                ? 'Synced to Qdrant'
+                : 'All changes saved'
+            }
+          >
+            {saveStatus === 'saving' ? (
+              <Loader2 className="w-4 h-4 animate-spin text-accent" />
+            ) : saveStatus === 'synced' ? (
+              <Check className="w-4 h-4 text-emerald-600" />
+            ) : (
+              <Cloud className="w-4 h-4 text-text-muted hover:text-text-secondary" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Studio Split Content Area */}
+      <div className="flex flex-1 min-h-0 relative">
+        {/* Studio Sub-sidebar (Left Documents Column) */}
+        {isSidebarOpen && (
+          <StudioDocumentsSidebar
+            documents={documents}
+            activeDocId={activeDocId}
+            onSelectDoc={handleSelectDoc}
+            onCreateDoc={() => handleCreateDoc()}
+            onRenameDoc={handleRenameDoc}
+            onDeleteDoc={handleDeleteDoc}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            isCreating={isCreating}
+          />
+        )}
+
+        {/* Studio Canvas Area (Right Editor Column) */}
+        <main className="flex-1 flex flex-col h-full overflow-y-auto bg-surface">
+          {activeDoc ? (
+            <div className="w-full max-w-3xl mx-auto px-6 sm:px-12 py-10 flex-1 flex flex-col">
+              {/* Document Title H1 Input */}
+              <input
+                type="text"
+                value={titleInput}
+                onChange={handleTitleChange}
+                placeholder="Untitled Document"
+                className="w-full text-3xl sm:text-4xl font-bold text-text-primary placeholder:text-text-muted focus:outline-none border-none bg-transparent mb-5 tracking-tight transition-all"
+              />
+
+              {/* TipTap Notion-style Editor Canvas */}
+              <div className="flex-1">
+                <EditorCanvas
+                  key={activeDoc.id}
+                  initialContent={activeDoc.content_json || activeDoc.content_text || ''}
+                  onAutoSave={handleAutoSaveContent}
+                  onIdleIndex={handleIdleIndex}
+                />
               </div>
             </div>
-
-            {/* Document Title H1 Input */}
-            <input
-              type="text"
-              value={titleInput}
-              onChange={handleTitleChange}
-              placeholder="Untitled Document"
-              className="w-full text-3xl sm:text-4xl font-bold text-text-primary placeholder:text-text-muted focus:outline-none border-none bg-transparent mb-6 transition-all"
-            />
-
-            {/* TipTap Notion-style Editor Canvas */}
-            <div className="flex-1">
-              <EditorCanvas
-                key={activeDoc.id}
-                initialContent={activeDoc.content_json || activeDoc.content_text || ''}
-                onAutoSave={handleAutoSaveContent}
-                onIdleIndex={handleIdleIndex}
-              />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-text-muted">
+              <p className="text-sm mb-3">No document selected</p>
+              <button
+                type="button"
+                onClick={() => handleCreateDoc()}
+                className="px-4 py-2 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors cursor-pointer"
+              >
+                Create a document
+              </button>
             </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-text-muted">
-            <p className="text-sm mb-3">No document selected</p>
-            <button
-              type="button"
-              onClick={() => handleCreateDoc()}
-              className="px-4 py-2 text-xs font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors cursor-pointer"
-            >
-              Create a document
-            </button>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
 
       {/* "Document created" Bottom Toast Notification (matches 02-studio-editor.png) */}
       {toastMessage && (
@@ -336,6 +383,12 @@ export default function StudioPage() {
           </div>
         </div>
       )}
+
+      {/* Ora Assistant Slide-Over Drawer (exclusive to Studio & Assets) */}
+      <OraSidebarDrawer
+        isOpen={isOraDrawerOpen}
+        onClose={() => setIsOraDrawerOpen(false)}
+      />
     </div>
   );
 }

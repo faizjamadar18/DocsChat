@@ -1,11 +1,12 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Plus, File, MoreVertical, Sparkles, Download, Trash2 } from 'lucide-react';
+import { Search, ChevronDown, Plus, File, MoreVertical, Download, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
 import AssetPreview, { Source } from '@/components/assets/AssetPreview';
 import UploadBanner, { UploadState } from '@/components/assets/UploadBanner';
+import OraSidebarDrawer, { OraLogoMark } from '@/components/layout/OraSidebarDrawer';
 
 function formatFileSize(bytes: number): string {
   if (!bytes) return '0 B';
@@ -50,6 +51,15 @@ export default function AssetsPage() {
 
   // Asset action dropdown state
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+
+  // Ora sidebar drawer state
+  const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    const handleToggle = () => setIsOraDrawerOpen((prev) => !prev);
+    window.addEventListener('toggle-ora-sidebar', handleToggle);
+    return () => window.removeEventListener('toggle-ora-sidebar', handleToggle);
+  }, []);
 
   useEffect(() => {
     if (!activeDropdownId) return;
@@ -253,9 +263,6 @@ export default function AssetsPage() {
     }
   };
 
-  const handleOraToggle = () => {
-    window.dispatchEvent(new CustomEvent('toggle-ora-sidebar'));
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
@@ -285,10 +292,14 @@ export default function AssetsPage() {
           
           <button
             type="button"
-            onClick={handleOraToggle}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-accent hover:text-accent-hover bg-accent/5 hover:bg-accent/10 border border-accent/20 rounded-xl transition-colors cursor-pointer"
+            onClick={() => setIsOraDrawerOpen((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
+              isOraDrawerOpen
+                ? 'bg-accent/10 text-accent border border-accent/20'
+                : 'text-text-secondary hover:text-text-primary bg-surface border border-border'
+            }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <OraLogoMark className="w-3.5 h-3.5" />
             <span>Ora</span>
           </button>
 
@@ -428,6 +439,12 @@ export default function AssetsPage() {
         onConfirm={handleDeleteConfirm}
         filename={assetToDelete?.filename || ''}
         isDeleting={isDeleting}
+      />
+
+      {/* Ora Assistant Slide-Over Drawer (exclusive to Assets & Studio) */}
+      <OraSidebarDrawer
+        isOpen={isOraDrawerOpen}
+        onClose={() => setIsOraDrawerOpen(false)}
       />
     </div>
   );

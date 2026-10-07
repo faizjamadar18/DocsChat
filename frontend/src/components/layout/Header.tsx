@@ -97,8 +97,13 @@ export default function Header({
         {/* Black Pill: ●● Ora */}
         <button
           type="button"
+          onClick={() => {
+            if (pathname?.startsWith('/studio') || pathname?.startsWith('/assets')) {
+              window.dispatchEvent(new CustomEvent('toggle-ora-sidebar'));
+            }
+          }}
           className="bg-[#111113] hover:bg-black text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all shadow-xs hover:shadow-sm"
-          title="Ora Voice Assistant"
+          title="Ora Assistant"
         >
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />

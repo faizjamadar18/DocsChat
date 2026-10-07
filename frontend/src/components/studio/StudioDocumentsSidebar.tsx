@@ -7,7 +7,6 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
-  BookOpen,
 } from 'lucide-react';
 import DeleteDocModal from './DeleteDocModal';
 
@@ -50,8 +49,6 @@ export function StudioDocumentsSidebar({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
-  const activeDoc = documents.find((d) => d.id === activeDocId);
-
   const filteredDocs = documents.filter((doc) =>
     doc.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -82,18 +79,10 @@ export function StudioDocumentsSidebar({
   };
 
   return (
-    <aside className="w-64 border-r border-border bg-surface flex flex-col shrink-0 select-none h-full">
-      {/* Top Active Doc Tab Header */}
-      <div className="h-12 border-b border-border/80 px-4 flex items-center gap-2">
-        <BookOpen className="w-4 h-4 text-text-secondary shrink-0" />
-        <span className="text-xs font-semibold text-text-primary truncate">
-          {activeDoc?.title || 'Documents'}
-        </span>
-      </div>
-
+    <aside className="w-60 sm:w-64 border-r border-border bg-surface flex flex-col shrink-0 select-none h-full">
       <div className="p-3 flex-1 flex flex-col min-h-0">
         {/* DOCUMENTS section header + create button */}
-        <div className="flex items-center justify-between px-1 py-1.5 mb-2">
+        <div className="flex items-center justify-between px-1.5 py-1 mb-2">
           <span className="text-[11px] font-semibold text-text-muted tracking-wider uppercase">
             DOCUMENTS
           </span>
@@ -109,7 +98,7 @@ export function StudioDocumentsSidebar({
         </div>
 
         {/* Search docs input */}
-        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-sidebar border border-border mb-3">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F4F5] border-none mb-3">
           <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
           <input
             type="text"
@@ -121,7 +110,7 @@ export function StudioDocumentsSidebar({
         </div>
 
         {/* Document list */}
-        <div className="space-y-0.5 flex-1 overflow-y-auto">
+        <div className="space-y-1 flex-1 overflow-y-auto">
           {filteredDocs.length === 0 ? (
             <div className="text-center py-8 text-xs text-text-muted">
               {searchQuery ? 'No docs found' : 'No documents yet'}
@@ -136,14 +125,14 @@ export function StudioDocumentsSidebar({
                 <div
                   key={doc.id}
                   onClick={() => !isRenaming && onSelectDoc(doc.id)}
-                  className={`group relative flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                  className={`group relative flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-colors ${
                     isActive
-                      ? 'bg-sidebar font-medium text-text-primary'
-                      : 'text-text-secondary hover:bg-sidebar hover:text-text-primary'
+                      ? 'bg-[#F3F4F6] font-medium text-text-primary shadow-2xs'
+                      : 'text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
-                    <FileText className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-accent' : 'text-text-muted'}`} />
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-1">
+                    <FileText className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-text-primary' : 'text-text-muted'}`} />
                     {isRenaming ? (
                       <input
                         type="text"
