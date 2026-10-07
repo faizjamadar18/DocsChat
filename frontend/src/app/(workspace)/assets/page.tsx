@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
 import AssetPreview, { Source } from '@/components/assets/AssetPreview';
+import UploadBanner, { UploadState } from '@/components/assets/UploadBanner';
 
 function formatFileSize(bytes: number): string {
   if (!bytes) return '0 B';
@@ -18,8 +19,15 @@ function formatTimeAgo(dateString: string): string {
   if (!dateString) return 'recently';
   const date = new Date(dateString);
   const diffMs = Date.now() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return 'today';
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHours = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSec < 60) return 'less than a minute ago';
+  if (diffMin < 60) return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
+  if (diffHours < 24) return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+  if (diffDays === 0) return 'today';
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
 }
@@ -33,6 +41,9 @@ export default function AssetsPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Source | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Upload progress banner state (matching Image 1 & Image 2)
+  const [uploadState, setUploadState] = useState<UploadState | null>(null);
 
   const fetchSources = async () => {
     try {
@@ -70,6 +81,49 @@ export default function AssetsPage() {
       active = false;
     };
   }, []);
+
+  const handleStartUpload = async (file: File) => {
+    setUploadState({
+      filename: file.name,
+      progress: 0,
+      status: 'uploading',
+    });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      await api.uploadWithProgress(
+        '/sources/upload',
+        formData,
+        (percent) => {
+          setUploadState((prev) =>
+            prev && prev.filename === file.name
+              ? { ...prev, progress: percent }
+              : prev
+          );
+        }
+      );
+
+      // On completion, immediately show 100% and success state
+      setUploadState({
+        filename: file.name,
+        progress: 100,
+        status: 'completed',
+      });
+
+      // Refresh the asset list so the newly uploaded file appears on top
+      await fetchSources();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      setUploadState({
+        filename: file.name,
+        progress: 0,
+        status: 'error',
+        error: message,
+      });
+    }
+  };
 
   const filteredSources = sources.filter((s) =>
     s.filename.toLowerCase().includes(search.toLowerCase())
@@ -169,7 +223,15 @@ export default function AssetsPage() {
       {/* Main Content: Asset List + Optional Side Preview */}
       <div className="flex flex-col lg:flex-row items-start gap-8">
         {/* Asset List Column */}
-        <div className="flex-1 min-w-0 w-full space-y-2">
+        <div className="flex-1 min-w-0 w-full space-y-3">
+          {/* Upload Progress / Success Banner (Image 1 & Image 2) */}
+          {uploadState && (
+            <UploadBanner
+              uploadState={uploadState}
+              onDismiss={() => setUploadState(null)}
+            />
+          )}
+
           {loading ? (
             <div className="py-12 text-center text-xs text-text-muted">Loading assets...</div>
           ) : filteredSources.length === 0 ? (
@@ -237,7 +299,7 @@ export default function AssetsPage() {
       <UploadModal 
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
-        onUploadSuccess={fetchSources} 
+        onStartUpload={handleStartUpload} 
       />
       
       <DeleteConfirmationModal

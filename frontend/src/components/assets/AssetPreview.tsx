@@ -30,7 +30,14 @@ function formatTimeAgo(dateString: string): string {
   if (!dateString) return 'recently';
   const date = new Date(dateString);
   const diffMs = Date.now() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHours = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSec < 60) return 'less than a minute ago';
+  if (diffMin < 60) return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
+  if (diffHours < 24) return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
   if (diffDays <= 0) return 'today';
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;

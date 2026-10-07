@@ -2,22 +2,20 @@
 import React, { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { X, UploadCloud, File, AlertCircle } from 'lucide-react';
-import { api } from '@/lib/api';
 
 const emptySubscribe = () => () => {};
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUploadSuccess: () => void;
+  onStartUpload: (file: File) => void;
 }
 
-export default function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalProps) {
+export default function UploadModal({ isOpen, onClose, onStartUpload }: UploadModalProps) {
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
 
   if (!isOpen || !isMounted) return null;
 
@@ -60,27 +58,11 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
     }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = () => {
     if (!file) return;
-    setUploading(true);
-    setError(null);
-    
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      await api.post('/sources/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      onUploadSuccess();
-      onClose();
-      setFile(null);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to upload file.';
-      setError(message);
-    } finally {
-      setUploading(false);
-    }
+    onStartUpload(file);
+    onClose();
+    setFile(null);
   };
 
   return createPortal(
@@ -149,7 +131,6 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
                 type="button"
                 onClick={() => setFile(null)}
                 className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
-                disabled={uploading}
                 aria-label="Remove file"
               >
                 <X className="w-4 h-4" />
@@ -171,24 +152,16 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-white hover:bg-base border border-border rounded-xl transition-colors cursor-pointer"
-            disabled={uploading}
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleUpload}
-            disabled={!file || uploading}
+            disabled={!file}
             className="flex items-center gap-2 px-4 py-2 text-xs font-medium bg-[#111113] hover:bg-black text-white rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploading ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Uploading...</span>
-              </>
-            ) : (
-              <span>Upload File</span>
-            )}
+            <span>Upload File</span>
           </button>
         </div>
       </div>
