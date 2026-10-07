@@ -30,6 +30,7 @@ export interface AskQuestionOptions {
   attachedName?: string;
   threadId?: string;
   requireScope?: boolean;
+  mode?: 'universal' | 'assets' | 'studio';
 }
 
 function parseSseLine(line: string): Record<string, unknown> | null {
@@ -41,46 +42,74 @@ function parseSseLine(line: string): Record<string, unknown> | null {
   }
 }
 
-export function useChat(activeWorkspaceId?: string, activeThreadId?: string) {
+export interface ChatThreadInfo {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  title: string;
+  mode?: 'universal' | 'assets' | 'studio';
+  attached_scope?: {
+    id: string;
+    title: string;
+    type?: 'asset' | 'document';
+  };
+  created_at?: string;
+  updated_at?: string;
+}
+
+export function useChat(
+  activeWorkspaceId?: string,
+  activeThreadId?: string,
+  initialMode: 'universal' | 'assets' | 'studio' = 'universal'
+) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdThreadId, setCreatedThreadId] = useState<string | null>(null);
-  const currentThreadId = activeThreadId || createdThreadId;
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(activeThreadId || null);
+  const [activeThreadInfo, setActiveThreadInfo] = useState<ChatThreadInfo | null>(null);
+  const currentThreadId = activeThreadId !== undefined ? activeThreadId : (selectedThreadId || createdThreadId);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchHistory = useCallback(async (wsId?: string, tId?: string) => {
     const targetWs = wsId || activeWorkspaceId;
     const targetThread = tId !== undefined ? tId : activeThreadId;
 
-    if (targetThread === '') {
-      // Empty string means a fresh new thread
+    if (!targetThread) {
+      // No thread selected means a fresh new chat per mode.
+      // Never fall back to workspace-wide history here: that would leak
+      // universal / assets / studio conversations into each other.
       setMessages([]);
+      setActiveThreadInfo(null);
       setLoading(false);
+      setError(null);
       return;
     }
 
     try {
       setLoading(true);
-      let data;
-      if (targetThread) {
-        data = await api.get(`/chat/threads/${targetThread}/messages`);
+      const data = await api.get(`/chat/threads/${targetThread}/messages`);
+      const loadedMessages = data.messages || [];
+      const threadInfo = (data.thread || null) as ChatThreadInfo | null;
+      // Enforce conversation isolation: never render a thread belonging to
+      // a different mode inside this pipeline.
+      if (threadInfo?.mode && threadInfo.mode !== initialMode) {
+        setMessages([]);
+        setActiveThreadInfo(null);
+        setError(`This conversation belongs to ${threadInfo.mode} chat and is not available here.`);
       } else {
-        const endpoint = targetWs ? `/chat/history?workspace_id=${targetWs}` : '/chat/history';
-        data = await api.get(endpoint, {
-          headers: targetWs ? { 'X-Workspace-Id': targetWs } : {},
-        });
+        setMessages(loadedMessages);
+        setActiveThreadInfo(threadInfo);
+        setError(null);
       }
-      setMessages(data.messages || []);
-      setError(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to load chat history';
       setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [activeWorkspaceId, activeThreadId]);
+  }, [activeWorkspaceId, activeThreadId, initialMode]);
 
   useEffect(() => {
     void fetchHistory(activeWorkspaceId, activeThreadId);
@@ -94,18 +123,32 @@ export function useChat(activeWorkspaceId?: string, activeThreadId?: string) {
       if (targetThread) {
         endpoint += `?thread_id=${targetThread}`;
       } else if (targetWs) {
-        endpoint += `?workspace_id=${targetWs}`;
+        endpoint += `?workspace_id=${targetWs}&mode=${initialMode}`;
       }
       await api.delete(endpoint, {
         headers: targetWs ? { 'X-Workspace-Id': targetWs } : {},
       });
       setMessages([]);
+      setActiveThreadInfo(null);
       setError(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to clear chat';
       setError(msg);
     }
   };
+
+  const switchThread = useCallback((tId: string | null) => {
+    setSelectedThreadId(tId);
+    setCreatedThreadId(null);
+    setActiveThreadInfo(null);
+    if (tId) {
+      void fetchHistory(activeWorkspaceId, tId);
+    } else {
+      setMessages([]);
+      setLoading(false);
+      setError(null);
+    }
+  }, [activeWorkspaceId, fetchHistory]);
 
   const stopGenerating = () => {
     if (abortControllerRef.current) {
@@ -171,6 +214,7 @@ export function useChat(activeWorkspaceId?: string, activeThreadId?: string) {
           scope_ids: parsedOptions.scopeIds,
           attached_name: parsedOptions.attachedName,
           require_scope: parsedOptions.requireScope,
+          mode: parsedOptions.mode || initialMode,
         }),
         signal: controller.signal,
       });
@@ -296,7 +340,10 @@ export function useChat(activeWorkspaceId?: string, activeThreadId?: string) {
     streaming,
     error,
     currentThreadId,
+    activeThreadInfo,
+    selectedThreadId,
     setCreatedThreadId,
+    switchThread,
     askQuestion,
     stopGenerating,
     clearHistory,

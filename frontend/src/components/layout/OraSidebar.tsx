@@ -13,10 +13,54 @@ import {
   Wand2,
   HelpCircle,
   CheckCheck,
+  ChevronDown,
+  Plus,
+  MessageSquare,
 } from 'lucide-react';
 import { useChat, AskQuestionOptions } from '../../hooks/useChat';
+import { useChatThreads, ChatThread } from '../../hooks/useChatThreads';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { api } from '../../lib/api';
+
+function isToday(dateStr: string): boolean {
+  try {
+    const cleanDate = !dateStr.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateStr)
+      ? `${dateStr}Z`
+      : dateStr;
+    const d = new Date(cleanDate);
+    const now = new Date();
+    return (
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
+    );
+  } catch {
+    return false;
+  }
+}
+
+function formatShortTime(dateStr?: string): string {
+  if (!dateStr) return '';
+  try {
+    const cleanDate = !dateStr.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateStr)
+      ? `${dateStr}Z`
+      : dateStr;
+    const date = new Date(cleanDate);
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.floor(Math.max(0, diffMs / 1000) / 60);
+    const diffHours = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMin < 1) return 'now';
+    if (diffMin < 60) return `${diffMin}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
 
 export function OraLogoMark({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -44,6 +88,7 @@ export interface OraSidebarProps {
   onClose: () => void;
   initialScope?: MentionItem | null;
   mode?: 'universal' | 'assets' | 'studio';
+  onSelectThreadDocument?: (scope: MentionItem) => void;
 }
 
 export default function OraSidebar({
@@ -51,16 +96,23 @@ export default function OraSidebar({
   onClose,
   initialScope,
   mode = 'universal',
+  onSelectThreadDocument,
 }: OraSidebarProps) {
   const { currentWorkspace } = useWorkspace();
   const {
     messages,
     loading,
     streaming,
+    currentThreadId,
+    switchThread,
     askQuestion,
     stopGenerating,
     clearHistory,
-  } = useChat(currentWorkspace?.id);
+  } = useChat(currentWorkspace?.id, undefined, mode);
+
+  const { threads, deleteThread } = useChatThreads(currentWorkspace?.id, mode);
+  const [isHistoryDropdownOpen, setIsHistoryDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [input, setInput] = useState('');
   const [attachedScope, setAttachedScope] = useState<MentionItem | null>(null);
@@ -254,6 +306,7 @@ export default function OraSidebar({
     askQuestion(promptText, {
       workspaceId: currentWorkspace?.id,
       requireScope: true,
+      mode,
       scopeIds: activeScope ? [activeScope.id] : [],
       attachedName: activeScope?.title,
     });
@@ -302,6 +355,7 @@ export default function OraSidebar({
     const scopeOptions: AskQuestionOptions = {
       workspaceId: currentWorkspace?.id,
       requireScope: isStrictScope,
+      mode,
     };
 
     if (activeScope) {
@@ -327,11 +381,67 @@ export default function OraSidebar({
     }
   };
 
-  const handleClearHistory = async () => {
-    if (confirm('Clear chat history for this workspace?')) {
-      await clearHistory(currentWorkspace?.id);
+  useEffect(() => {
+    if (!isHistoryDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsHistoryDropdownOpen(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsHistoryDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isHistoryDropdownOpen]);
+
+  const handleSelectThread = (thread: ChatThread) => {
+    // Guard: never load a thread from another pipeline into this sidebar.
+    if (thread.mode && thread.mode !== mode) return;
+    switchThread(thread.id);
+    if (thread.attached_scope) {
+      setAttachedScope(thread.attached_scope as MentionItem);
+      onSelectThreadDocument?.(thread.attached_scope as MentionItem);
+    } else {
+      setAttachedScope(null);
+    }
+    setIsHistoryDropdownOpen(false);
+  };
+
+  const handleNewChat = () => {
+    switchThread(null);
+    setAttachedScope(null);
+    setIsHistoryDropdownOpen(false);
+  };
+
+  const handleDeleteThread = async (threadId: string) => {
+    await deleteThread(threadId);
+    if (currentThreadId === threadId) {
+      switchThread(null);
+      setAttachedScope(null);
     }
   };
+
+  const handleClearHistory = async () => {
+    if (currentThreadId) {
+      if (confirm('Delete this conversation?')) {
+        await deleteThread(currentThreadId);
+        switchThread(null);
+      }
+    } else if (messages.length > 0) {
+      if (confirm('Clear current messages?')) {
+        await clearHistory(currentWorkspace?.id);
+      }
+    }
+  };
+
+  const activeThread = threads.find((t) => t.id === currentThreadId);
+  const todayThreads = threads.filter((t) => isToday(t.updated_at || t.created_at));
+  const olderThreads = threads.filter((t) => !isToday(t.updated_at || t.created_at));
 
   return (
     <aside
@@ -356,23 +466,40 @@ export default function OraSidebar({
       )}
 
       <div className="w-80 sm:w-96 h-full flex flex-col shrink-0">
-        {/* Top Header (matching 04-ora-assistant-sidebar.png and user reference) */}
-      <div className="h-14 px-4 flex items-center justify-between border-b border-border/80 shrink-0 bg-white">
-        <div className="flex items-center gap-2">
-          <OraLogoMark className="w-4 h-4 text-text-primary" />
-          <span className="text-sm font-semibold text-text-primary tracking-tight">Ora</span>
-          {mode !== 'universal' && (
-            <span className="text-[10px] uppercase font-semibold tracking-wider text-[#765D96] bg-[#ECE8F4] px-2 py-0.5 rounded-full">
-              {mode}
+        {/* Top Header with Chat History Dropdown Trigger (matching Notion user image) */}
+      <div className="h-14 px-4 flex items-center justify-between border-b border-border/80 shrink-0 bg-white relative">
+        <div className="flex items-center gap-1.5 min-w-0 max-w-[65%]">
+          <OraLogoMark className="w-4 h-4 text-text-primary shrink-0" />
+          <button
+            type="button"
+            onClick={() => setIsHistoryDropdownOpen((prev) => !prev)}
+            className="flex items-center gap-1 px-1.5 py-1 -ml-0.5 rounded-lg hover:bg-[#F3F4F6] text-text-primary transition-colors cursor-pointer min-w-0 max-w-full group"
+            title="Conversation history"
+          >
+            <span className="text-sm font-semibold truncate tracking-tight">
+              {activeThread?.title || 'Ora'}
             </span>
-          )}
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-text-muted group-hover:text-text-primary shrink-0 transition-transform duration-200 ${
+                isHistoryDropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={handleNewChat}
+            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+            title="New conversation"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
           <button
             type="button"
             onClick={handleClearHistory}
             className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
-            title="Clear chat history"
+            title="Clear or delete conversation"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -386,6 +513,132 @@ export default function OraSidebar({
           </button>
         </div>
       </div>
+
+      {/* Notion-style History Dropdown Menu (matching user image) */}
+      {isHistoryDropdownOpen && (
+        <div
+          ref={dropdownRef}
+          className="absolute top-14 left-3 right-3 bg-[#1e1e20] text-zinc-100 rounded-2xl shadow-2xl border border-white/10 p-2.5 z-50 animate-fade-in max-h-96 flex flex-col overflow-hidden"
+        >
+          {/* Top action: New chat */}
+          <button
+            type="button"
+            onClick={handleNewChat}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-zinc-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer mb-2 border border-white/5 bg-white/5 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New chat</span>
+          </button>
+
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1 -mr-1">
+            {threads.length === 0 ? (
+              <div className="py-6 text-center text-xs text-zinc-400">
+                No conversation history yet
+              </div>
+            ) : (
+              <>
+                {todayThreads.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-zinc-400 px-2 py-1 uppercase tracking-wider">
+                      Today
+                    </div>
+                    <div className="space-y-0.5">
+                      {todayThreads.map((thread) => (
+                        <div
+                          key={thread.id}
+                          onClick={() => handleSelectThread(thread)}
+                          className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors ${
+                            currentThreadId === thread.id
+                              ? 'bg-white/15 text-white font-medium'
+                              : 'text-zinc-300 hover:bg-white/8 hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <MessageSquare className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs">{thread.title}</p>
+                              {thread.attached_scope && (
+                                <p className="truncate text-[10px] text-zinc-400 mt-0.5">
+                                  {thread.attached_scope.title}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400">
+                              {formatShortTime(thread.updated_at || thread.created_at)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleDeleteThread(thread.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 rounded transition-all cursor-pointer"
+                              title="Delete chat"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {olderThreads.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-zinc-400 px-2 py-1 uppercase tracking-wider">
+                      Older
+                    </div>
+                    <div className="space-y-0.5">
+                      {olderThreads.map((thread) => (
+                        <div
+                          key={thread.id}
+                          onClick={() => handleSelectThread(thread)}
+                          className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs cursor-pointer transition-colors ${
+                            currentThreadId === thread.id
+                              ? 'bg-white/15 text-white font-medium'
+                              : 'text-zinc-300 hover:bg-white/8 hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <MessageSquare className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs">{thread.title}</p>
+                              {thread.attached_scope && (
+                                <p className="truncate text-[10px] text-zinc-400 mt-0.5">
+                                  {thread.attached_scope.title}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400">
+                              {formatShortTime(thread.updated_at || thread.created_at)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleDeleteThread(thread.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 rounded transition-all cursor-pointer"
+                              title="Delete chat"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col">
@@ -461,6 +714,7 @@ export default function OraSidebar({
                       askQuestion('Summarize this document', {
                         workspaceId: currentWorkspace?.id,
                         requireScope: true,
+                        mode,
                         scopeIds: [attachedScope.id],
                         attachedName: attachedScope.title,
                       });
@@ -475,6 +729,7 @@ export default function OraSidebar({
                       askQuestion('What are the key points in this document?', {
                         workspaceId: currentWorkspace?.id,
                         requireScope: true,
+                        mode,
                         scopeIds: [attachedScope.id],
                         attachedName: attachedScope.title,
                       });

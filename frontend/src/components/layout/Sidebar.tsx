@@ -20,6 +20,38 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChatThreads } from '../../hooks/useChatThreads';
 
+function isToday(dateStr?: string): boolean {
+  if (!dateStr) return false;
+  try {
+    const clean = !dateStr.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateStr) ? `${dateStr}Z` : dateStr;
+    const d = new Date(clean);
+    const now = new Date();
+    return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  } catch {
+    return false;
+  }
+}
+
+function formatShortTime(dateStr?: string): string {
+  if (!dateStr) return '';
+  try {
+    const clean = !dateStr.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateStr) ? `${dateStr}Z` : dateStr;
+    const date = new Date(clean);
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.floor(Math.max(0, diffMs / 1000) / 60);
+    const diffHours = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffMin < 1) return 'now';
+    if (diffMin < 60) return `${diffMin}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
 export default function Sidebar({
   mobileOpen,
   onCloseMobile,
@@ -34,7 +66,7 @@ export default function Sidebar({
 
   const { currentWorkspace, sidebarCollapsed } = useWorkspace();
   const { user, logout } = useAuth();
-  const { threads, deleteThread } = useChatThreads(currentWorkspace?.id);
+  const { threads, deleteThread } = useChatThreads(currentWorkspace?.id, 'universal');
 
   const [chatsOpen, setChatsOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -159,55 +191,92 @@ export default function Sidebar({
           </div>
 
           {chatsOpen && (
-            <div className="mt-1 space-y-0.5 overflow-y-auto max-h-60 pr-1">
+            <div className="mt-1 space-y-3 overflow-y-auto max-h-72 pr-1">
               {threads.length === 0 ? (
                 <div className="px-3 py-2 text-xs text-text-muted italic">
                   No conversations yet
                 </div>
               ) : (
-                threads.map((thread) => {
-                  const isActive =
-                    pathname === '/playground' && currentThreadId === thread.id;
-                  return (
-                    <div
-                      key={thread.id}
-                      onClick={() => {
-                        router.push(`/playground?thread_id=${thread.id}`);
-                        onCloseMobile?.();
-                      }}
-                      className={`group px-3 py-1.5 rounded-md text-xs truncate transition-colors flex items-center justify-between cursor-pointer ${
-                        isActive
-                          ? 'bg-accent-subtle text-accent-hover font-medium'
-                          : 'text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
-                        <MessageSquare
-                          className={`w-3.5 h-3.5 shrink-0 ${
-                            isActive ? 'text-accent-hover' : 'text-text-muted'
+                <>
+                  {(() => {
+                    const todayThreads = threads.filter((t) => isToday(t.updated_at || t.created_at));
+                    const olderThreads = threads.filter((t) => !isToday(t.updated_at || t.created_at));
+                    const renderThreadRow = (thread: (typeof threads)[number]) => {
+                      const isActive = pathname === '/playground' && currentThreadId === thread.id;
+                      return (
+                        <div
+                          key={thread.id}
+                          onClick={() => {
+                            router.push(`/playground?thread_id=${thread.id}`);
+                            onCloseMobile?.();
+                          }}
+                          className={`group px-3 py-1.5 rounded-md text-xs transition-colors flex items-center justify-between cursor-pointer ${
+                            isActive
+                              ? 'bg-accent-subtle text-accent-hover font-medium'
+                              : 'text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2]'
                           }`}
-                        />
-                        <span className="truncate">{thread.title}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm('Delete this conversation?')) {
-                            void deleteThread(thread.id);
-                            if (currentThreadId === thread.id) {
-                              router.push('/playground');
-                            }
-                          }
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
-                        title="Delete chat"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  );
-                })
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
+                            <MessageSquare
+                              className={`w-3.5 h-3.5 shrink-0 ${
+                                isActive ? 'text-accent-hover' : 'text-text-muted'
+                              }`}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <span className="truncate block leading-tight">{thread.title}</span>
+                              {thread.attached_scope && (
+                                <span className="truncate block text-[10px] text-text-muted leading-tight mt-0.5">
+                                  {thread.attached_scope.title}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 ml-1">
+                            <span className="text-[10px] text-text-muted">
+                              {formatShortTime(thread.updated_at || thread.created_at)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Delete this conversation?')) {
+                                  void deleteThread(thread.id);
+                                  if (currentThreadId === thread.id) {
+                                    router.push('/playground');
+                                  }
+                                }
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
+                              title="Delete chat"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    };
+                    return (
+                      <>
+                        {todayThreads.length > 0 && (
+                          <div>
+                            <div className="px-3 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                              Today
+                            </div>
+                            <div className="space-y-0.5">{todayThreads.map(renderThreadRow)}</div>
+                          </div>
+                        )}
+                        {olderThreads.length > 0 && (
+                          <div>
+                            <div className="px-3 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                              Older
+                            </div>
+                            <div className="space-y-0.5">{olderThreads.map(renderThreadRow)}</div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
               )}
             </div>
           )}

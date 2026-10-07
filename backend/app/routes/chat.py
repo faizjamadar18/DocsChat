@@ -24,10 +24,11 @@ router = APIRouter(prefix="/api/chat", tags=["Chat"])
 @router.get("/threads", response_model=ChatThreadListResponse)
 async def list_threads(
     workspace_id: Optional[str] = None,
+    mode: Optional[str] = None,
     x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
     current_user: dict = Depends(get_current_user),
 ):
-    """List all chat threads for the current user and active workspace."""
+    """List chat threads for the current user and active workspace, optionally filtered by mode."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -38,6 +39,11 @@ async def list_threads(
     if target_ws:
         filter_query["workspace_id"] = target_ws
 
+    if mode == "universal":
+        filter_query["$or"] = [{"mode": "universal"}, {"mode": {"$exists": False}}]
+    elif mode:
+        filter_query["mode"] = mode
+
     cursor = database.chat_threads_collection.find(filter_query).sort("updated_at", -1)
 
     threads = []
@@ -47,6 +53,8 @@ async def list_threads(
             workspace_id=doc.get("workspace_id", ""),
             user_id=doc.get("user_id", ""),
             title=doc.get("title", "New Conversation"),
+            mode=doc.get("mode", "universal"),
+            attached_scope=doc.get("attached_scope"),
             created_at=doc.get("created_at", datetime.now(timezone.utc)),
             updated_at=doc.get("updated_at", datetime.now(timezone.utc)),
         ))
@@ -72,10 +80,13 @@ async def create_thread(
 
     now = datetime.now(timezone.utc)
     title = (request.title or "New Conversation").strip()
+    thread_mode = request.mode or "universal"
     new_thread = {
         "user_id": current_user["id"],
         "workspace_id": target_ws,
         "title": title,
+        "mode": thread_mode,
+        "attached_scope": request.attached_scope,
         "created_at": now,
         "updated_at": now,
     }
@@ -86,6 +97,8 @@ async def create_thread(
         workspace_id=target_ws,
         user_id=current_user["id"],
         title=title,
+        mode=thread_mode,
+        attached_scope=request.attached_scope,
         created_at=now,
         updated_at=now,
     )
@@ -128,7 +141,18 @@ async def get_thread_messages(
             created_at=doc["created_at"],
         ))
 
-    return ChatHistoryResponse(messages=messages, total=len(messages))
+    thread_info = ChatThreadResponse(
+        id=str(thread["_id"]),
+        workspace_id=thread.get("workspace_id", ""),
+        user_id=thread.get("user_id", ""),
+        title=thread.get("title", "New Conversation"),
+        mode=thread.get("mode", "universal"),
+        attached_scope=thread.get("attached_scope"),
+        created_at=thread.get("created_at", datetime.now(timezone.utc)),
+        updated_at=thread.get("updated_at", datetime.now(timezone.utc)),
+    )
+
+    return ChatHistoryResponse(messages=messages, total=len(messages), thread=thread_info)
 
 
 @router.patch("/threads/{thread_id}", response_model=ChatThreadResponse)
@@ -160,6 +184,8 @@ async def update_thread(
         workspace_id=res["workspace_id"],
         user_id=res["user_id"],
         title=res["title"],
+        mode=res.get("mode", "universal"),
+        attached_scope=res.get("attached_scope"),
         created_at=res["created_at"],
         updated_at=res["updated_at"],
     )
@@ -195,10 +221,15 @@ async def delete_thread(
 async def get_chat_history(
     workspace_id: Optional[str] = None,
     thread_id: Optional[str] = None,
+    mode: Optional[str] = None,
     x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
     current_user: dict = Depends(get_current_user),
 ):
-    """Get chat history for current user and workspace (or specific thread), ordered by time."""
+    """Get chat history for current user and workspace (or specific thread), ordered by time.
+    Supports optional mode filter for strict conversation isolation across
+    universal / assets / studio pipelines. When mode is provided without a
+    thread_id, only messages belonging to threads of that mode are returned.
+    """
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -210,6 +241,32 @@ async def get_chat_history(
         filter_query["thread_id"] = thread_id
     elif target_ws:
         filter_query["workspace_id"] = target_ws
+
+    if mode and not thread_id and database.chat_threads_collection is not None:
+        # Resolve thread IDs belonging to the requested mode, then scope
+        # messages to those threads for strict isolation.
+        thread_filter: dict = {"user_id": current_user["id"]}
+        if target_ws:
+            thread_filter["workspace_id"] = target_ws
+        if mode == "universal":
+            thread_filter["$or"] = [{"mode": "universal"}, {"mode": {"$exists": False}}]
+        else:
+            thread_filter["mode"] = mode
+        mode_thread_ids: list[str] = []
+        mode_cursor = database.chat_threads_collection.find(thread_filter, {"_id": 1})
+        async for tdoc in mode_cursor:
+            mode_thread_ids.append(str(tdoc["_id"]))
+        if not mode_thread_ids:
+            return ChatHistoryResponse(messages=[], total=0)
+        # Include legacy messages without thread_id only for universal mode
+        if mode == "universal":
+            filter_query["$or"] = [
+                {"thread_id": {"$in": mode_thread_ids}},
+                {"thread_id": {"$exists": False}},
+                {"thread_id": None},
+            ]
+        else:
+            filter_query["thread_id"] = {"$in": mode_thread_ids}
 
     cursor = database.messages_collection.find(filter_query).sort("created_at", 1)
 
@@ -254,6 +311,14 @@ async def ask(
     active_thread_id = request.thread_id
     created_new_thread = False
     thread_title = ""
+    thread_mode = request.mode or "universal"
+    attached_scope = None
+    if request.attached_name and request.scope_ids and len(request.scope_ids) > 0:
+        attached_scope = {
+            "id": request.scope_ids[0],
+            "title": request.attached_name,
+            "type": "asset" if thread_mode == "assets" else "document",
+        }
 
     now = datetime.now(timezone.utc)
     if database.chat_threads_collection is not None:
@@ -264,6 +329,9 @@ async def ask(
             })
             if existing_thread:
                 thread_title = existing_thread.get("title", "Conversation")
+                thread_mode = existing_thread.get("mode", thread_mode)
+                if not attached_scope:
+                    attached_scope = existing_thread.get("attached_scope")
             else:
                 active_thread_id = None
 
@@ -278,6 +346,8 @@ async def ask(
                 "user_id": user_id,
                 "workspace_id": target_workspace_id,
                 "title": thread_title,
+                "mode": thread_mode,
+                "attached_scope": attached_scope,
                 "created_at": now,
                 "updated_at": now,
             }
@@ -285,10 +355,13 @@ async def ask(
             active_thread_id = str(ins_res.inserted_id)
             created_new_thread = True
         else:
-            # Update thread updated_at
+            # Update thread updated_at and attached_scope if missing
+            update_fields: dict = {"updated_at": now}
+            if attached_scope:
+                update_fields["attached_scope"] = attached_scope
             await database.chat_threads_collection.update_one(
                 {"_id": ObjectId(active_thread_id)},
-                {"$set": {"updated_at": now}}
+                {"$set": update_fields}
             )
 
     # Enforce Groq model
@@ -315,6 +388,8 @@ async def ask(
                 "type": "thread_info",
                 "thread_id": active_thread_id,
                 "thread_title": thread_title,
+                "mode": thread_mode,
+                "attached_scope": attached_scope,
                 "is_new": created_new_thread,
             }
             yield f"data: {json.dumps(init_event)}\n\n"
@@ -378,6 +453,8 @@ async def ask(
                 "type": "thread_info",
                 "thread_id": active_thread_id,
                 "thread_title": thread_title,
+                "mode": thread_mode,
+                "attached_scope": attached_scope,
                 "is_new": created_new_thread,
             }
             yield f"data: {json.dumps(init_event)}\n\n"
@@ -439,10 +516,12 @@ async def ask(
 async def clear_chat(
     workspace_id: Optional[str] = None,
     thread_id: Optional[str] = None,
+    mode: Optional[str] = None,
     x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
     current_user: dict = Depends(get_current_user),
 ):
-    """Clear chat history for the current user and active workspace (or specific thread)."""
+    """Clear chat history for the current user and active workspace (or specific thread).
+    Supports optional mode so clearing one pipeline never wipes the others."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -455,6 +534,28 @@ async def clear_chat(
         target_ws = workspace_id or x_workspace_id or current_user.get("active_workspace_id")
         if target_ws:
             filter_query["workspace_id"] = target_ws
+        if mode and database.chat_threads_collection is not None:
+            thread_filter: dict = {"user_id": current_user["id"]}
+            if target_ws:
+                thread_filter["workspace_id"] = target_ws
+            if mode == "universal":
+                thread_filter["$or"] = [{"mode": "universal"}, {"mode": {"$exists": False}}]
+            else:
+                thread_filter["mode"] = mode
+            mode_thread_ids: list[str] = []
+            mode_cursor = database.chat_threads_collection.find(thread_filter, {"_id": 1})
+            async for tdoc in mode_cursor:
+                mode_thread_ids.append(str(tdoc["_id"]))
+            if not mode_thread_ids:
+                return {"message": "Chat history cleared", "deleted_count": 0}
+            if mode == "universal":
+                filter_query["$or"] = [
+                    {"thread_id": {"$in": mode_thread_ids}},
+                    {"thread_id": {"$exists": False}},
+                    {"thread_id": None},
+                ]
+            else:
+                filter_query["thread_id"] = {"$in": mode_thread_ids}
 
     result = await database.messages_collection.delete_many(filter_query)
     return {"message": "Chat history cleared", "deleted_count": result.deleted_count}

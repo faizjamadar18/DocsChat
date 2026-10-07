@@ -443,6 +443,35 @@ export default function AssetsPage() {
         onClose={() => setIsOraDrawerOpen(false)}
         initialScope={selectedAsset ? { id: selectedAsset.id, title: selectedAsset.filename, type: 'asset' } : null}
         mode="assets"
+        onSelectThreadDocument={(scope) => {
+          // Restore the associated document context: select + preview/open it.
+          const match = sources.find((s) => s.id === scope.id);
+          if (match) {
+            setSelectedAsset(match);
+            return;
+          }
+          // Fallback: fetch the asset directly if it is not in the current list
+          // (e.g. list not yet loaded or paginated), then select/preview it.
+          void (async () => {
+            try {
+              const fetched = await api.get(`/sources/${scope.id}`);
+              if (fetched && fetched.id) {
+                const restored: Source = {
+                  id: fetched.id,
+                  filename: fetched.filename || scope.title,
+                  status: fetched.status || 'ready',
+                  page_count: fetched.page_count || 0,
+                  uploaded_at: fetched.uploaded_at || new Date().toISOString(),
+                  file_size: fetched.file_size || 0,
+                };
+                setSources((prev) => (prev.some((s) => s.id === restored.id) ? prev : [restored, ...prev]));
+                setSelectedAsset(restored);
+              }
+            } catch (err) {
+              console.error('Failed to restore asset context for thread:', err);
+            }
+          })();
+        }}
       />
 
       {/* Modals */}

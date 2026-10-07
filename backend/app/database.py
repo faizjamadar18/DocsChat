@@ -127,6 +127,16 @@ async def run_migrations():
                 {"$set": {"workspace_id": ws_id_str}}
             )
 
+        if chat_threads_collection is not None:
+            await chat_threads_collection.update_many(
+                {"user_id": user_id_str, "$or": [{"workspace_id": None}, {"workspace_id": {"$exists": False}}]},
+                {"$set": {"workspace_id": ws_id_str}}
+            )
+            await chat_threads_collection.update_many(
+                {"user_id": user_id_str, "$or": [{"mode": None}, {"mode": {"$exists": False}}]},
+                {"$set": {"mode": "universal"}}
+            )
+
         try:
             from app.services.vector_store import set_user_vectors_workspace
             set_user_vectors_workspace(user_id_str, ws_id_str)
@@ -180,6 +190,7 @@ async def init_db():
 
     try:
         await chat_threads_collection.create_index([("workspace_id", 1), ("user_id", 1), ("updated_at", -1)])
+        await chat_threads_collection.create_index([("workspace_id", 1), ("user_id", 1), ("mode", 1), ("updated_at", -1)])
     except Exception as e:
         print(f"Warning: chat_threads index creation: {e}")
 

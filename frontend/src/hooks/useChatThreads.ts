@@ -7,11 +7,20 @@ export interface ChatThread {
   workspace_id: string;
   user_id: string;
   title: string;
+  mode?: 'universal' | 'assets' | 'studio';
+  attached_scope?: {
+    id: string;
+    title: string;
+    type?: 'asset' | 'document';
+  };
   created_at: string;
   updated_at: string;
 }
 
-export function useChatThreads(workspaceId?: string) {
+export function useChatThreads(
+  workspaceId?: string,
+  mode?: 'universal' | 'assets' | 'studio'
+) {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +32,8 @@ export function useChatThreads(workspaceId?: string) {
       return;
     }
     try {
-      const data = await api.get(`/chat/threads?workspace_id=${workspaceId}`, {
+      const modeParam = mode ? `&mode=${mode}` : '';
+      const data = await api.get(`/chat/threads?workspace_id=${workspaceId}${modeParam}`, {
         headers: { 'X-Workspace-Id': workspaceId },
       });
       setThreads(data.threads || []);
@@ -34,7 +44,7 @@ export function useChatThreads(workspaceId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [workspaceId]);
+  }, [workspaceId, mode]);
 
   useEffect(() => {
     void fetchThreads();
@@ -49,12 +59,21 @@ export function useChatThreads(workspaceId?: string) {
     };
   }, [fetchThreads]);
 
-  const createThread = async (title: string = 'New Conversation'): Promise<ChatThread | null> => {
+  const createThread = async (
+    title: string = 'New Conversation',
+    threadMode: 'universal' | 'assets' | 'studio' = mode || 'universal',
+    attachedScope?: { id: string; title: string; type?: 'asset' | 'document' }
+  ): Promise<ChatThread | null> => {
     if (!workspaceId) return null;
     try {
       const newThread: ChatThread = await api.post(
         '/chat/threads',
-        { workspace_id: workspaceId, title },
+        {
+          workspace_id: workspaceId,
+          title,
+          mode: threadMode,
+          attached_scope: attachedScope,
+        },
         { headers: { 'X-Workspace-Id': workspaceId } }
       );
       setThreads((prev) => [newThread, ...prev]);

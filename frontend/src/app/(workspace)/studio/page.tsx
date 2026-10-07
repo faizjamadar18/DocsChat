@@ -380,6 +380,38 @@ export default function StudioPage() {
           onClose={() => setIsOraDrawerOpen(false)}
           initialScope={activeDoc ? { id: activeDoc.id, title: activeDoc.title, type: 'document' } : null}
           mode="studio"
+          onSelectThreadDocument={(scope) => {
+            // Restore the full conversation's document context: select + open it.
+            const match = documents.find((d) => d.id === scope.id);
+            if (match) {
+              handleSelectDoc(match.id);
+              return;
+            }
+            // Fallback: fetch the document directly if missing from sidebar list.
+            void (async () => {
+              try {
+                const fetched = await api.get(`/documents/${scope.id}`);
+                if (fetched && fetched.id) {
+                  const restored: StudioDoc = {
+                    id: fetched.id,
+                    title: fetched.title || scope.title,
+                    content_text: fetched.content_text || '',
+                    content_json: fetched.content_json,
+                    updated_at: fetched.updated_at,
+                  };
+                  setDocuments((prev) =>
+                    prev.some((d) => d.id === restored.id) ? prev : [restored, ...prev]
+                  );
+                  setActiveDocId(restored.id);
+                  setActiveDoc(restored);
+                  setTitleInput(restored.title);
+                  setActiveDocTitle(restored.title);
+                }
+              } catch (err) {
+                console.error('Failed to restore document context for thread:', err);
+              }
+            })();
+          }}
         />
       </div>
 

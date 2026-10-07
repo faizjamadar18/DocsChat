@@ -38,10 +38,12 @@ function PlaygroundContent() {
   const {
     messages,
     streaming,
+    error: chatError,
+    activeThreadInfo,
     askQuestion,
     stopGenerating,
     clearHistory,
-  } = useChat(currentWorkspace?.id, threadId);
+  } = useChat(currentWorkspace?.id, threadId, 'universal');
 
   const [input, setInput] = useState('');
   const [attachedScope, setAttachedScope] = useState<MentionItem | null>(null);
@@ -114,10 +116,20 @@ function PlaygroundContent() {
     };
   }, [currentWorkspace?.id]);
 
+  // Enforce Workspace Chat isolation: if the URL thread belongs to
+  // assets/studio, bounce back to a fresh universal chat.
+  useEffect(() => {
+    if (threadId && activeThreadInfo && activeThreadInfo.mode && activeThreadInfo.mode !== 'universal') {
+      router.replace('/playground');
+    }
+  }, [threadId, activeThreadInfo, router]);
+
   // Listen to thread creation event to update URL query param
   useEffect(() => {
     const handleThreadSync = (e: Event) => {
-      const customEvent = e as CustomEvent<{ thread_id?: string }>;
+      const customEvent = e as CustomEvent<{ thread_id?: string; mode?: string }>;
+      // Only adopt new threads that belong to the universal pipeline.
+      if (customEvent.detail?.mode && customEvent.detail.mode !== 'universal') return;
       if (customEvent.detail?.thread_id && !threadId) {
         router.replace(`/playground?thread_id=${customEvent.detail.thread_id}`, {
           scroll: false,
@@ -231,12 +243,14 @@ function PlaygroundContent() {
       ? {
           workspaceId: currentWorkspace?.id,
           threadId: threadId,
+          mode: 'universal' as const,
           scopeIds: [attachedScope.id],
           attachedName: attachedScope.title,
         }
       : {
           workspaceId: currentWorkspace?.id,
           threadId: threadId,
+          mode: 'universal' as const,
         };
 
     askQuestion(queryToSend, scopeOptions);
