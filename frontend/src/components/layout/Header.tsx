@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { PanelLeft, Search, Bell } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
+import { useVoiceAgent } from '../../context/VoiceAgentContext';
 
 export default function Header({
   onToggleMobileSidebar,
@@ -13,6 +14,7 @@ export default function Header({
   const pathname = usePathname();
   const { currentWorkspace, toggleSidebar, activeDocTitle } = useWorkspace();
   const { user } = useAuth();
+  const { startVoice, status: voiceStatus } = useVoiceAgent();
 
   const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'DocsChat HQ');
 
@@ -96,16 +98,15 @@ export default function Header({
           </div>
         </div>
 
-        {/* Black Pill: ●● Ora */}
+        {/* Black Pill: ●● Ora — tap to talk, tap outside the bubble to stop */}
         <button
           type="button"
           onClick={() => {
-            if (pathname?.startsWith('/studio') || pathname?.startsWith('/assets')) {
-              window.dispatchEvent(new CustomEvent('toggle-ora-sidebar'));
-            }
+            void startVoice();
           }}
-          className="bg-[#111113] hover:bg-black text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all shadow-xs hover:shadow-sm"
-          title="Ora Assistant"
+          disabled={voiceStatus === 'checking' || voiceStatus === 'connecting'}
+          className="bg-[#111113] hover:bg-black text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all shadow-xs hover:shadow-sm disabled:opacity-60"
+          title="Talk to Ora (voice)"
         >
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />

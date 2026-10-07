@@ -1,13 +1,18 @@
 'use client';
 import React, { useState } from 'react';
-import { Settings, CreditCard, User, AlertTriangle } from 'lucide-react';
+import { Settings, CreditCard, User, AlertTriangle, Eye, EyeOff, Mic } from 'lucide-react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
 import { useAuth } from '../../../hooks/useAuth';
+import { useVapiKey } from '../../../hooks/useVapiKey';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'billing' | 'account'>('general');
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
+  const { status: vapiStatus, saving: vapiSaving, error: vapiError, saveKey, deleteKey } = useVapiKey();
+  const [vapiInput, setVapiInput] = useState('');
+  const [showVapiKey, setShowVapiKey] = useState(false);
+  const [vapiSavedFlash, setVapiSavedFlash] = useState(false);
 
   const [workspaceName, setWorkspaceName] = useState(currentWorkspace?.name || 'Shreyas HQ');
   const [slug, setSlug] = useState(currentWorkspace?.slug || 'shreyashq');
@@ -190,6 +195,86 @@ export default function SettingsPage() {
                 defaultValue={user?.email || ''}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-sidebar text-xs text-text-secondary"
               />
+            </div>
+          </div>
+
+          {/* Voice Assistant: user-owned free Vapi public key (BYOK, owner pays $0) */}
+          <div className="space-y-3 pt-6 border-t border-border">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-1.5">
+              <Mic className="w-4 h-4" />
+              <span>Voice Assistant</span>
+            </h3>
+            <div>
+              <label className="block text-xs font-medium text-[#4B5563] mb-1">
+                Public VAPI API Key
+              </label>
+              <p className="text-[11px] text-text-muted mb-2">
+                Get your free Public VAPI API key from{' '}
+                <a
+                  href="https://dashboard.vapi.ai"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-text-primary"
+                >
+                  dashboard.vapi.ai
+                </a>{' '}
+                (API Keys -&gt; Public key, starts with pk_). Paste only the public key — never a
+                private key. Tip: in Vapi, lock the key to this site under Allowed Origins and
+                enable Transient Assistant only.
+              </p>
+              <div className="relative">
+                <input
+                  type={showVapiKey ? 'text' : 'password'}
+                  value={vapiInput}
+                  onChange={(e) => setVapiInput(e.target.value)}
+                  placeholder={vapiStatus?.has_key ? vapiStatus.hint || '•••••••• (Key is Set)' : 'pk_... paste your public key'}
+                  className="w-full px-3 py-2 pr-10 rounded-lg border border-border text-xs text-text-primary focus:outline-none focus:border-accent-hover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowVapiKey((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-text-muted hover:text-text-primary cursor-pointer"
+                  title={showVapiKey ? 'Hide key' : 'Show key'}
+                >
+                  {showVapiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-text-muted mt-1">
+                <span className="font-medium">NOTE:</span> We never store your key as plain text.
+                It is fully locked the moment you hit save, and only you can use it.
+              </p>
+              {vapiError ? <p className="text-[11px] text-red-600 mt-1">{vapiError}</p> : null}
+              {vapiSavedFlash ? (
+                <p className="text-[11px] text-emerald-600 mt-1">Key saved. Tap ●● Ora to talk.</p>
+              ) : null}
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  type="button"
+                  disabled={vapiSaving}
+                  onClick={async () => {
+                    const ok = await saveKey(vapiInput);
+                    if (ok) {
+                      setVapiInput('');
+                      setShowVapiKey(false);
+                      setVapiSavedFlash(true);
+                      setTimeout(() => setVapiSavedFlash(false), 4000);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-accent-hover hover:bg-[#4C389E] text-white text-xs font-medium transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  {vapiSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+                {vapiStatus?.has_key ? (
+                  <button
+                    type="button"
+                    disabled={vapiSaving}
+                    onClick={() => void deleteKey()}
+                    className="px-4 py-2 rounded-lg border border-border text-xs text-text-secondary hover:text-red-600 transition-colors cursor-pointer disabled:opacity-60"
+                  >
+                    Remove key
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

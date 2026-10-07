@@ -19,6 +19,7 @@ import {
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChatThreads } from '../../hooks/useChatThreads';
+import { useVoiceLogs } from '../../hooks/useVoiceLogs';
 
 function isToday(dateStr?: string): boolean {
   if (!dateStr) return false;
@@ -67,8 +68,10 @@ export default function Sidebar({
   const { currentWorkspace, sidebarCollapsed } = useWorkspace();
   const { user, logout } = useAuth();
   const { threads, deleteThread } = useChatThreads(currentWorkspace?.id, 'universal');
+  const { logs: voiceLogs, deleteLog: deleteVoiceLog } = useVoiceLogs(currentWorkspace?.id);
 
   const [chatsOpen, setChatsOpen] = useState(true);
+  const [voiceOpen, setVoiceOpen] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleNewChat = () => {
@@ -277,6 +280,65 @@ export default function Sidebar({
                     );
                   })()}
                 </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Separate VOICE LOGS section (voice history never mixes with text chats) */}
+        <div className="px-3 pt-2 flex flex-col min-h-0 shrink-0">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <button
+              type="button"
+              onClick={() => setVoiceOpen(!voiceOpen)}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-text-muted tracking-wider uppercase hover:text-text-primary transition-colors cursor-pointer"
+            >
+              <span>VOICE LOGS</span>
+              <ChevronDown
+                className={`w-3 h-3 text-text-muted transition-transform duration-200 ${
+                  voiceOpen ? '' : '-rotate-90'
+                }`}
+              />
+            </button>
+            {voiceLogs.length > 0 ? (
+              <span className="text-[10px] text-text-muted">{voiceLogs.length}</span>
+            ) : null}
+          </div>
+
+          {voiceOpen && (
+            <div className="mt-1 space-y-0.5 overflow-y-auto max-h-40 pr-1">
+              {voiceLogs.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-text-muted italic">
+                  No voice chats yet — tap ●● Ora to talk
+                </div>
+              ) : (
+                voiceLogs.slice(0, 10).map((log) => (
+                  <div
+                    key={log.id}
+                    title={log.user_text}
+                    className="group px-3 py-1.5 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] transition-colors flex items-center justify-between cursor-default"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
+                      <MessageSquare className="w-3.5 h-3.5 shrink-0 text-text-muted" />
+                      <div className="min-w-0 flex-1">
+                        <span className="truncate block leading-tight">{log.title}</span>
+                        <span className="block text-[10px] text-text-muted leading-tight mt-0.5">
+                          {log.duration_seconds}s · {formatShortTime(log.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm('Delete this voice log?')) void deleteVoiceLog(log.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
+                      title="Delete voice log"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))
               )}
             </div>
           )}
