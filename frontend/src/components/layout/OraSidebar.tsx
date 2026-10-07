@@ -19,6 +19,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { useChat, AskQuestionOptions } from '../../hooks/useChat';
+import Markdown from '../Markdown';
 import { useChatThreads, ChatThread } from '../../hooks/useChatThreads';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { api } from '../../lib/api';
@@ -183,9 +184,9 @@ export default function OraSidebar({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Fetch docs & assets for @ mention autocomplete
+  // Fetch docs & assets for @ mention autocomplete (not needed in Studio: single-doc)
   useEffect(() => {
-    if (!currentWorkspace?.id) return;
+    if (!currentWorkspace?.id || mode === 'studio') return;
 
     let active = true;
     async function loadMentions() {
@@ -226,7 +227,7 @@ export default function OraSidebar({
     return () => {
       active = false;
     };
-  }, [currentWorkspace?.id]);
+  }, [currentWorkspace?.id, mode]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -332,6 +333,12 @@ export default function OraSidebar({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setInput(val);
+
+    // Studio is a single-document writing helper — no @ cross-referencing.
+    if (mode === 'studio') {
+      setShowMentions(false);
+      return;
+    }
 
     const lastAtIndex = val.lastIndexOf('@');
     if (lastAtIndex !== -1 && (lastAtIndex === 0 || val[lastAtIndex - 1] === ' ')) {
@@ -446,7 +453,23 @@ export default function OraSidebar({
         const parsed = JSON.parse(rawData);
         if (parsed.id && parsed.title) {
           if (mode === 'assets' && activeScopeIds !== undefined) {
-            onScopeChange?.([parsed.id]);
+            // Additive multi-drop: first drop out of All-mode narrows to
+            // that asset; further drops accumulate (deduplicated, capped).
+            // (@ mention keeps the opposite meaning: narrow to one.)
+            if (activeScopeIds === null) {
+              setAssetsScope([parsed.id]);
+            } else if (!activeScopeIds.includes(parsed.id)) {
+              if (activeScopeIds.length < MAX_SCOPE_IDS) {
+                setAssetsScope([...activeScopeIds, parsed.id]);
+              }
+            }
+          } else {
+            setAttachedScope({
+              id: parsed.id,
+              title: parsed.title,
+              type: parsed.type || 'asset',
+            });
+            return;
           }
           setAttachedScope({
             id: parsed.id,
@@ -633,8 +656,8 @@ export default function OraSidebar({
           <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3">
             <FileText className="w-6 h-6 text-[#765D96]" />
           </div>
-          <span className="text-sm font-semibold text-text-primary">Drop PDF to attach</span>
-          <span className="text-xs text-text-secondary mt-1">Ora will focus solely on this document</span>
+          <span className="text-sm font-semibold text-text-primary">Drop PDF to add it</span>
+          <span className="text-xs text-text-secondary mt-1">{mode === 'assets' ? 'Ora adds it to the queried assets' : 'Ora will focus on this document'}</span>
         </div>
       )}
 
@@ -824,7 +847,7 @@ export default function OraSidebar({
                       Working on <strong className="font-medium text-text-primary">{attachedScope.title}</strong>
                     </span>
                   ) : (
-                    'Choose a quick action to edit or analyze your document'
+                    'Help with this document — summarize, improve, or fix it'
                   )}
                 </p>
               </div>
@@ -868,7 +891,7 @@ export default function OraSidebar({
                 {scopeCatalog.length === 0
                   ? 'Upload your first PDF to start asking questions.'
                   : isAllAssetsMode
-                    ? `Ask questions across all ${scopeCatalog.length} PDFs, or type @ to narrow to one.`
+                    ? `Ask across your PDFs — all ${scopeCatalog.length}, or type @ to narrow to one.`
                     : narrowedAssets.length > 1
                       ? `Asking across ${narrowedAssets.length} selected PDFs. Click the scope chip to adjust.`
                       : 'Ask questions or extract insights strictly from this attached PDF.'}
@@ -1028,9 +1051,7 @@ export default function OraSidebar({
                         )}
 
                         {/* Formatted Content */}
-                        <div className="space-y-2 whitespace-pre-wrap">
-                          {msg.content}
-                        </div>
+                        <Markdown content={msg.content} />
                       </div>
 
                       {/* Copy Message Action Button */}
@@ -1058,8 +1079,8 @@ export default function OraSidebar({
         )}
       </div>
 
-      {/* Mention Popup Autocomplete Menu (matching 03-assets.png) */}
-      {showMentions && allFilteredMentions.length > 0 && (
+      {/* Mention Popup Autocomplete Menu (universal + assets only — Studio is single-doc) */}
+      {mode !== 'studio' && showMentions && allFilteredMentions.length > 0 && (
         <div className="absolute bottom-16 left-3 right-3 bg-white rounded-2xl shadow-xl border border-border p-2 max-h-56 overflow-y-auto animate-fade-in text-xs z-50">
           {filteredDocs.length > 0 && (
             <div className="mb-2">

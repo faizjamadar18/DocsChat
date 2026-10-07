@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, File, MoreVertical, Download, Trash2 } from 'lucide-react';
+import { Search, Plus, FileText, MoreVertical, Download, Trash2, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
@@ -298,15 +298,25 @@ export default function AssetsPage() {
         {/* Top Action Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search input */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sidebar border border-border w-full sm:w-80">
-            <Search className="w-4 h-4 text-text-muted" />
+          <div className="flex items-center gap-2 px-3 h-9 rounded-lg bg-surface border border-border w-full sm:w-80 focus-within:border-accent/50 transition-colors">
+            <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search assets..."
-              className="bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none w-full"
+              className="bg-transparent text-[13px] text-text-primary placeholder-text-muted focus:outline-none w-full min-w-0"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="p-0.5 rounded text-text-muted hover:text-text-primary transition-colors cursor-pointer shrink-0"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
           {/* Right controls: Ora trigger, Upload button */}
@@ -352,14 +362,62 @@ export default function AssetsPage() {
             )}
 
             {loading ? (
-              <div className="py-12 text-center text-xs text-text-muted">Loading assets...</div>
-            ) : filteredSources.length === 0 ? (
-              <div className="py-12 text-center text-xs text-text-muted bg-surface rounded-xl border border-border">
-                No assets found. Click Upload to add your first PDF document.
+              <div className="space-y-3" aria-label="Loading assets">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-surface animate-pulse">
+                    <div className="w-9 h-9 rounded-lg bg-sidebar shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="h-3 w-2/5 rounded bg-sidebar" />
+                      <div className="h-2.5 w-1/4 rounded bg-sidebar" />
+                    </div>
+                  </div>
+                ))}
               </div>
+            ) : filteredSources.length === 0 ? (
+              search ? (
+                <div className="py-14 text-center bg-surface rounded-xl border border-border">
+                  <div className="w-9 h-9 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2.5">
+                    <Search className="w-4 h-4 text-text-muted" />
+                  </div>
+                  <p className="text-[13px] font-medium text-text-primary">No results</p>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    Nothing matches &ldquo;{search}&rdquo;
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="mt-2.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] transition-colors cursor-pointer"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              ) : (
+                <div className="py-14 text-center bg-surface rounded-xl border border-border">
+                  <div className="w-9 h-9 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2.5">
+                    <FileText className="w-4 h-4 text-text-muted" />
+                  </div>
+                  <p className="text-[13px] font-medium text-text-primary">No assets yet</p>
+                  <p className="text-xs text-text-muted mt-0.5 max-w-xs mx-auto">
+                    Upload your first PDF to query, summarize, and cite it with Ora.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsUploadModalOpen(true)}
+                    className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-text-primary text-white hover:bg-black transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Upload PDF
+                  </button>
+                </div>
+              )
             ) : (
-              filteredSources.map((source) => {
+              <>
+              <div className="px-1 pb-1 text-[11px] text-text-muted tabular-nums">
+                {filteredSources.length} {filteredSources.length === 1 ? 'asset' : 'assets'}
+              </div>
+              {filteredSources.map((source) => {
                 const isSelected = selectedAsset?.id === source.id;
+                const inScope = oraScopeIds === null || oraScopeIds.includes(source.id);
                 return (
                   <div
                     key={source.id}
@@ -377,51 +435,73 @@ export default function AssetsPage() {
                     }}
                     onClick={() => {
                       setSelectedAsset(source);
-                      // Narrow Ora to this single asset; chip X restores All.
+                      // Narrow Ora to this single asset and auto-open the
+                      // panel — click without feedback is a dead UI.
                       setOraScopeIds([source.id]);
+                      setIsOraDrawerOpen(true);
                     }}
-                    title="Click to select or drag into Ora to ask questions"
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group active:cursor-grabbing ${
+                    title="Click to ask Ora about this PDF"
+                    className={`relative flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group active:cursor-grabbing ${
                       isSelected
-                        ? 'bg-[#F3F4F6] border-border shadow-2xs'
+                        ? 'bg-white border-border shadow-2xs'
                         : 'bg-surface hover:bg-[#F9F9FB] border-border/60 hover:border-border'
                     }`}
                   >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-white border border-border/80 flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
-                        <File className="w-4 h-4 text-text-secondary" />
+                    {/* Selected accent bar */}
+                    {isSelected && (
+                      <span className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-accent" />
+                    )}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-sidebar border border-border/60 flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 text-text-secondary" />
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-xs font-medium text-text-primary group-hover:text-accent transition-colors truncate">
+                        <h4 className="text-[13px] font-medium text-text-primary truncate leading-tight">
                           {source.filename}
                         </h4>
-                        <p className="text-[11px] text-text-muted mt-0.5">
+                        <p className="text-xs text-text-muted mt-0.5 truncate">
                           {formatFileSize(source.file_size)} &bull; {formatTimeAgo(source.uploaded_at)}
+                          {source.page_count > 0 ? ` \u2022 ${source.page_count} pages` : ''}
+                          {!inScope ? ' \u2022 not in query' : ''}
                         </p>
                       </div>
                     </div>
 
-                    <div className="relative flex items-center gap-2 shrink-0">
+                    <div className="relative flex items-center gap-1.5 shrink-0">
+                      {/* Hover Ask affordance — row click does the same */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedAsset(source);
+                          setOraScopeIds([source.id]);
+                          setIsOraDrawerOpen(true);
+                        }}
+                        className="hidden sm:inline-flex px-2.5 py-1 text-[11px] font-medium rounded-lg bg-accent-subtle text-accent-hover hover:bg-accent hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                        title="Ask Ora about this PDF"
+                      >
+                        Ask
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveDropdownId((prev) => (prev === source.id ? null : source.id));
                         }}
-                        className={`p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-base transition-colors cursor-pointer ${
+                        className={`w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-sidebar transition-all cursor-pointer ${
                           activeDropdownId === source.id
-                            ? 'opacity-100 bg-base text-text-primary'
-                            : 'opacity-0 group-hover:opacity-100'
+                            ? 'opacity-100 bg-sidebar text-text-primary'
+                            : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100'
                         }`}
                         aria-label="Asset options"
                       >
-                        <MoreVertical className="w-4 h-4" />
+                        <MoreVertical className="w-3.5 h-3.5" />
                       </button>
 
                       {activeDropdownId === source.id && (
                         <div
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute right-0 top-full mt-1.5 w-36 rounded-xl bg-white border border-border shadow-lg py-1 z-30 animate-fade-in"
+                          className="absolute right-0 top-full mt-1.5 w-40 rounded-xl bg-white border border-border shadow-xl p-1.5 z-30 animate-fade-in"
                         >
                           <button
                             type="button"
@@ -430,7 +510,7 @@ export default function AssetsPage() {
                               setActiveDropdownId(null);
                               handleDownload(source);
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-text-primary hover:bg-base transition-colors text-left cursor-pointer"
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
                           >
                             <Download className="w-3.5 h-3.5 text-text-muted" />
                             <span>Download</span>
@@ -443,7 +523,7 @@ export default function AssetsPage() {
                               setActiveDropdownId(null);
                               setAssetToDelete(source);
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-left cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             <span>Delete</span>
@@ -453,7 +533,8 @@ export default function AssetsPage() {
                     </div>
                   </div>
                 );
-              })
+              })}
+              </>
             )}
           </div>
         </div>
