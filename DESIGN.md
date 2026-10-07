@@ -220,7 +220,15 @@ Reference implementation: `OraSidebar.tsx` (history), `assets/page.tsx` (row men
 
 ### 2. Sidebar (`Sidebar.tsx`, `OraSidebar.tsx`, `StudioDocumentsSidebar`)
 
-Left nav `w-64 bg-sidebar border-r`; right assistant `w-80 sm:w-96 bg-white border-l`. Nav row: `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2]`; active adds `bg-accent-subtle text-accent-hover`. Section toggle (`CHATS`): `text-[11px] font-semibold uppercase tracking-wider text-text-muted`.
+Left nav `w-64 bg-sidebar border-r`; right assistant `w-80 sm:w-96 bg-white border-l`; Studio docs sub-column `w-60 sm:w-64 bg-surface border-r`.
+
+Row anatomy (all sidebars, same treatment everywhere): `h-8 (32px) px-2 gap-2 rounded-lg text-[13px]`, 16px icon `shrink-0`, truncated label `min-w-0 flex-1`, hover-reveal trailing actions (`opacity-0 group-hover:opacity-100`, reserved space via opacity — never `hidden` swaps that shift layout).
+
+- Nav row: `text-text-secondary hover:bg-[#EFEFF2] hover:text-text-primary`; active adds `bg-accent-subtle text-accent-hover font-medium` with accent icon. Hover and active washes must be visibly different — never gray-on-gray.
+- Section header: micro label + optional tabular count + 24px action button (`w-6 h-6 rounded-md hover:bg-[#EFEFF2]`).
+- Sidebar search: `h-8 rounded-lg bg-sidebar border border-border focus-within:border-accent/50` with clear-X when non-empty.
+- Asset/content cards (main column, not nav): `p-3 rounded-xl border`, icon box `w-9 h-9 rounded-lg bg-sidebar`, title 13px medium, meta 12px muted (size • time • pages), selected marked by 2px accent bar + `shadow-2xs`.
+- Empty states: icon tile + 13px medium headline + 12px muted description + one CTA (Notion pattern). Loading: skeleton rows (`animate-pulse`), never bare spinners or bare text.
 
 ### 3. Buttons
 
