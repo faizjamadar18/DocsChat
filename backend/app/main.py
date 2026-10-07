@@ -4,7 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.database import init_db, close_db
-from app.routes import auth, sources, chat, workspaces
+from app.routes import auth, sources, chat, workspaces, documents
 
 
 async def catch_unhandled_exceptions(request: Request, call_next):
@@ -53,6 +53,7 @@ _cors_origins = [
 app.include_router(auth.router)
 app.include_router(workspaces.router)
 app.include_router(sources.router)
+app.include_router(documents.router)
 app.include_router(chat.router)
 
 

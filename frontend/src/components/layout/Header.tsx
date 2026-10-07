@@ -11,7 +11,7 @@ export default function Header({
   onToggleMobileSidebar?: () => void;
 }) {
   const pathname = usePathname();
-  const { currentWorkspace, toggleSidebar } = useWorkspace();
+  const { currentWorkspace, toggleSidebar, activeDocTitle } = useWorkspace();
   const { user } = useAuth();
 
   const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'DocsChat HQ');
@@ -21,6 +21,9 @@ export default function Header({
     const parts = [{ label: workspaceName, href: '/home' }];
     if (pathname?.startsWith('/studio')) {
       parts.push({ label: 'Studio', href: '/studio' });
+      if (activeDocTitle) {
+        parts.push({ label: activeDocTitle, href: '/studio' });
+      }
     } else if (pathname?.startsWith('/assets')) {
       parts.push({ label: 'Assets', href: '/assets' });
     } else if (pathname?.startsWith('/settings')) {

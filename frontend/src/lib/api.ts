@@ -56,11 +56,29 @@ export const api = {
     return this.request(endpoint, { ...options, method: 'GET' });
   },
 
-  post(endpoint: string, body: any, options?: RequestInit) {
+  post(endpoint: string, body: unknown, options?: RequestInit) {
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,
       method: 'POST',
+      body: isFormData ? body : JSON.stringify(body),
+    });
+  },
+
+  put(endpoint: string, body: unknown, options?: RequestInit) {
+    const isFormData = body instanceof FormData;
+    return this.request(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: isFormData ? body : JSON.stringify(body),
+    });
+  },
+
+  patch(endpoint: string, body: unknown, options?: RequestInit) {
+    const isFormData = body instanceof FormData;
+    return this.request(endpoint, {
+      ...options,
+      method: 'PATCH',
       body: isFormData ? body : JSON.stringify(body),
     });
   },

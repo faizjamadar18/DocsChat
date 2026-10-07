@@ -23,6 +23,8 @@ interface WorkspaceContextType {
   setSidebarCollapsed: (collapsed: boolean) => void;
   refreshWorkspaces: () => Promise<void>;
   switchWorkspace: (workspaceId: string) => Promise<void>;
+  activeDocTitle: string | null;
+  setActiveDocTitle: (title: string | null) => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
@@ -33,6 +35,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeDocTitle, setActiveDocTitle] = useState<string | null>(null);
 
   const fetchWorkspacesData = useCallback(async () => {
     if (!isAuthenticated) {
@@ -164,6 +167,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setSidebarCollapsed,
         refreshWorkspaces: fetchWorkspacesData,
         switchWorkspace,
+        activeDocTitle,
+        setActiveDocTitle,
       }}
     >
       {children}

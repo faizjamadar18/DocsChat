@@ -220,3 +220,51 @@ async def ask_question(
 
     async for token in stream_response(prompt, model="groq"):
         yield token
+
+
+async def process_document_content(
+    user_id: str,
+    document_id: str,
+    title: str,
+    content_text: str,
+    workspace_id: Optional[str] = None,
+) -> int:
+    """
+    Split studio document text into chunks and index into Qdrant.
+    Replaces existing vectors for this document_id.
+    """
+    try:
+        # First delete existing vectors for this document
+        await asyncio.to_thread(vs.delete_source_vectors, user_id, document_id)
+        if not content_text or not content_text.strip():
+            return 0
+
+        from langchain_core.documents import Document
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=settings.CHUNK_SIZE,
+            chunk_overlap=settings.CHUNK_OVERLAP,
+        )
+        texts = text_splitter.split_text(content_text)
+        chunks = [
+            Document(
+                page_content=t,
+                metadata={
+                    "source_id": document_id,
+                    "source_type": "document",
+                    "title": title,
+                }
+            )
+            for t in texts
+        ]
+        chunk_count = await asyncio.to_thread(
+            vs.add_documents,
+            user_id,
+            chunks,
+            document_id,
+            workspace_id,
+        )
+        print(f"[OK] Indexed Studio doc {title} ({document_id}) -> {chunk_count} chunks in Qdrant")
+        return chunk_count
+    except Exception as e:
+        print(f"[ERR] Error indexing document {document_id}: {e}")
+        return 0
