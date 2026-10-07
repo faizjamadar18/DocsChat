@@ -73,6 +73,10 @@ export function useChat(
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchHistory = useCallback(async (_wsId?: string, tId?: string) => {
+    // Never clobber an actively streaming conversation with a refetch —
+    // e.g. the URL thread sync that fires mid-stream after thread creation.
+    // The streamed temp messages are the source of truth until done.
+    if (abortControllerRef.current) return;
     const targetThread = tId !== undefined ? tId : activeThreadId;
 
     if (!targetThread) {
@@ -136,7 +140,18 @@ export function useChat(
     }
   };
 
+  const stopGenerating = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setStreaming(false);
+  }, []);
+
   const switchThread = useCallback((tId: string | null) => {
+    // Stop any live stream first so its late tokens can't bleed into the
+    // newly selected conversation, then load (abort cleared → fetch proceeds).
+    stopGenerating();
     setSelectedThreadId(tId);
     setCreatedThreadId(null);
     setActiveThreadInfo(null);
@@ -147,15 +162,7 @@ export function useChat(
       setLoading(false);
       setError(null);
     }
-  }, [activeWorkspaceId, fetchHistory]);
-
-  const stopGenerating = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setStreaming(false);
-  };
+  }, [activeWorkspaceId, fetchHistory, stopGenerating]);
 
   const askQuestion = async (
     query: string,

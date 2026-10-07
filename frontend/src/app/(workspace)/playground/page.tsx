@@ -14,11 +14,9 @@ import {
   X,
   Copy,
   Check,
-  Plus,
-  Trash2,
-  Search,
 } from 'lucide-react';
 import { useWorkspace } from '@/context/WorkspaceContext';
+import Markdown from '@/components/Markdown';
 import { useChat } from '@/hooks/useChat';
 import { api } from '@/lib/api';
 
@@ -41,7 +39,7 @@ function PlaygroundContent() {
     activeThreadInfo,
     askQuestion,
     stopGenerating,
-    clearHistory,
+    switchThread,
   } = useChat(currentWorkspace?.id, threadId, 'universal');
 
   const [input, setInput] = useState('');
@@ -52,7 +50,21 @@ function PlaygroundContent() {
 
   const [docs, setDocs] = useState<MentionItem[]>([]);
   const [assets, setAssets] = useState<MentionItem[]>([]);
-  const [activeFilter, setActiveFilter] = useState<'documents' | 'all'>('documents');
+
+  const STARTER_SUGGESTIONS = [
+    {
+      label: 'Count my files',
+      prompt: 'How many documents and how many assets are in my workspace?',
+    },
+    {
+      label: 'Key takeaways',
+      prompt: 'What are the key takeaways across my workspace sources?',
+    },
+    {
+      label: 'Compare sources',
+      prompt: 'Compare the main viewpoints across my sources and note where they disagree.',
+    },
+  ];
 
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showSourcesForMsg, setShowSourcesForMsg] = useState<string | null>(null);
@@ -122,6 +134,17 @@ function PlaygroundContent() {
       router.replace('/playground');
     }
   }, [threadId, activeThreadInfo, router]);
+
+  // New Chat resets: the URL lost its thread_id (header/Sidebar "New Chat"),
+  // but useChat still holds the previous thread — clear it so the old
+  // conversation can't linger and the next question can't join the old thread.
+  const prevThreadIdRef = useRef<string | undefined>(threadId);
+  useEffect(() => {
+    if (!threadId && prevThreadIdRef.current) {
+      switchThread(null);
+    }
+    prevThreadIdRef.current = threadId;
+  }, [threadId, switchThread]);
 
   // Listen to thread creation event to update URL query param
   useEffect(() => {
@@ -261,6 +284,17 @@ function PlaygroundContent() {
     }
   };
 
+  // Starter suggestion chips fill the input for review — the user sends manually.
+  const handlePreset = (prompt: string) => {
+    if (streaming) return;
+    setInput(prompt);
+    setShowMentions(false);
+    requestAnimationFrame(() => {
+      adjustTextareaHeight();
+      textareaRef.current?.focus();
+    });
+  };
+
   const handleCopyMessage = async (msgId: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -271,74 +305,10 @@ function PlaygroundContent() {
     }
   };
 
-  const handleStartNewChat = () => {
-    router.push('/playground');
-    setInput('');
-    setAttachedScope(null);
-  };
-
   const isConversationActive = messages.length > 0;
 
   return (
     <div className="flex flex-col h-full w-full select-none overflow-hidden bg-surface relative">
-      {/* Top Header Bar matching reference image */}
-      <header className="h-14 px-6 border-b border-border flex items-center justify-between shrink-0 bg-white z-10">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-text-primary tracking-tight">
-              Ora
-            </span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent-subtle text-accent-hover">
-              Workspace Assistant
-            </span>
-          </div>
-          {isConversationActive && (
-            <button
-              type="button"
-              onClick={handleStartNewChat}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-text-secondary hover:text-text-primary bg-surface hover:bg-[#EFEFF2] rounded-lg border border-border/80 transition-colors cursor-pointer ml-2"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>New Chat</span>
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isConversationActive && (
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Clear messages for this conversation?')) {
-                  void clearHistory(currentWorkspace?.id, threadId);
-                }
-              }}
-              title="Clear chat"
-              className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Quick Search trigger matching image */}
-          <button
-            type="button"
-            onClick={() => {
-              window.dispatchEvent(
-                new KeyboardEvent('keydown', { key: 'k', metaKey: true })
-              );
-            }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border text-xs text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
-          >
-            <Search className="w-3.5 h-3.5 text-text-muted" />
-            <span>Search</span>
-            <kbd className="text-[10px] bg-[#EFEFF2] text-text-muted px-1.5 py-0.5 rounded font-mono">
-              Ctrl+K
-            </kbd>
-          </button>
-        </div>
-      </header>
-
       {/* Main Content: Hero State vs Conversation Stream */}
       <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
         {!isConversationActive ? (
@@ -353,11 +323,11 @@ function PlaygroundContent() {
 
             {/* Subtitle */}
             <p className="text-xs sm:text-sm text-text-secondary text-center mt-2 font-normal">
-              Ask across all sources and documents in your workspace, or type @ to reference a file.
+              Ask across everything in your workspace, or type @ to reference a file.
             </p>
 
             {/* Central Large Prompt Input Card */}
-            <div className="w-full mt-8 bg-white border border-border rounded-3xl p-4 shadow-sm relative transition-all focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40">
+            <div className="w-full mt-8 bg-white border border-border rounded-3xl p-4 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary [color-scheme:light]">
               {/* Attached Scoped Document Tag */}
               {attachedScope && (
                 <div className="mb-2.5 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-3 py-1 rounded-full text-xs font-medium animate-fade-in">
@@ -381,11 +351,17 @@ function PlaygroundContent() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask Ora anything across your workspace..."
                 rows={2}
-                className="w-full bg-transparent text-sm sm:text-base text-text-primary placeholder-text-muted resize-none focus:outline-none leading-relaxed"
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                data-gramm="false"
+                data-gramm_editor="false"
+                data-enable-grammarly="false"
+                className="w-full bg-transparent text-sm sm:text-base text-text-primary [-webkit-text-fill-color:#111827] placeholder:text-text-muted placeholder:[-webkit-text-fill-color:#9CA3AF] resize-none focus:outline-none leading-relaxed"
               />
 
               {/* Toolbar Row */}
-              <div className="flex items-center justify-between pt-2 mt-1 border-t border-border/40">
+              <div className="flex items-center justify-between pt-2 mt-1">
                 {/* Left tools: Paperclip, Waveform, Translate */}
                 <div className="flex items-center gap-1">
                   {/* Paperclip */}
@@ -407,7 +383,7 @@ function PlaygroundContent() {
                       <AudioWaveform className="w-4 h-4" />
                     </button>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-text-primary text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap shadow-md z-30">
-                      Audio input coming soon
+                      Soon
                     </div>
                   </div>
 
@@ -420,23 +396,13 @@ function PlaygroundContent() {
                       <Languages className="w-4 h-4" />
                     </button>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-text-primary text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap shadow-md z-30">
-                      Language settings coming soon
+                      Soon
                     </div>
                   </div>
                 </div>
 
-                {/* Right tools: Connected context, Microphone, Submit */}
+                {/* Right tools: Microphone, Submit */}
                 <div className="flex items-center gap-2">
-                  {/* Connected context chip */}
-                  <div className="relative group">
-                    <div className="text-[11px] font-medium text-text-muted px-2 py-1 rounded-md hover:bg-[#F3F4F6] transition-colors cursor-default">
-                      Connected context
-                    </div>
-                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-text-primary text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap shadow-md z-30">
-                      Grounded across all workspace documents & sources
-                    </div>
-                  </div>
-
                   {/* Microphone */}
                   <div className="relative group">
                     <button
@@ -446,7 +412,7 @@ function PlaygroundContent() {
                       <Mic className="w-4 h-4" />
                     </button>
                     <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-text-primary text-white text-[10px] px-2 py-1 rounded-md whitespace-nowrap shadow-md z-30">
-                      Voice dictation coming soon
+                      Soon
                     </div>
                   </div>
 
@@ -526,33 +492,19 @@ function PlaygroundContent() {
               )}
             </div>
 
-            {/* Source Filter Pills (Simplified as per user feedback: Documents & All Sources) */}
-            <div className="flex items-center gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setActiveFilter('documents')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
-                  activeFilter === 'documents'
-                    ? 'bg-white border border-border text-text-primary font-medium shadow-2xs'
-                    : 'text-text-muted hover:text-text-primary bg-transparent'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Documents</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveFilter('all')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
-                  activeFilter === 'all'
-                    ? 'bg-white border border-border text-text-primary font-medium shadow-2xs'
-                    : 'text-text-muted hover:text-text-primary bg-transparent'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>All Sources</span>
-              </button>
+            {/* Starter suggestions — Claude/ChatGPT pattern: one click fills the input, user sends */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-6 max-w-xl">
+              {STARTER_SUGGESTIONS.map((s) => (
+                <button
+                  key={s.label}
+                  type="button"
+                  onClick={() => handlePreset(s.prompt)}
+                  disabled={streaming}
+                  className="px-3.5 py-1.5 rounded-full border border-border bg-white text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 hover:shadow-2xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
 
             {/* Footer Action Links matching reference image */}
@@ -674,9 +626,7 @@ function PlaygroundContent() {
                             )}
 
                           {/* Formatted Assistant Output */}
-                          <div className="space-y-2 whitespace-pre-wrap">
-                            {msg.content}
-                          </div>
+                          <Markdown content={msg.content} />
                         </div>
 
                         {/* Actions row: Copy */}
@@ -704,7 +654,7 @@ function PlaygroundContent() {
 
             {/* Pinned Bottom Input Card in Conversation Mode */}
             <div className="sticky bottom-0 bg-surface/80 backdrop-blur-md pt-2 pb-1">
-              <div className="bg-white border border-border rounded-2xl p-3 shadow-md relative transition-all focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40">
+              <div className="bg-white border border-border rounded-2xl p-3 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary [color-scheme:light]">
                 {attachedScope && (
                   <div className="mb-2 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-2.5 py-0.5 rounded-full text-xs font-medium animate-fade-in">
                     <FileText className="w-3 h-3 text-[#765D96]" />
@@ -726,10 +676,16 @@ function PlaygroundContent() {
                   onKeyDown={handleKeyDown}
                   placeholder="Ask a follow-up across workspace..."
                   rows={1}
-                  className="w-full bg-transparent text-sm text-text-primary placeholder-text-muted resize-none focus:outline-none leading-relaxed"
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  data-gramm="false"
+                  data-gramm_editor="false"
+                  data-enable-grammarly="false"
+                  className="w-full bg-transparent text-sm text-text-primary [-webkit-text-fill-color:#111827] placeholder:text-text-muted placeholder:[-webkit-text-fill-color:#9CA3AF] resize-none focus:outline-none leading-relaxed"
                 />
 
-                <div className="flex items-center justify-between pt-2 mt-1 border-t border-border/40">
+                <div className="flex items-center justify-between pt-2 mt-1">
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -742,10 +698,6 @@ function PlaygroundContent() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-medium text-text-muted">
-                      Connected context
-                    </span>
-
                     {streaming ? (
                       <button
                         type="button"
