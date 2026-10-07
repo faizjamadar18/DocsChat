@@ -5,7 +5,7 @@ import { useWorkspace } from '../../../context/WorkspaceContext';
 import { api } from '../../../lib/api';
 import { StudioDocumentsSidebar, StudioDoc } from '../../../components/studio/StudioDocumentsSidebar';
 import { EditorCanvas } from '../../../components/studio/EditorCanvas';
-import OraSidebarDrawer, { OraLogoMark } from '../../../components/layout/OraSidebarDrawer';
+import OraSidebar, { OraLogoMark } from '../../../components/layout/OraSidebar';
 
 export default function StudioPage() {
   const { currentWorkspace, setActiveDocTitle } = useWorkspace();
@@ -337,7 +337,7 @@ export default function StudioPage() {
           />
         )}
 
-        {/* Studio Canvas Area (Right Editor Column) */}
+        {/* Studio Canvas Area (Middle Editor Column) */}
         <main className="flex-1 flex flex-col h-full overflow-y-auto bg-surface">
           {activeDoc ? (
             <div className="w-full max-w-3xl mx-auto px-6 sm:px-12 py-10 flex-1 flex flex-col">
@@ -373,6 +373,12 @@ export default function StudioPage() {
             </div>
           )}
         </main>
+
+        {/* Mounted In-Flow Ora Assistant Sidebar (Right Column when opened) */}
+        <OraSidebar
+          isOpen={isOraDrawerOpen}
+          onClose={() => setIsOraDrawerOpen(false)}
+        />
       </div>
 
       {/* "Document created" Bottom Toast Notification (matches 02-studio-editor.png) */}
@@ -383,12 +389,6 @@ export default function StudioPage() {
           </div>
         </div>
       )}
-
-      {/* Ora Assistant Slide-Over Drawer (exclusive to Studio & Assets) */}
-      <OraSidebarDrawer
-        isOpen={isOraDrawerOpen}
-        onClose={() => setIsOraDrawerOpen(false)}
-      />
     </div>
   );
 }

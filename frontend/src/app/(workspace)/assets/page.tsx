@@ -6,7 +6,7 @@ import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
 import AssetPreview, { Source } from '@/components/assets/AssetPreview';
 import UploadBanner, { UploadState } from '@/components/assets/UploadBanner';
-import OraSidebarDrawer, { OraLogoMark } from '@/components/layout/OraSidebarDrawer';
+import OraSidebar, { OraLogoMark } from '@/components/layout/OraSidebar';
 
 function formatFileSize(bytes: number): string {
   if (!bytes) return '0 B';
@@ -52,8 +52,8 @@ export default function AssetsPage() {
   // Asset action dropdown state
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
-  // Ora sidebar drawer state
-  const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(false);
+  // Ora sidebar drawer state (open by default in Assets workspace)
+  const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(true);
 
   useEffect(() => {
     const handleToggle = () => setIsOraDrawerOpen((prev) => !prev);
@@ -265,166 +265,175 @@ export default function AssetsPage() {
 
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search input */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sidebar border border-border w-full sm:w-80">
-          <Search className="w-4 h-4 text-text-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search assets..."
-            className="bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none w-full"
-          />
+    <div className="flex h-full w-full overflow-hidden">
+      {/* Scrollable Assets Column (matches 03-assets.png and 03-assets2.png) */}
+      <div className="flex-1 min-w-0 h-full overflow-y-auto px-6 py-8 space-y-6">
+        {/* Top Action Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Search input */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sidebar border border-border w-full sm:w-80">
+            <Search className="w-4 h-4 text-text-muted" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search assets..."
+              className="bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none w-full"
+            />
+          </div>
+
+          {/* Right controls: Sort dropdown, Ora trigger, Upload button */}
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-surface border border-border rounded-xl transition-colors cursor-pointer"
+            >
+              <span>Recent</span>
+              <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => setIsOraDrawerOpen((prev) => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
+                isOraDrawerOpen
+                  ? 'bg-accent/10 text-accent border border-accent/20'
+                  : 'text-text-secondary hover:text-text-primary bg-surface border border-border'
+              }`}
+            >
+              <OraLogoMark className="w-3.5 h-3.5" />
+              <span>Ora</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsUploadModalOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[#111113] hover:bg-black text-white rounded-xl transition-colors cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Upload</span>
+            </button>
+          </div>
         </div>
 
-        {/* Right controls: Sort dropdown, Ora trigger, Upload button */}
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-surface border border-border rounded-xl transition-colors cursor-pointer"
-          >
-            <span>Recent</span>
-            <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setIsOraDrawerOpen((prev) => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl transition-colors cursor-pointer ${
-              isOraDrawerOpen
-                ? 'bg-accent/10 text-accent border border-accent/20'
-                : 'text-text-secondary hover:text-text-primary bg-surface border border-border'
-            }`}
-          >
-            <OraLogoMark className="w-3.5 h-3.5" />
-            <span>Ora</span>
-          </button>
+        {/* Main Content: Asset List + Optional Side Preview */}
+        <div className="flex flex-col lg:flex-row items-start gap-8">
+          {/* Asset List Column */}
+          <div className="flex-1 min-w-0 w-full space-y-3">
+            {/* Upload Progress / Success Banner (Image 1 & Image 2) */}
+            {uploadState && (
+              <UploadBanner
+                uploadState={uploadState}
+                onDismiss={() => setUploadState(null)}
+              />
+            )}
 
-          <button
-            type="button"
-            onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[#111113] hover:bg-black text-white rounded-xl transition-colors cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Upload</span>
-          </button>
-        </div>
-      </div>
+            {loading ? (
+              <div className="py-12 text-center text-xs text-text-muted">Loading assets...</div>
+            ) : filteredSources.length === 0 ? (
+              <div className="py-12 text-center text-xs text-text-muted bg-surface rounded-xl border border-border">
+                No assets found. Click Upload to add your first PDF document.
+              </div>
+            ) : (
+              filteredSources.map((source) => {
+                const isSelected = selectedAsset?.id === source.id;
+                return (
+                  <div
+                    key={source.id}
+                    onClick={() => setSelectedAsset(source)}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group ${
+                      isSelected
+                        ? 'bg-[#F3F4F6] border-border shadow-2xs'
+                        : 'bg-surface hover:bg-[#F9F9FB] border-border/60 hover:border-border'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-white border border-border/80 flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
+                        <File className="w-4 h-4 text-text-secondary" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-medium text-text-primary group-hover:text-accent transition-colors truncate">
+                          {source.filename}
+                        </h4>
+                        <p className="text-[11px] text-text-muted mt-0.5">
+                          {formatFileSize(source.file_size)} &bull; {formatTimeAgo(source.uploaded_at)}
+                        </p>
+                      </div>
+                    </div>
 
-      {/* Main Content: Asset List + Optional Side Preview */}
-      <div className="flex flex-col lg:flex-row items-start gap-8">
-        {/* Asset List Column */}
-        <div className="flex-1 min-w-0 w-full space-y-3">
-          {/* Upload Progress / Success Banner (Image 1 & Image 2) */}
-          {uploadState && (
-            <UploadBanner
-              uploadState={uploadState}
-              onDismiss={() => setUploadState(null)}
+                    <div className="relative flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdownId((prev) => (prev === source.id ? null : source.id));
+                        }}
+                        className={`p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-base transition-colors cursor-pointer ${
+                          activeDropdownId === source.id
+                            ? 'opacity-100 bg-base text-text-primary'
+                            : 'opacity-0 group-hover:opacity-100'
+                        }`}
+                        aria-label="Asset options"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {activeDropdownId === source.id && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-full mt-1.5 w-36 rounded-xl bg-white border border-border shadow-lg py-1 z-30 animate-fade-in"
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdownId(null);
+                              handleDownload(source);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-text-primary hover:bg-base transition-colors text-left cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5 text-text-muted" />
+                            <span>Download</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdownId(null);
+                              setAssetToDelete(source);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Preview Panel Column (matching 03-assets2.png) */}
+          {selectedAsset && (
+            <AssetPreview
+              asset={selectedAsset}
+              onClose={() => setSelectedAsset(null)}
+              onDownload={handleDownload}
+              onDelete={(asset) => setAssetToDelete(asset)}
             />
           )}
-
-          {loading ? (
-            <div className="py-12 text-center text-xs text-text-muted">Loading assets...</div>
-          ) : filteredSources.length === 0 ? (
-            <div className="py-12 text-center text-xs text-text-muted bg-surface rounded-xl border border-border">
-              No assets found. Click Upload to add your first PDF document.
-            </div>
-          ) : (
-            filteredSources.map((source) => {
-              const isSelected = selectedAsset?.id === source.id;
-              return (
-                <div
-                  key={source.id}
-                  onClick={() => setSelectedAsset(source)}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group ${
-                    isSelected
-                      ? 'bg-[#F3F4F6] border-border shadow-2xs'
-                      : 'bg-surface hover:bg-[#F9F9FB] border-border/60 hover:border-border'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-white border border-border/80 flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
-                      <File className="w-4 h-4 text-text-secondary" />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="text-xs font-medium text-text-primary group-hover:text-accent transition-colors truncate">
-                        {source.filename}
-                      </h4>
-                      <p className="text-[11px] text-text-muted mt-0.5">
-                        {formatFileSize(source.file_size)} &bull; {formatTimeAgo(source.uploaded_at)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="relative flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveDropdownId((prev) => (prev === source.id ? null : source.id));
-                      }}
-                      className={`p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-base transition-colors cursor-pointer ${
-                        activeDropdownId === source.id
-                          ? 'opacity-100 bg-base text-text-primary'
-                          : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      aria-label="Asset options"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-
-                    {activeDropdownId === source.id && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute right-0 top-full mt-1.5 w-36 rounded-xl bg-white border border-border shadow-lg py-1 z-30 animate-fade-in"
-                      >
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveDropdownId(null);
-                            handleDownload(source);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-text-primary hover:bg-base transition-colors text-left cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5 text-text-muted" />
-                          <span>Download</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveDropdownId(null);
-                            setAssetToDelete(source);
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors text-left cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
         </div>
-
-        {/* Preview Panel Column (matching 03-assets2.png) */}
-        {selectedAsset && (
-          <AssetPreview
-            asset={selectedAsset}
-            onClose={() => setSelectedAsset(null)}
-            onDownload={handleDownload}
-            onDelete={(asset) => setAssetToDelete(asset)}
-          />
-        )}
       </div>
+
+      {/* Mounted In-Flow Ora Assistant Sidebar (matches 03-assets.png and 03-assets2.png verbatim) */}
+      <OraSidebar
+        isOpen={isOraDrawerOpen}
+        onClose={() => setIsOraDrawerOpen(false)}
+      />
 
       {/* Modals */}
       <UploadModal 
@@ -439,12 +448,6 @@ export default function AssetsPage() {
         onConfirm={handleDeleteConfirm}
         filename={assetToDelete?.filename || ''}
         isDeleting={isDeleting}
-      />
-
-      {/* Ora Assistant Slide-Over Drawer (exclusive to Assets & Studio) */}
-      <OraSidebarDrawer
-        isOpen={isOraDrawerOpen}
-        onClose={() => setIsOraDrawerOpen(false)}
       />
     </div>
   );

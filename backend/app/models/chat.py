@@ -7,6 +7,8 @@ class ChatRequest(BaseModel):
     query: str
     model: Optional[str] = "groq"
     workspace_id: Optional[str] = None
+    scope_ids: Optional[list[str]] = None
+    attached_name: Optional[str] = None
 
 
 class Citation(BaseModel):
@@ -24,6 +26,8 @@ class ChatMessage(BaseModel):
     content: str
     model_used: Optional[str] = None
     sources: Optional[list[Citation]] = None
+    scope_ids: Optional[list[str]] = None
+    attached_name: Optional[str] = None
     created_at: datetime
 
 

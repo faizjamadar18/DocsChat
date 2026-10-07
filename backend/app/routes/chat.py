@@ -40,6 +40,8 @@ async def get_chat_history(
             content=doc["content"],
             model_used=doc.get("model_used") or "groq",
             sources=doc.get("sources"),
+            scope_ids=doc.get("scope_ids"),
+            attached_name=doc.get("attached_name"),
             created_at=doc["created_at"],
         ))
 
@@ -67,11 +69,12 @@ async def ask(
     # Enforce Groq model
     enforced_model = "groq"
 
-    # Retrieve context and citations scoped to workspace
+    # Retrieve context and citations scoped to workspace (and scope_ids if provided)
     context, citations = await retrieve_for_query(
         user_id=user_id,
         query=request.query,
         workspace_id=target_workspace_id,
+        scope_ids=request.scope_ids,
     )
 
     # Save user message to MongoDB
@@ -81,6 +84,8 @@ async def ask(
         "role": "user",
         "content": request.query,
         "model_used": None,
+        "scope_ids": request.scope_ids,
+        "attached_name": request.attached_name,
         "created_at": datetime.now(timezone.utc),
     }
     await database.messages_collection.insert_one(user_msg)
@@ -100,7 +105,16 @@ async def ask(
                 data = json.dumps({"token": token, "done": False})
                 yield f"data: {data}\n\n"
 
-            data = json.dumps({"token": "", "done": True, "sources": citations})
+            has_read_document = bool(request.scope_ids or (citations and len(citations) > 0))
+            has_searched_workspace = bool(not request.scope_ids or (citations and len(citations) > 0))
+
+            data = json.dumps({
+                "token": "",
+                "done": True,
+                "sources": citations,
+                "has_read_document": has_read_document,
+                "has_searched_workspace": has_searched_workspace,
+            })
             yield f"data: {data}\n\n"
 
             assistant_msg = {
@@ -110,6 +124,8 @@ async def ask(
                 "content": full_response,
                 "model_used": enforced_model,
                 "sources": citations,
+                "scope_ids": request.scope_ids,
+                "attached_name": request.attached_name,
                 "created_at": datetime.now(timezone.utc),
             }
             await database.messages_collection.insert_one(assistant_msg)

@@ -23,8 +23,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Persistent Header */}
             <Header onToggleMobileSidebar={() => setMobileSidebarOpen(true)} />
 
-            {/* Scrollable Canvas */}
-            <main className="flex-1 min-h-0 overflow-y-auto bg-surface">
+            {/* Scrollable Canvas / Workspace View */}
+            <main className="flex-1 min-h-0 flex flex-col overflow-y-auto bg-surface">
               {children}
             </main>
           </div>
