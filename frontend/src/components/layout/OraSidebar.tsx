@@ -693,16 +693,6 @@ export default function OraSidebar({
           ref={dropdownRef}
           className="absolute top-14 left-3 right-3 bg-white text-text-primary rounded-2xl shadow-xl border border-border p-2.5 z-50 animate-fade-in max-h-96 flex flex-col overflow-hidden"
         >
-          {/* Top action: New chat */}
-          <button
-            type="button"
-            onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-text-primary hover:bg-sidebar transition-colors cursor-pointer mb-2 border border-border bg-sidebar shrink-0"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New chat</span>
-          </button>
-
           <div className="flex-1 overflow-y-auto space-y-3 pr-1 -mr-1">
             {threads.length === 0 ? (
               <div className="py-6 text-center text-xs text-text-muted">
