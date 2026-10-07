@@ -1,9 +1,9 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ChevronDown, Plus, File, Trash2, Sparkles } from 'lucide-react';
-import { api } from '../../../lib/api';
-import UploadModal from '../../../components/assets/UploadModal';
-import DeleteConfirmationModal from '../../../components/assets/DeleteConfirmationModal';
+import { api } from '@/lib/api';
+import UploadModal from '@/components/assets/UploadModal';
+import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
 
 interface Source {
   id: string;
@@ -23,7 +23,7 @@ export default function AssetsPage() {
   const [assetToDelete, setAssetToDelete] = useState<Source | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchSources = useCallback(async () => {
+  const fetchSources = async () => {
     try {
       const data = await api.get('/sources');
       setSources(data.sources || []);
@@ -32,11 +32,31 @@ export default function AssetsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    fetchSources();
-  }, [fetchSources]);
+    let active = true;
+    async function load() {
+      try {
+        const data = await api.get('/sources');
+        if (active) {
+          setSources(data.sources || []);
+        }
+      } catch (err) {
+        if (active) {
+          console.error('Failed to fetch sources:', err);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filteredSources = sources.filter((s) =>
     s.filename.toLowerCase().includes(search.toLowerCase())

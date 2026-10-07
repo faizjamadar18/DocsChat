@@ -28,10 +28,22 @@ When instructed to add a new feature or execute a phase from `IMPLEMENTATION_PLA
 - Write the application code to fulfill the requirement and make the tests pass.
 - Run `pytest` again and autonomously debug until you achieve a 100% pass rate.
 - Self-test your work using terminal scripts if necessary to ensure it works end-to-end. No manual user verification should be required.
-- Ensure frontend lints pass (`npm run lint`).
-- Make small, atomic commits using Conventional Commits tagged with the current phase.
+- Ensure frontend lints pass (`npm run lint`) and TypeScript checks pass (`npx tsc --noEmit`).
 
-## 5. Review & Final PR
+## 5. Strict Pre-Commit Verification Gate (MANDATORY BEFORE ANY COMMIT)
+Under NO circumstances should any code be committed to git before all of the following verification steps have been executed and passed with ZERO errors:
+1. **Frontend Verification**:
+   - Run `npm run lint` in `frontend/` — must pass with 0 errors.
+   - Run `npx tsc --noEmit` in `frontend/` — all module imports, types, and paths must resolve without errors.
+   - Check the terminal logs of any running dev servers (e.g., Next.js dev server) to confirm zero compilation or module resolution errors.
+2. **Backend Verification**:
+   - Run `pytest` in `backend/` using the virtual environment (`.\venv\Scripts\pytest` or `$env:PYTHONPATH="."; .\venv\Scripts\pytest`) — must achieve a 100% pass rate.
+   - Run backend linter (`flake8 app/` or equivalent) with zero syntax or import errors.
+3. **Zero-Tolerance Commit Rule**:
+   - Never commit code with failing tests, broken imports, compiler errors, or unaddressed linter errors.
+   - Only execute `git commit` after all gates above have passed cleanly.
+
+## 6. Review & Final PR
 - Call the `review-changes` skill to audit your work after each phase.
 - Keep commits on the unified transformation branch.
 - Only call `open-pull-request` to submit a PR to `main` once **ALL** roadmap phases are completed, integrated, and verified locally.

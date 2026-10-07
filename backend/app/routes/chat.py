@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, HTTPException, Header, status
 from fastapi.responses import StreamingResponse
 from datetime import datetime, timezone
 from typing import Optional
-from bson import ObjectId
 import app.database as database
 from app.database import check_db, DatabaseNotReadyError
 from app.models.chat import ChatRequest, ChatMessage, ChatHistoryResponse

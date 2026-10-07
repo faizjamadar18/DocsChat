@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, UploadCloud, File, AlertCircle } from 'lucide-react';
-import { api } from '../../../lib/api';
+import { api } from '@/lib/api';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -70,8 +70,9 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
       onUploadSuccess();
       onClose();
       setFile(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload file.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to upload file.';
+      setError(message);
     } finally {
       setUploading(false);
     }

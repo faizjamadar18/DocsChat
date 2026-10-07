@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import datetime, timezone
-from bson import ObjectId
 import app.database as database
 from app.database import check_db, slugify
 from app.models.user import GoogleAuthRequest, UserResponse, TokenResponse
