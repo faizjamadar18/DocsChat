@@ -1,6 +1,7 @@
 import os
 import asyncio
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Header, Query, status
+from fastapi.responses import FileResponse
 from datetime import datetime, timezone
 from typing import Optional
 from bson import ObjectId
@@ -153,6 +154,36 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
         chunk_count=source.get("chunk_count", 0),
         status=source["status"],
         uploaded_at=source["uploaded_at"],
+    )
+
+
+@router.get("/{source_id}/download")
+async def download_source(source_id: str, current_user: dict = Depends(get_current_user)):
+    """Download a source PDF file."""
+    try:
+        check_db()
+    except DatabaseNotReadyError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
+
+    if not ObjectId.is_valid(source_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid source ID")
+
+    source = await database.sources_collection.find_one({
+        "_id": ObjectId(source_id),
+        "user_id": current_user["id"],
+    })
+
+    if not source:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+
+    file_path = source.get("file_path")
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on server")
+
+    return FileResponse(
+        path=file_path,
+        filename=source.get("filename", "document.pdf"),
+        media_type="application/pdf",
     )
 
 

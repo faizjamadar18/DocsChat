@@ -104,3 +104,35 @@ def test_list_sources_falls_back_to_user_active_workspace(mock_db):
 
     assert response.status_code == 200
     assert captured_query.get("workspace_id") == WORKSPACE_1
+
+
+def test_download_source_not_found(mock_db):
+    mock_db["users"].find_one = AsyncMock(return_value={
+        "_id": ObjectId(USER_ID),
+        "email": USER_EMAIL,
+        "username": "User",
+        "active_workspace_id": WORKSPACE_1,
+    })
+    mock_db["sources"].find_one = AsyncMock(return_value=None)
+
+    fake_id = str(ObjectId())
+    response = client.get(
+        f"/api/sources/{fake_id}/download",
+        headers={"Authorization": f"Bearer {USER_TOKEN}"}
+    )
+    assert response.status_code == 404
+
+
+def test_download_source_invalid_id(mock_db):
+    mock_db["users"].find_one = AsyncMock(return_value={
+        "_id": ObjectId(USER_ID),
+        "email": USER_EMAIL,
+        "username": "User",
+        "active_workspace_id": WORKSPACE_1,
+    })
+
+    response = client.get(
+        "/api/sources/invalid-id/download",
+        headers={"Authorization": f"Bearer {USER_TOKEN}"}
+    )
+    assert response.status_code == 400

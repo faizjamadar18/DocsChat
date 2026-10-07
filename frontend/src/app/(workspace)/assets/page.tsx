@@ -1,17 +1,27 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, Plus, File, Trash2, Sparkles } from 'lucide-react';
+import { Search, ChevronDown, Plus, File, MoreVertical, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
+import AssetPreview, { Source } from '@/components/assets/AssetPreview';
 
-interface Source {
-  id: string;
-  filename: string;
-  status: string;
-  page_count: number;
-  uploaded_at: string;
-  file_size: number;
+function formatFileSize(bytes: number): string {
+  if (!bytes) return '0 B';
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatTimeAgo(dateString: string): string {
+  if (!dateString) return 'recently';
+  const date = new Date(dateString);
+  const diffMs = Date.now() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) return 'today';
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
 }
 
 export default function AssetsPage() {
@@ -19,6 +29,7 @@ export default function AssetsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   
+  const [selectedAsset, setSelectedAsset] = useState<Source | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<Source | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,7 +51,9 @@ export default function AssetsPage() {
       try {
         const data = await api.get('/sources');
         if (active) {
-          setSources(data.sources || []);
+          const list = data.sources || [];
+          setSources(list);
+          setSelectedAsset((prev) => prev ?? (list.length > 0 ? list[0] : null));
         }
       } catch (err) {
         if (active) {
@@ -67,6 +80,9 @@ export default function AssetsPage() {
     setIsDeleting(true);
     try {
       await api.delete(`/sources/${assetToDelete.id}`);
+      if (selectedAsset?.id === assetToDelete.id) {
+        setSelectedAsset(null);
+      }
       await fetchSources();
     } catch (err) {
       console.error('Failed to delete source:', err);
@@ -76,12 +92,36 @@ export default function AssetsPage() {
     }
   };
 
+  const handleDownload = async (source: Source) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/sources/${source.id}/download`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = source.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to download source:', err);
+    }
+  };
+
   const handleOraToggle = () => {
     window.dispatchEvent(new CustomEvent('toggle-ora-sidebar'));
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6 animate-fade-in">
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Search input */}
@@ -126,52 +166,70 @@ export default function AssetsPage() {
         </div>
       </div>
 
-      {/* Asset List */}
-      <div className="space-y-2">
-        {loading ? (
-          <div className="py-12 text-center text-xs text-text-muted">Loading assets...</div>
-        ) : filteredSources.length === 0 ? (
-          <div className="py-12 text-center text-xs text-text-muted bg-surface rounded-xl border border-border">
-            No assets found. Click Upload to add your first PDF document.
-          </div>
-        ) : (
-          filteredSources.map((source) => (
-            <div
-              key={source.id}
-              className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface hover:bg-base transition-colors group"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-text-secondary shrink-0">
-                  <File className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors cursor-pointer">
-                    {source.filename}
-                  </h4>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    {source.file_size ? `${(source.file_size / (1024 * 1024)).toFixed(2)} MB` : 'Unknown size'} &middot;{' '}
-                    {source.page_count ? `${source.page_count} pages` : 'Processing'} &middot;{' '}
-                    {new Date(source.uploaded_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <span className="px-2.5 py-1 text-[10px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wide">
-                  {source.status}
-                </span>
-                
-                <button
-                  type="button"
-                  onClick={() => setAssetToDelete(source)}
-                  className="p-1.5 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                  aria-label="Delete asset"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+      {/* Main Content: Asset List + Optional Side Preview */}
+      <div className="flex flex-col lg:flex-row items-start gap-8">
+        {/* Asset List Column */}
+        <div className="flex-1 min-w-0 w-full space-y-2">
+          {loading ? (
+            <div className="py-12 text-center text-xs text-text-muted">Loading assets...</div>
+          ) : filteredSources.length === 0 ? (
+            <div className="py-12 text-center text-xs text-text-muted bg-surface rounded-xl border border-border">
+              No assets found. Click Upload to add your first PDF document.
             </div>
-          ))
+          ) : (
+            filteredSources.map((source) => {
+              const isSelected = selectedAsset?.id === source.id;
+              return (
+                <div
+                  key={source.id}
+                  onClick={() => setSelectedAsset(source)}
+                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer group ${
+                    isSelected
+                      ? 'bg-[#F3F4F6] border-border shadow-2xs'
+                      : 'bg-surface hover:bg-[#F9F9FB] border-border/60 hover:border-border'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-white border border-border/80 flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
+                      <File className="w-4 h-4 text-text-secondary" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-medium text-text-primary group-hover:text-accent transition-colors truncate">
+                        {source.filename}
+                      </h4>
+                      <p className="text-[11px] text-text-muted mt-0.5">
+                        {formatFileSize(source.file_size)} &bull; {formatTimeAgo(source.uploaded_at)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAssetToDelete(source);
+                      }}
+                      className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-base transition-colors opacity-0 group-hover:opacity-100"
+                      aria-label="Asset options"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Preview Panel Column (matching 03-assets2.png) */}
+        {selectedAsset && (
+          <AssetPreview
+            asset={selectedAsset}
+            onClose={() => setSelectedAsset(null)}
+            onDownload={handleDownload}
+            onDelete={(asset) => setAssetToDelete(asset)}
+          />
         )}
       </div>
 
