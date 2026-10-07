@@ -41,6 +41,16 @@ body {
   background-color: rgba(0, 0, 0, 0.22);
 }
 
+/* Hide scrollbar while maintaining scrollability */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

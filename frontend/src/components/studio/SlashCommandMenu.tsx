@@ -208,6 +208,16 @@ export function SlashCommandMenu({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [prevQuery, setPrevQuery] = useState(query);
   const menuRef = useRef<HTMLDivElement>(null);
+  const selectedItemRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (selectedItemRef.current) {
+      selectedItemRef.current.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    }
+  }, [selectedIndex]);
 
   if (query !== prevQuery) {
     setPrevQuery(query);
@@ -287,7 +297,7 @@ export function SlashCommandMenu({
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}
-      className="fixed z-50 w-57.5 bg-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.04)] border border-border p-1.5 animate-fade-in text-xs select-none"
+      className="fixed z-50 w-57.5 max-h-80 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.04)] border border-border p-1.5 animate-fade-in text-xs select-none"
     >
       {categories.map((cat, catIdx) => {
         const catItems = filteredItems.filter((i) => i.category === cat);
@@ -308,6 +318,7 @@ export function SlashCommandMenu({
                 return (
                   <button
                     key={item.id}
+                    ref={isSelected ? selectedItemRef : null}
                     type="button"
                     onClick={() => executeCommand(item)}
                     onMouseEnter={() => setSelectedIndex(itemGlobalIdx)}

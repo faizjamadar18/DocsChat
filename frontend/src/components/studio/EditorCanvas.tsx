@@ -6,7 +6,6 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
-import { Link } from '@tiptap/extension-link';
 import { Plus, GripVertical } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu';
 
@@ -38,6 +37,7 @@ export function EditorCanvas({
       StarterKit.configure({
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
+        link: { openOnClick: false },
       }),
       Placeholder.configure({
         placeholder: "Start typing or press '/' for commands...",
@@ -48,7 +48,6 @@ export function EditorCanvas({
       TableRow,
       TableHeader,
       TableCell,
-      Link.configure({ openOnClick: false }),
     ],
     content: initialContent || '',
     editorProps: {
