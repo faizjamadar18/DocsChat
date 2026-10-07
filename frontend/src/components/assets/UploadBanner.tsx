@@ -38,7 +38,7 @@ export default function UploadBanner({ uploadState, onDismiss }: UploadBannerPro
     <div className="w-full space-y-2 py-1 animate-fade-in">
       {/* Top Progress Track (Image 1) */}
       {isUploading && (
-        <div className="w-full h-0.5 bg-[#EFEAFC] rounded-full overflow-hidden">
+        <div className="w-full h-0.5 bg-accent-subtle rounded-full overflow-hidden">
           <div
             className="h-full bg-accent transition-all duration-300 ease-out"
             style={{ width: `${Math.max(5, uploadState.progress)}%` }}

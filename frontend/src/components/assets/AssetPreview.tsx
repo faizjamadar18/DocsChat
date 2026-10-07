@@ -77,7 +77,7 @@ export default function AssetPreview({
 
       {/* Asset Information */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-text-primary break-words">
+        <h3 className="text-sm font-semibold text-text-primary wrap-break-word">
           {asset.filename}
         </h3>
 

@@ -13,6 +13,7 @@ Before making ANY commit or opening a Pull Request, you MUST review and execute 
 - [ ] Frontend: `npm run lint` passes with 0 errors.
 - [ ] Frontend: `npx tsc --noEmit` passes with 0 errors (all imports and path aliases resolve).
 - [ ] Terminal: Running dev servers (Next.js, FastAPI) show zero 500 runtime or module resolution errors.
+- [ ] **IDE Problems Window**: Check and resolve all errors and warnings in the IDE Problems window (`current_problems`) before committing.
 - [ ] **Edge Case Walkthrough**: Briefly review subtle edge cases (null/empty states, boundary inputs, layout clipping/overflow, modal/overlay behavior) before committing.
 - [ ] Under NO circumstance should code be committed before all checks above are green.
 
