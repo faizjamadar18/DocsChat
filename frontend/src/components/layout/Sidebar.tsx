@@ -20,6 +20,8 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChatThreads } from '../../hooks/useChatThreads';
 import { useVoiceLogs } from '../../hooks/useVoiceLogs';
+import type { VoiceLog } from '../../hooks/useVoiceLogs';
+import VoiceLogModal from '../voice/VoiceLogModal';
 
 function isToday(dateStr?: string): boolean {
   if (!dateStr) return false;
@@ -72,6 +74,7 @@ export default function Sidebar({
 
   const [chatsOpen, setChatsOpen] = useState(true);
   const [voiceOpen, setVoiceOpen] = useState(true);
+  const [selectedVoiceLog, setSelectedVoiceLog] = useState<VoiceLog | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleNewChat = () => {
@@ -315,8 +318,9 @@ export default function Sidebar({
                 voiceLogs.slice(0, 10).map((log) => (
                   <div
                     key={log.id}
-                    title={log.user_text}
-                    className="group px-3 py-1.5 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] transition-colors flex items-center justify-between cursor-default"
+                    title="Click to view full conversation"
+                    onClick={() => setSelectedVoiceLog(log)}
+                    className="group px-3 py-1.5 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] transition-colors flex items-center justify-between cursor-pointer"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1 mr-1">
                       <MessageSquare className="w-3.5 h-3.5 shrink-0 text-text-muted" />
@@ -329,7 +333,8 @@ export default function Sidebar({
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (confirm('Delete this voice log?')) void deleteVoiceLog(log.id);
                       }}
                       className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
@@ -406,6 +411,16 @@ export default function Sidebar({
           </div>
         )}
       </div>
+
+      {/* Full voice conversation viewer */}
+      <VoiceLogModal
+        log={selectedVoiceLog}
+        onClose={() => setSelectedVoiceLog(null)}
+        onDelete={(id) => {
+          void deleteVoiceLog(id);
+          setSelectedVoiceLog(null);
+        }}
+      />
     </aside>
   );
 

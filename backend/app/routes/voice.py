@@ -13,7 +13,7 @@ from app.database import check_db, DatabaseNotReadyError
 from app.middleware.auth_middleware import get_current_user
 from app.services import vapi_key_service as key_svc
 from app.services import voice_session_service as sess_svc
-from app.services.rag_service import retrieve_workspace_knowledge
+from app.services.rag_service import retrieve_workspace_knowledge, get_workspace_catalog
 
 router = APIRouter(prefix="/api/voice", tags=["Voice"])
 
@@ -25,6 +25,19 @@ GREETINGS = {
     "hi", "hello", "hey", "yo", "thanks", "thank you", "bye",
     "good morning", "good afternoon", "good evening", "how are you",
 }
+
+# File-list questions are answered from the workspace catalog (names + counts),
+# not from vector chunks — chunks alone can never say "how many files".
+INVENTORY_HINTS = (
+    "how many", "list", "what files", "what documents", "what assets",
+    "do i have", "do you have", "show my", "my files", "my documents",
+    "my assets", "name all", "all files",
+)
+
+
+def _is_inventory_question(query: str) -> bool:
+    q = (query or "").strip().lower()
+    return any(h in q for h in INVENTORY_HINTS)
 
 
 class SaveKeyRequest(BaseModel):
@@ -245,6 +258,24 @@ async def tool_call(request: dict | None = None, token: Optional[str] = Query(No
                             "result": "Hey! I'm Ora. Ask me about your documents and I'll keep it short."})
             continue
         try:
+            catalog_summary, doc_count, asset_count = await get_workspace_catalog(
+                user_id, workspace_id,
+            )
+        except Exception:
+            catalog_summary, doc_count, asset_count = "", 0, 0
+        # File-list questions come straight from the catalog (counts + names).
+        if _is_inventory_question(query):
+            if doc_count == 0 and asset_count == 0:
+                results.append({"toolCallId": call_id,
+                                "result": "This workspace is empty right now. Upload a PDF or write in Studio first."})
+            else:
+                results.append({"toolCallId": call_id, "result": _shorten_for_speech(
+                    f"You have {doc_count} Studio documents and {asset_count} uploaded assets. "
+                    f"{catalog_summary} Ask me about any of them."
+                )})
+            print(f"[VOICE] inventory q={query!r} docs={doc_count} assets={asset_count} ws={workspace_id}")
+            continue
+        try:
             context, _citations = await retrieve_workspace_knowledge(
                 user_id=user_id, workspace_id=workspace_id, query=query, top_k=5,
             )
@@ -252,11 +283,21 @@ async def tool_call(request: dict | None = None, token: Optional[str] = Query(No
             results.append({"toolCallId": call_id,
                             "error": "My notes are unavailable right now. Please try again in a moment."})
             continue
+        print(f"[VOICE] q={query!r} hits={1 if context else 0} docs={doc_count} assets={asset_count} ws={workspace_id}")
         if not context:
-            results.append({"toolCallId": call_id,
-                            "result": "I didn't find that in your files. Upload it first, then ask again."})
+            # Files exist but nothing matched: say so instead of claiming empty.
+            if doc_count or asset_count:
+                results.append({"toolCallId": call_id, "result": _shorten_for_speech(
+                    f"Nothing in your files matched that exact question, but you do have "
+                    f"{doc_count} documents and {asset_count} assets. {catalog_summary} "
+                    f"Try asking about one of them by name."
+                )})
+            else:
+                results.append({"toolCallId": call_id,
+                                "result": "I didn't find that in your files. Upload it first, then ask again."})
             continue
-        results.append({"toolCallId": call_id, "result": _shorten_for_speech(context)})
+        combined = f"Workspace files: {catalog_summary}\n\nRelevant text: {context}"
+        results.append({"toolCallId": call_id, "result": _shorten_for_speech(combined)})
     return {"results": results}
 
 

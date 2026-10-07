@@ -143,6 +143,33 @@ def test_tool_call_greeting_skips_retrieval():
         mock_retrieve.assert_not_called()
 
 
+def test_tool_call_inventory_answered_from_catalog():
+    client = _make_client()
+    from app.services import voice_session_service as sess
+    token = sess.create_session_token("user123", "ws123")
+    catalog = ("- Studio Documents (2 total): Plan, Notes\n"
+               "- Uploaded Assets (3 total): a.pdf, b.pdf, c.pdf", 2, 3)
+    with patch("app.routes.voice.get_workspace_catalog",
+               new=AsyncMock(return_value=catalog)), \
+         patch("app.routes.voice.retrieve_workspace_knowledge",
+               new=AsyncMock()) as mock_retrieve:
+        payload = {
+            "message": {
+                "type": "tool-calls",
+                "toolCallList": [
+                    {"id": "c3", "type": "function",
+                     "function": {"name": "search_workspace_knowledge",
+                                 "arguments": {"query": "how many documents and assets do I have?"}}}
+                ],
+            }
+        }
+        resp = client.post(f"/api/voice/tool-call?token={token}", json=payload)
+        assert resp.status_code == 200
+        result = resp.json()["results"][0]["result"]
+        assert "2" in result and "3" in result
+        mock_retrieve.assert_not_called()
+
+
 def test_voice_logs_are_separate_from_chat():
     client = _make_client()
     from app.middleware.auth_middleware import get_current_user

@@ -102,7 +102,13 @@ export default function VoiceNotch() {
       <div ref={rootRef} className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
         <div className="bg-white rounded-2xl shadow-xl border border-border p-4 w-80 text-center">
           <p className="text-sm font-semibold text-text-primary">Voice needs attention</p>
-          <p className="text-xs text-text-secondary mt-1">{errorMsg}</p>
+          <p className="text-xs text-text-secondary mt-1 leading-relaxed">{errorMsg}</p>
+          <Link
+            href="/settings"
+            className="mt-3 inline-block px-3 py-2 rounded-lg bg-[#111113] text-white text-xs font-medium hover:bg-black transition-colors"
+          >
+            Open Settings
+          </Link>
         </div>
       </div>
     );

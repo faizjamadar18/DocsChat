@@ -219,8 +219,9 @@ export default function SettingsPage() {
                   dashboard.vapi.ai
                 </a>{' '}
                 (API Keys -&gt; Public key, starts with pk_). Paste only the public key — never a
-                private key. Tip: in Vapi, lock the key to this site under Allowed Origins and
-                enable Transient Assistant only.
+                private key. Then open that key in Vapi and make sure: 1) Transient Assistant is ON
+                (our app builds the assistant on each call), 2) this site is listed under Allowed
+                Origins (e.g. http://localhost:3000 for local testing, plus your live site).
               </p>
               <div className="relative">
                 <input
