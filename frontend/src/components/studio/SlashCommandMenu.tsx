@@ -287,7 +287,7 @@ export function SlashCommandMenu({
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}
-      className="fixed z-50 w-56 max-h-[380px] overflow-y-auto bg-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.04)] border border-[#ECECEE] p-1.5 animate-fade-in text-xs"
+      className="fixed z-50 w-[230px] bg-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.04)] border border-[#ECECEE] p-1.5 animate-fade-in text-xs select-none"
     >
       {categories.map((cat, catIdx) => {
         const catItems = filteredItems.filter((i) => i.category === cat);

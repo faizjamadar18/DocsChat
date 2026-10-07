@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Cloud, Check, Loader2, Sparkles } from 'lucide-react';
+import { Cloud, Check, Loader2 } from 'lucide-react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
 import { api } from '../../../lib/api';
 import { StudioDocumentsSidebar, StudioDoc } from '../../../components/studio/StudioDocumentsSidebar';
@@ -272,18 +272,8 @@ export default function StudioPage() {
       <main className="flex-1 flex flex-col h-full overflow-y-auto bg-surface">
         {activeDoc ? (
           <div className="w-full max-w-3xl mx-auto px-6 sm:px-12 py-8 flex-1 flex flex-col">
-            {/* Top Canvas Header: Ora button & Cloud Sync Indicator */}
-            <div className="flex items-center justify-end gap-3 mb-6 select-none">
-              {/* ✦ Ora button */}
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-text-primary bg-sidebar hover:bg-[#F3F4F6] border border-border transition-colors cursor-pointer shadow-2xs"
-                title="Ora Assistant"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-accent" />
-                <span>Ora</span>
-              </button>
-
+            {/* Top Canvas Header: Cloud Sync Indicator */}
+            <div className="flex items-center justify-end mb-6 select-none">
               {/* Cloud Auto-save Sync Status */}
               <div
                 className="flex items-center gap-1.5 text-text-muted text-xs transition-colors"
