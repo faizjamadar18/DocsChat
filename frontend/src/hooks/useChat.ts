@@ -72,8 +72,7 @@ export function useChat(
   const currentThreadId = activeThreadId !== undefined ? activeThreadId : (selectedThreadId || createdThreadId);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchHistory = useCallback(async (wsId?: string, tId?: string) => {
-    const targetWs = wsId || activeWorkspaceId;
+  const fetchHistory = useCallback(async (_wsId?: string, tId?: string) => {
     const targetThread = tId !== undefined ? tId : activeThreadId;
 
     if (!targetThread) {
@@ -109,7 +108,7 @@ export function useChat(
     } finally {
       setLoading(false);
     }
-  }, [activeWorkspaceId, activeThreadId, initialMode]);
+  }, [activeThreadId, initialMode]);
 
   useEffect(() => {
     void fetchHistory(activeWorkspaceId, activeThreadId);

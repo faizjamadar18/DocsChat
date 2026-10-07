@@ -38,7 +38,6 @@ function PlaygroundContent() {
   const {
     messages,
     streaming,
-    error: chatError,
     activeThreadInfo,
     askQuestion,
     stopGenerating,
