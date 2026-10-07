@@ -39,8 +39,10 @@ Under NO circumstances should any code be committed to git before all of the fol
 2. **Backend Verification**:
    - Run `pytest` in `backend/` using the virtual environment (`.\venv\Scripts\pytest` or `$env:PYTHONPATH="."; .\venv\Scripts\pytest`) — must achieve a 100% pass rate.
    - Run backend linter (`flake8 app/` or equivalent) with zero syntax or import errors.
-3. **Zero-Tolerance Commit Rule**:
-   - Never commit code with failing tests, broken imports, compiler errors, or unaddressed linter errors.
+3. **Edge Case Walkthrough**:
+   - Perform a quick sanity check for minute edge cases (empty/null states, boundary inputs, layout clipping/overflow, overlay positioning) so the user does not need to babysit.
+4. **Zero-Tolerance Commit Rule**:
+   - Never commit code with failing tests, broken imports, compiler errors, unaddressed linter errors, or unverified edge cases.
    - Only execute `git commit` after all gates above have passed cleanly.
 
 ## 6. Review & Final PR
