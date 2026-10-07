@@ -40,61 +40,42 @@ export default function HomePage() {
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
     : 'there';
 
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const diffDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return '1 day ago';
+    return `${diffDays} days ago`;
+  };
+
   useEffect(() => {
     async function loadData() {
+      if (!user?.active_workspace_id) return;
       try {
-        const sourcesData = await api.get('/sources');
-        if (sourcesData && sourcesData.sources) {
-          const mapped: RecentItem[] = sourcesData.sources.slice(0, 3).map((s: { id: string; filename: string; page_count?: number }) => ({
-            id: s.id,
-            title: s.filename,
-            subtitle: `${(s.page_count || 1) * 20} KB • Recently uploaded`,
+        const data = await api.get(`/workspaces/${user.active_workspace_id}/dashboard`);
+        if (data) {
+          const assets: RecentItem[] = (data.recent_assets || []).map((a: { id: string; filename: string; file_size: number; uploaded_at: string }) => ({
+            id: a.id,
+            title: a.filename,
+            subtitle: `${(a.file_size / 1024).toFixed(1)} KB • Added ${formatTimeAgo(a.uploaded_at)}`,
             type: 'asset',
           }));
-          setRecentAssets(mapped);
-        }
-      } catch {
-        // Fallback display items matching visual reference
-        setRecentAssets([
-          {
-            id: '1',
-            title: 'agentic_resume.pdf',
-            subtitle: '33.8 KB • Added recently',
-            type: 'asset',
-          },
-          {
-            id: '2',
-            title: 'DocsChat_Architecture.pdf',
-            subtitle: '45.6 KB • Added recently',
-            type: 'asset',
-          },
-        ]);
-      }
+          setRecentAssets(assets);
 
-      // Default sample recent documents until Studio Phase 5 creates backend documents
-      setRecentDocs([
-        {
-          id: '1',
-          title: 'Plura Doc',
-          subtitle: 'Edited 3 days ago',
-          type: 'document',
-        },
-        {
-          id: '2',
-          title: 'RAG Chatbot Explained',
-          subtitle: 'Edited 3 days ago',
-          type: 'document',
-        },
-        {
-          id: '3',
-          title: 'JavaScript Async Await Basics',
-          subtitle: 'Edited 2 months ago',
-          type: 'document',
-        },
-      ]);
+          const docs: RecentItem[] = (data.recent_documents || []).map((d: { id: string; title: string; updated_at: string }) => ({
+            id: d.id,
+            title: d.title || 'Untitled Document',
+            subtitle: `Edited ${formatTimeAgo(d.updated_at)}`,
+            type: 'document',
+          }));
+          setRecentDocs(docs);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      }
     }
     loadData();
-  }, []);
+  }, [user?.active_workspace_id]);
 
   const quickChips = [
     { label: 'Improve a draft', icon: PenLine },

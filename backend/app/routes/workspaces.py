@@ -9,8 +9,11 @@ from app.models.workspace import (
     WorkspaceResponse,
     WorkspaceListResponse,
     WorkspaceActivateResponse,
+    WorkspaceDashboardResponse,
 )
 from app.middleware.auth_middleware import get_current_user
+from app.models.document import DocumentResponse
+from app.models.source import SourceResponse
 from app.services import vector_store as vs
 
 router = APIRouter(prefix="/api/workspaces", tags=["Workspaces"])
@@ -114,6 +117,62 @@ async def get_workspace(workspace_id: str, current_user: dict = Depends(get_curr
         logo_url=workspace.get("logo_url"),
         created_at=workspace["created_at"],
         updated_at=workspace["updated_at"],
+    )
+
+
+@router.get("/{workspace_id}/dashboard", response_model=WorkspaceDashboardResponse)
+async def get_workspace_dashboard(workspace_id: str, current_user: dict = Depends(get_current_user)):
+    """Get dashboard data for a workspace (recent docs and assets)."""
+    check_db()
+    if not ObjectId.is_valid(workspace_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid workspace ID")
+
+    workspace = await database.workspaces_collection.find_one({
+        "_id": ObjectId(workspace_id),
+        "owner_id": current_user["id"],
+    })
+    if not workspace:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
+
+    # Fetch 3 most recently updated documents
+    docs_cursor = database.documents_collection.find(
+        {"workspace_id": workspace_id}
+    ).sort("updated_at", -1).limit(3)
+    
+    recent_documents = []
+    async for doc in docs_cursor:
+        recent_documents.append(DocumentResponse(
+            id=str(doc["_id"]),
+            workspace_id=doc["workspace_id"],
+            user_id=doc["user_id"],
+            title=doc.get("title", "Untitled Document"),
+            content_json=doc.get("content_json"),
+            content_text=doc.get("content_text", ""),
+            created_at=doc["created_at"],
+            updated_at=doc["updated_at"],
+        ))
+
+    # Fetch 3 most recently uploaded assets
+    sources_cursor = database.sources_collection.find(
+        {"workspace_id": workspace_id}
+    ).sort("uploaded_at", -1).limit(3)
+
+    recent_assets = []
+    async for source in sources_cursor:
+        recent_assets.append(SourceResponse(
+            id=str(source["_id"]),
+            workspace_id=source.get("workspace_id"),
+            filename=source["filename"],
+            file_size=source["file_size"],
+            page_count=source["page_count"],
+            chunk_count=source["chunk_count"],
+            status=source["status"],
+            uploaded_at=source["uploaded_at"],
+        ))
+
+    return WorkspaceDashboardResponse(
+        recent_documents=recent_documents,
+        recent_assets=recent_assets,
     )
 
 

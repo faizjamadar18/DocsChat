@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from app.models.document import DocumentResponse
+from app.models.source import SourceResponse
 
 
 class WorkspaceCreate(BaseModel):
@@ -36,3 +38,8 @@ class WorkspaceListResponse(BaseModel):
 class WorkspaceActivateResponse(BaseModel):
     message: str
     active_workspace_id: str
+
+
+class WorkspaceDashboardResponse(BaseModel):
+    recent_documents: list[DocumentResponse]
+    recent_assets: list[SourceResponse]
