@@ -287,7 +287,7 @@ export function SlashCommandMenu({
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}
-      className="fixed z-50 w-[230px] bg-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.04)] border border-[#ECECEE] p-1.5 animate-fade-in text-xs select-none"
+      className="fixed z-50 w-57.5 bg-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.1),0_2px_8px_rgba(0,0,0,0.04)] border border-border p-1.5 animate-fade-in text-xs select-none"
     >
       {categories.map((cat, catIdx) => {
         const catItems = filteredItems.filter((i) => i.category === cat);
@@ -296,7 +296,7 @@ export function SlashCommandMenu({
         return (
           <div key={cat}>
             {catIdx > 0 && <div className="border-t border-[#F3F4F6] my-1 mx-2" />}
-            <div className="px-3 pt-1.5 pb-1 text-[11px] font-medium text-[#9CA3AF] select-none">
+            <div className="px-3 pt-1.5 pb-1 text-[11px] font-medium text-text-muted select-none">
               {cat}
             </div>
             <div className="space-y-0.5">
@@ -313,7 +313,7 @@ export function SlashCommandMenu({
                     onMouseEnter={() => setSelectedIndex(itemGlobalIdx)}
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-[#F4F4F6] text-[#111827]'
+                        ? 'bg-[#F4F4F6] text-text-primary'
                         : 'text-[#1F2937] hover:bg-[#F9FAFB]'
                     }`}
                   >

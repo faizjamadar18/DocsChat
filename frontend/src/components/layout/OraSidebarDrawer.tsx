@@ -10,11 +10,11 @@ export function OraLogoMark({ className = 'w-4 h-4' }: { className?: string }) {
     <svg className={className} viewBox="0 0 20 20" fill="currentColor">
       <path
         d="M6 3.5C4.62 3.5 3.5 4.62 3.5 6v7c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V6C8.5 4.62 7.38 3.5 6 3.5z"
-        className="fill-[#111827]"
+        className="fill-text-primary"
       />
       <path
         d="M13.5 5C12.12 5 11 6.12 11 7.5v7c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5v-7c0-1.38-1.12-2.5-2.5-2.5z"
-        className="fill-[#111827]"
+        className="fill-text-primary"
       />
     </svg>
   );
@@ -159,7 +159,7 @@ export default function OraSidebarDrawer({
         {messages.length === 0 ? (
           /* Empty State (matching 04-ora-assistant-sidebar.png verbatim) */
           <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-[#F7F7F9] border border-border flex items-center justify-center mb-1">
+            <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1">
               <OraLogoMark className="w-5 h-5 text-text-secondary" />
             </div>
             <h3 className="text-sm font-semibold text-text-primary">Ask Ora anything</h3>
@@ -186,7 +186,7 @@ export default function OraSidebarDrawer({
                   className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
                     msg.role === 'user'
                       ? 'bg-accent text-white rounded-br-xs'
-                      : 'bg-[#F7F7F9] text-text-primary border border-border/80 rounded-bl-xs'
+                      : 'bg-sidebar text-text-primary border border-border/80 rounded-bl-xs'
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -198,11 +198,11 @@ export default function OraSidebarDrawer({
                     {msg.sources.map((cit, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[#EFEAFC] text-accent border border-accent/20"
+                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-accent-subtle text-accent border border-accent/20"
                         title={cit.snippet}
                       >
                         <FileText className="w-2.5 h-2.5" />
-                        <span className="truncate max-w-[140px]">{cit.filename}</span>
+                        <span className="truncate max-w-35">{cit.filename}</span>
                         {cit.page ? ` p.${cit.page}` : ''}
                       </span>
                     ))}
@@ -260,7 +260,7 @@ export default function OraSidebarDrawer({
 
       {/* Input Bar at Bottom (matching 04-ora-assistant-sidebar.png) */}
       <form onSubmit={handleSubmit} className="p-3 border-t border-border/80 bg-white">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F7F7F9] border border-border focus-within:border-accent/40 focus-within:bg-white transition-all">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-sidebar border border-border focus-within:border-accent/40 focus-within:bg-white transition-all">
           <input
             ref={inputRef}
             type="text"
@@ -273,7 +273,7 @@ export default function OraSidebarDrawer({
           <button
             type="submit"
             disabled={!input.trim() || streaming}
-            className="w-7 h-7 rounded-full bg-[#EFEAFC] hover:bg-accent text-[#6E56CF] hover:text-white flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="w-7 h-7 rounded-full bg-accent-subtle hover:bg-accent text-accent hover:text-white flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             title="Send"
           >
             <ArrowUp className="w-3.5 h-3.5" />
