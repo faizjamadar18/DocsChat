@@ -41,9 +41,12 @@ export default function HomePage() {
     : 'there';
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
+    const cleanDateString = !dateString.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateString)
+      ? `${dateString}Z`
+      : dateString;
+    const date = new Date(cleanDateString);
     const diffDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'today';
+    if (diffDays <= 0) return 'today';
     if (diffDays === 1) return '1 day ago';
     return `${diffDays} days ago`;
   };

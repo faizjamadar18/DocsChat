@@ -37,6 +37,9 @@ async def list_sources(
     cursor = database.sources_collection.find(filter_query).sort("uploaded_at", -1)
     sources = []
     async for doc in cursor:
+        uploaded_at = doc.get("uploaded_at")
+        if uploaded_at and uploaded_at.tzinfo is None:
+            uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
         sources.append(SourceResponse(
             id=str(doc["_id"]),
             workspace_id=doc.get("workspace_id"),
@@ -45,7 +48,7 @@ async def list_sources(
             page_count=doc.get("page_count", 0),
             chunk_count=doc.get("chunk_count", 0),
             status=doc["status"],
-            uploaded_at=doc["uploaded_at"],
+            uploaded_at=uploaded_at,
         ))
 
     return SourceListResponse(sources=sources, total=len(sources))
@@ -145,6 +148,10 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
     if not source:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
 
+    uploaded_at = source.get("uploaded_at")
+    if uploaded_at and uploaded_at.tzinfo is None:
+        uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
+
     return SourceResponse(
         id=str(source["_id"]),
         workspace_id=source.get("workspace_id"),
@@ -153,7 +160,7 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
         page_count=source.get("page_count", 0),
         chunk_count=source.get("chunk_count", 0),
         status=source["status"],
-        uploaded_at=source["uploaded_at"],
+        uploaded_at=uploaded_at,
     )
 
 

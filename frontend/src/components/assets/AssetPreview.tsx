@@ -28,9 +28,12 @@ function formatFileSize(bytes: number): string {
 
 function formatTimeAgo(dateString: string): string {
   if (!dateString) return 'recently';
-  const date = new Date(dateString);
+  const cleanDateString = !dateString.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateString)
+    ? `${dateString}Z`
+    : dateString;
+  const date = new Date(cleanDateString);
   const diffMs = Date.now() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
+  const diffSec = Math.max(0, Math.floor(diffMs / 1000));
   const diffMin = Math.floor(diffSec / 60);
   const diffHours = Math.floor(diffMin / 60);
   const diffDays = Math.floor(diffHours / 24);

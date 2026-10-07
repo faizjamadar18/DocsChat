@@ -159,6 +159,9 @@ async def get_workspace_dashboard(workspace_id: str, current_user: dict = Depend
 
     recent_assets = []
     async for source in sources_cursor:
+        uploaded_at = source.get("uploaded_at")
+        if uploaded_at and uploaded_at.tzinfo is None:
+            uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
         recent_assets.append(SourceResponse(
             id=str(source["_id"]),
             workspace_id=source.get("workspace_id"),
@@ -167,7 +170,7 @@ async def get_workspace_dashboard(workspace_id: str, current_user: dict = Depend
             page_count=source["page_count"],
             chunk_count=source["chunk_count"],
             status=source["status"],
-            uploaded_at=source["uploaded_at"],
+            uploaded_at=uploaded_at,
         ))
 
     return WorkspaceDashboardResponse(

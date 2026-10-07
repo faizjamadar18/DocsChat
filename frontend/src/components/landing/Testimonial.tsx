@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 export default function Testimonial() {
   return (
     <section className="border-b border-white/10">

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Plus, File, MoreVertical, Sparkles } from 'lucide-react';
+import { Search, ChevronDown, Plus, File, MoreVertical, Sparkles, Download, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
@@ -17,9 +17,12 @@ function formatFileSize(bytes: number): string {
 
 function formatTimeAgo(dateString: string): string {
   if (!dateString) return 'recently';
-  const date = new Date(dateString);
+  const cleanDateString = !dateString.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(dateString)
+    ? `${dateString}Z`
+    : dateString;
+  const date = new Date(cleanDateString);
   const diffMs = Date.now() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
+  const diffSec = Math.max(0, Math.floor(diffMs / 1000));
   const diffMin = Math.floor(diffSec / 60);
   const diffHours = Math.floor(diffMin / 60);
   const diffDays = Math.floor(diffHours / 24);
@@ -27,7 +30,7 @@ function formatTimeAgo(dateString: string): string {
   if (diffSec < 60) return 'less than a minute ago';
   if (diffMin < 60) return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
   if (diffHours < 24) return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
-  if (diffDays === 0) return 'today';
+  if (diffDays <= 0) return 'today';
   if (diffDays === 1) return '1 day ago';
   return `${diffDays} days ago`;
 }
@@ -45,10 +48,26 @@ export default function AssetsPage() {
   // Upload progress banner state (matching Image 1 & Image 2)
   const [uploadState, setUploadState] = useState<UploadState | null>(null);
 
+  // Asset action dropdown state
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeDropdownId) return;
+    const handleClickOutside = () => setActiveDropdownId(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [activeDropdownId]);
+
   const fetchSources = async () => {
     try {
       const data = await api.get('/sources');
-      setSources(data.sources || []);
+      const readyList = (data.sources || []).filter((s: Source) => s.status === 'ready');
+      setSources(readyList);
+      setSelectedAsset((prev) => {
+        if (!prev) return readyList.length > 0 ? readyList[0] : null;
+        const exists = readyList.find((s: Source) => s.id === prev.id);
+        return exists || (readyList.length > 0 ? readyList[0] : null);
+      });
     } catch (err) {
       console.error('Failed to fetch sources:', err);
     } finally {
@@ -62,9 +81,9 @@ export default function AssetsPage() {
       try {
         const data = await api.get('/sources');
         if (active) {
-          const list = data.sources || [];
-          setSources(list);
-          setSelectedAsset((prev) => prev ?? (list.length > 0 ? list[0] : null));
+          const readyList = (data.sources || []).filter((s: Source) => s.status === 'ready');
+          setSources(readyList);
+          setSelectedAsset((prev) => prev ?? (readyList.length > 0 ? readyList[0] : null));
         }
       } catch (err) {
         if (active) {
@@ -114,16 +133,13 @@ export default function AssetsPage() {
       );
 
       // Upload finished (bytes transferred to server)
-      // Now transition into processing state while RAG pipeline parses, chunks & embeds
+      // Transition to processing state while RAG pipeline parses, chunks & embeds in background
       setUploadState({
         id: source.id,
         filename: file.name,
         progress: 100,
         status: 'processing',
       });
-
-      // Refresh list so the file appears immediately in the assets list
-      await fetchSources();
 
       // Poll source status until processing finishes (status === 'ready')
       const pollInterval = 1500;
@@ -142,7 +158,9 @@ export default function AssetsPage() {
                 progress: 100,
                 status: 'completed',
               });
+              // Only add to sources UI once processing is completely finished
               await fetchSources();
+              setSelectedAsset(updated);
             }
             return;
           }
@@ -155,7 +173,6 @@ export default function AssetsPage() {
                 status: 'error',
                 error: 'Failed to process document content.',
               });
-              await fetchSources();
             }
             return;
           }
@@ -167,14 +184,14 @@ export default function AssetsPage() {
         if (attempts < maxAttempts && isMountedRef.current) {
           setTimeout(checkProcessingStatus, pollInterval);
         } else if (isMountedRef.current) {
-          // Fallback after polling window
+          // Timeout reached
           setUploadState({
             id: source.id,
             filename: file.name,
-            progress: 100,
-            status: 'completed',
+            progress: 0,
+            status: 'error',
+            error: 'Document processing took longer than expected.',
           });
-          await fetchSources();
         }
       };
 
@@ -191,6 +208,7 @@ export default function AssetsPage() {
   };
 
   const filteredSources = sources.filter((s) =>
+    s.status === 'ready' &&
     s.filename.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -330,18 +348,55 @@ export default function AssetsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="relative flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setAssetToDelete(source);
+                        setActiveDropdownId((prev) => (prev === source.id ? null : source.id));
                       }}
-                      className="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-base transition-colors opacity-0 group-hover:opacity-100"
+                      className={`p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-base transition-colors cursor-pointer ${
+                        activeDropdownId === source.id
+                          ? 'opacity-100 bg-base text-text-primary'
+                          : 'opacity-0 group-hover:opacity-100'
+                      }`}
                       aria-label="Asset options"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
+
+                    {activeDropdownId === source.id && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 top-full mt-1.5 w-36 rounded-xl bg-white border border-border shadow-lg py-1 z-30 animate-fade-in"
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDropdownId(null);
+                            handleDownload(source);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:text-text-primary hover:bg-base transition-colors text-left cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5 text-text-muted" />
+                          <span>Download</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDropdownId(null);
+                            setAssetToDelete(source);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
