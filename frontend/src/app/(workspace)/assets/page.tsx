@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronDown, Plus, File, Trash2 } from 'lucide-react';
+import { Search, ChevronDown, Plus, File } from 'lucide-react';
 import { api } from '../../../lib/api';
 
 interface Source {
@@ -39,14 +39,14 @@ export default function AssetsPage() {
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Search input */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#F7F7F9] border border-[#ECECEE] w-full sm:w-80">
-          <Search className="w-4 h-4 text-[#9CA3AF]" />
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sidebar border border-border w-full sm:w-80">
+          <Search className="w-4 h-4 text-text-muted" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search assets..."
-            className="bg-transparent text-xs text-[#111827] placeholder-[#9CA3AF] focus:outline-none w-full"
+            className="bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none w-full"
           />
         </div>
 
@@ -54,10 +54,10 @@ export default function AssetsPage() {
         <div className="flex items-center gap-3 self-end sm:self-auto">
           <button
             type="button"
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#6B7280] hover:text-[#111827] bg-[#FFFFFF] border border-[#ECECEE] rounded-xl transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-surface border border-border rounded-xl transition-colors cursor-pointer"
           >
             <span>Recent</span>
-            <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF]" />
+            <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
           </button>
 
           <button
@@ -73,26 +73,26 @@ export default function AssetsPage() {
       {/* Asset List */}
       <div className="space-y-1.5">
         {loading ? (
-          <div className="py-12 text-center text-xs text-[#9CA3AF]">Loading assets...</div>
+          <div className="py-12 text-center text-xs text-text-muted">Loading assets...</div>
         ) : filteredSources.length === 0 ? (
-          <div className="py-12 text-center text-xs text-[#9CA3AF]">
+          <div className="py-12 text-center text-xs text-text-muted">
             No assets found. Click Upload to add your first PDF document.
           </div>
         ) : (
           filteredSources.map((source) => (
             <div
               key={source.id}
-              className="flex items-center justify-between p-3.5 rounded-xl border border-[#ECECEE] bg-[#FFFFFF] hover:bg-[#FBFBFD] transition-colors group"
+              className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-surface hover:bg-base transition-colors group"
             >
               <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-[#6B7280] shrink-0">
+                <div className="w-9 h-9 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-text-secondary shrink-0">
                   <File className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-[#111827] group-hover:text-[#5B45B2] transition-colors">
+                  <h4 className="text-xs font-semibold text-text-primary group-hover:text-accent-hover transition-colors">
                     {source.filename}
                   </h4>
-                  <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+                  <p className="text-[11px] text-text-muted mt-0.5">
                     {source.page_count ? `${source.page_count} pages` : 'Processed'} &middot;{' '}
                     {new Date(source.uploaded_at).toLocaleDateString()}
                   </p>

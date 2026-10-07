@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <WorkspaceProvider>
-        <div className="flex h-screen w-screen overflow-hidden bg-[#FBFBFD] text-[#111827]">
+        <div className="flex h-screen w-screen overflow-hidden bg-base text-text-primary">
           {/* Persistent Sidebar */}
           <Sidebar
             mobileOpen={mobileSidebarOpen}
@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Header onToggleMobileSidebar={() => setMobileSidebarOpen(true)} />
 
             {/* Scrollable Canvas */}
-            <main className="flex-1 min-h-0 overflow-y-auto bg-[#FFFFFF]">
+            <main className="flex-1 min-h-0 overflow-y-auto bg-surface">
               {children}
             </main>
           </div>

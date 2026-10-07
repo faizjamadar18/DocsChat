@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.className} bg-[#FBFBFD] text-[#111827] antialiased min-h-screen`}>
+      <body className={`${GeistSans.className} bg-base text-text-primary antialiased min-h-screen`}>
         <AuthProvider>
           {children}
         </AuthProvider>

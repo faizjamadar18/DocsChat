@@ -32,7 +32,7 @@ export default function Header({
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="h-14 px-4 sm:px-6 bg-[#FFFFFF] border-b border-[#ECECEE] flex items-center justify-between shrink-0 select-none">
+    <header className="h-14 px-4 sm:px-6 bg-surface border-b border-border flex items-center justify-between shrink-0 select-none">
       {/* Left side: Sidebar collapse toggle & Breadcrumb */}
       <div className="flex items-center gap-3">
         {/* Desktop Sidebar Toggle */}
@@ -40,7 +40,7 @@ export default function Header({
           type="button"
           onClick={toggleSidebar}
           title="Toggle sidebar"
-          className="hidden lg:flex p-1.5 rounded-md text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+          className="hidden lg:flex p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
         >
           <PanelLeft className="w-4 h-4" />
         </button>
@@ -50,21 +50,21 @@ export default function Header({
           type="button"
           onClick={onToggleMobileSidebar}
           title="Open menu"
-          className="lg:hidden p-1.5 rounded-md text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+          className="lg:hidden p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
         >
           <PanelLeft className="w-4 h-4" />
         </button>
 
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-[#6B7280] font-medium">
+        <nav className="flex items-center gap-1.5 text-xs text-text-secondary font-medium">
           {breadcrumbs.map((crumb, idx) => (
             <React.Fragment key={crumb.href + idx}>
-              {idx > 0 && <span className="text-[#9CA3AF] select-none">&rsaquo;</span>}
+              {idx > 0 && <span className="text-text-muted select-none">&rsaquo;</span>}
               <span
                 className={
                   idx === breadcrumbs.length - 1
-                    ? 'text-[#111827] font-semibold'
-                    : 'hover:text-[#111827] transition-colors'
+                    ? 'text-text-primary font-semibold'
+                    : 'hover:text-text-primary transition-colors'
                 }
               >
                 {crumb.label}
@@ -78,14 +78,14 @@ export default function Header({
       <div className="flex items-center gap-3">
         {/* Search input box */}
         <div className="relative hidden sm:flex items-center">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#E5E7EB] bg-[#FBFBFD] hover:border-[#D1D5DB] transition-colors w-44 md:w-56 cursor-text">
-            <Search className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-subtle bg-base hover:border-[#D1D5DB] transition-colors w-44 md:w-56 cursor-text">
+            <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
             <input
               type="text"
               placeholder="Search..."
-              className="bg-transparent border-none text-xs text-[#111827] placeholder-[#9CA3AF] focus:outline-none w-full"
+              className="bg-transparent border-none text-xs text-text-primary placeholder-text-muted focus:outline-none w-full"
             />
-            <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] text-[#6B7280] bg-[#FFFFFF] border border-[#ECECEE] rounded shadow-2xs font-sans">
+            <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] text-text-secondary bg-surface border border-border rounded shadow-2xs font-sans">
               ⌘K
             </kbd>
           </div>
@@ -107,7 +107,7 @@ export default function Header({
         {/* Notification Bell */}
         <button
           type="button"
-          className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
           title="Notifications"
         >
           <Bell className="w-4 h-4" />

@@ -399,7 +399,7 @@ export function EditorCanvas({
 
   return (
     <div className="max-w-3xl mx-auto py-8">
-      <EditorContent editor={editor} className="prose prose-neutral focus:outline-none min-h-[500px]" />
+      <EditorContent editor={editor} className="prose prose-neutral focus:outline-none min-h-125" />
     </div>
   );
 }

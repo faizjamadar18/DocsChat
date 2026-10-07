@@ -16,14 +16,14 @@ export default function StudioPage() {
   return (
     <div className="flex h-full w-full">
       {/* Studio Sub-sidebar (Documents List) */}
-      <div className="w-64 border-r border-[#ECECEE] bg-[#FFFFFF] p-3 flex flex-col shrink-0">
+      <div className="w-64 border-r border-border bg-surface p-3 flex flex-col shrink-0">
         <div className="flex items-center justify-between px-1 py-1.5 mb-2">
-          <span className="text-[11px] font-semibold text-[#9CA3AF] tracking-wider uppercase">
+          <span className="text-[11px] font-semibold text-text-muted tracking-wider uppercase">
             DOCUMENTS
           </span>
           <button
             type="button"
-            className="w-5 h-5 rounded-md hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] flex items-center justify-center transition-colors cursor-pointer"
+            className="w-5 h-5 rounded-md hover:bg-[#F3F4F6] text-text-secondary hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
             title="New Document"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -31,12 +31,12 @@ export default function StudioPage() {
         </div>
 
         {/* Search docs input */}
-        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#F7F7F9] border border-[#ECECEE] mb-3">
-          <Search className="w-3.5 h-3.5 text-[#9CA3AF]" />
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-sidebar border border-border mb-3">
+          <Search className="w-3.5 h-3.5 text-text-muted" />
           <input
             type="text"
             placeholder="Search docs..."
-            className="bg-transparent text-xs text-[#111827] placeholder-[#9CA3AF] focus:outline-none w-full"
+            className="bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none w-full"
           />
         </div>
 
@@ -47,11 +47,11 @@ export default function StudioPage() {
               key={doc.id}
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer transition-colors ${
                 doc.active
-                  ? 'bg-[#F7F7F9] font-medium text-[#111827]'
-                  : 'text-[#6B7280] hover:bg-[#F7F7F9] hover:text-[#111827]'
+                  ? 'bg-sidebar font-medium text-text-primary'
+                  : 'text-text-secondary hover:bg-sidebar hover:text-text-primary'
               }`}
             >
-              <FileText className="w-3.5 h-3.5 text-[#9CA3AF]" />
+              <FileText className="w-3.5 h-3.5 text-text-muted" />
               <span className="truncate">{doc.title}</span>
             </div>
           ))}
@@ -65,7 +65,7 @@ export default function StudioPage() {
             type="text"
             value={docTitle}
             onChange={(e) => setDocTitle(e.target.value)}
-            className="w-full text-3xl font-bold text-[#111827] placeholder-[#9CA3AF] focus:outline-none border-none bg-transparent"
+            className="w-full text-3xl font-bold text-text-primary placeholder-text-muted focus:outline-none border-none bg-transparent"
             placeholder="Untitled Document"
           />
           <textarea
@@ -73,7 +73,7 @@ export default function StudioPage() {
             onChange={(e) => setDocContent(e.target.value)}
             placeholder="Start typing or press '/' for commands..."
             rows={12}
-            className="w-full text-sm text-[#374151] placeholder-[#9CA3AF] focus:outline-none border-none resize-none bg-transparent leading-relaxed"
+            className="w-full text-sm text-[#374151] placeholder-text-muted focus:outline-none border-none resize-none bg-transparent leading-relaxed"
           />
         </div>
       </div>

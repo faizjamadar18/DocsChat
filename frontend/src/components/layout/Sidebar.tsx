@@ -80,14 +80,14 @@ export default function Sidebar({
 
   const content = (
     <aside
-      className={`h-full w-64 bg-[#F7F7F9] border-r border-[#ECECEE] flex flex-col justify-between select-none transition-all duration-200 ${
+      className={`h-full w-64 bg-sidebar border-r border-border flex flex-col justify-between select-none transition-all duration-200 ${
         sidebarCollapsed ? 'lg:-ml-64' : 'lg:ml-0'
       }`}
     >
       {/* Top section: Workspace header & Navigation */}
       <div className="flex flex-col flex-1 min-h-0">
         {/* Workspace Brand / Header */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-[#ECECEE]/60">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-border/60">
           <button
             type="button"
             className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity text-left w-full cursor-pointer"
@@ -119,11 +119,11 @@ export default function Sidebar({
               )}
             </div>
 
-            <span className="text-sm font-semibold text-[#111827] truncate flex-1">
+            <span className="text-sm font-semibold text-text-primary truncate flex-1">
               {workspaceName}
             </span>
 
-            <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+            <ChevronDown className="w-3.5 h-3.5 text-text-muted shrink-0" />
           </button>
         </div>
 
@@ -142,13 +142,13 @@ export default function Sidebar({
                 onClick={onCloseMobile}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                   isActive
-                    ? 'bg-[#EFEAFC] text-[#5B45B2]'
-                    : 'text-[#6B7280] hover:text-[#111827] hover:bg-[#EFEFF2]'
+                    ? 'bg-accent-subtle text-accent-hover'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2]'
                 }`}
               >
                 <Icon
                   className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-[#5B45B2]' : 'text-[#6B7280]'
+                    isActive ? 'text-accent-hover' : 'text-text-secondary'
                   }`}
                 />
                 <span>{item.label}</span>
@@ -162,11 +162,11 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => setChatsOpen(!chatsOpen)}
-            className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-[#9CA3AF] tracking-wider uppercase hover:text-[#4B5563] transition-colors"
+            className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-text-muted tracking-wider uppercase hover:text-[#4B5563] transition-colors"
           >
             <span>CHATS</span>
             <ChevronDown
-              className={`w-3 h-3 text-[#9CA3AF] transition-transform duration-200 ${
+              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${
                 chatsOpen ? '' : '-rotate-90'
               }`}
             />
@@ -177,9 +177,9 @@ export default function Sidebar({
               {recentChats.map((chat) => (
                 <div
                   key={chat.id}
-                  className="px-3 py-1.5 rounded-md text-xs text-[#6B7280] hover:text-[#111827] hover:bg-[#EFEFF2] cursor-pointer truncate transition-colors flex items-center gap-2"
+                  className="px-3 py-1.5 rounded-md text-xs text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] cursor-pointer truncate transition-colors flex items-center gap-2"
                 >
-                  <MessageSquare className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                  <MessageSquare className="w-3.5 h-3.5 text-text-muted shrink-0" />
                   <span className="truncate">{chat.title}</span>
                 </div>
               ))}
@@ -189,7 +189,7 @@ export default function Sidebar({
       </div>
 
       {/* User profile footer */}
-      <div className="p-3 border-t border-[#ECECEE]/80 relative">
+      <div className="p-3 border-t border-border/80 relative">
         <div
           onClick={() => setUserMenuOpen(!userMenuOpen)}
           className="flex items-center justify-between p-2 rounded-lg hover:bg-[#EFEFF2] cursor-pointer transition-colors"
@@ -200,39 +200,39 @@ export default function Sidebar({
               <img
                 src={user.picture}
                 alt={user.username || 'User'}
-                className="w-7 h-7 rounded-full object-cover shrink-0 border border-[#E5E7EB]"
+                className="w-7 h-7 rounded-full object-cover shrink-0 border border-border-subtle"
               />
             ) : (
-              <div className="w-7 h-7 rounded-full bg-[#111827] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+              <div className="w-7 h-7 rounded-full bg-text-primary text-white flex items-center justify-center text-xs font-semibold shrink-0">
                 {(user?.username || 'U')[0].toUpperCase()}
               </div>
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-[#111827] truncate leading-tight">
+              <p className="text-xs font-semibold text-text-primary truncate leading-tight">
                 {user?.username || 'user'}
               </p>
-              <p className="text-[11px] text-[#6B7280] truncate leading-tight">
+              <p className="text-[11px] text-text-secondary truncate leading-tight">
                 {user?.email || ''}
               </p>
             </div>
           </div>
 
-          <ChevronsUpDown className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0 ml-1" />
+          <ChevronsUpDown className="w-3.5 h-3.5 text-text-muted shrink-0 ml-1" />
         </div>
 
         {/* Dropdown Menu */}
         {userMenuOpen && (
-          <div className="absolute bottom-16 left-3 right-3 bg-white rounded-xl shadow-lg border border-[#ECECEE] p-1 z-30 animate-fade-in">
+          <div className="absolute bottom-16 left-3 right-3 bg-white rounded-xl shadow-lg border border-border p-1 z-30 animate-fade-in">
             <Link
               href="/settings"
               onClick={() => {
                 setUserMenuOpen(false);
                 onCloseMobile?.();
               }}
-              className="flex items-center gap-2 px-3 py-2 text-xs text-[#111827] hover:bg-[#F7F7F9] rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-sidebar rounded-lg transition-colors"
             >
-              <Settings className="w-3.5 h-3.5 text-[#6B7280]" />
+              <Settings className="w-3.5 h-3.5 text-text-secondary" />
               Settings
             </Link>
             <button
