@@ -33,6 +33,7 @@ export function EditorCanvas({
   const editorWrapperRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit.configure({
         bulletList: { keepMarks: true },
