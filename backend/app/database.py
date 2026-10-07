@@ -18,6 +18,7 @@ documents_collection: AsyncIOMotorCollection | None = None
 sources_collection: AsyncIOMotorCollection | None = None
 messages_collection: AsyncIOMotorCollection | None = None
 chat_threads_collection: AsyncIOMotorCollection | None = None
+voice_logs_collection: AsyncIOMotorCollection | None = None
 
 
 def slugify(text: str) -> str:
@@ -146,7 +147,9 @@ async def run_migrations():
 
 async def init_db():
     """Connect to MongoDB, run migration hooks, and create indexes."""
-    global client, db, users_collection, workspaces_collection, documents_collection, sources_collection, messages_collection, chat_threads_collection
+    global client, db, users_collection, workspaces_collection, documents_collection
+    global sources_collection, messages_collection, chat_threads_collection
+    global voice_logs_collection
 
     client = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client[settings.DB_NAME]
@@ -157,6 +160,7 @@ async def init_db():
     sources_collection = db["sources"]
     messages_collection = db["messages"]
     chat_threads_collection = db["chat_threads"]
+    voice_logs_collection = db["voice_logs"]
 
     # Run auto-migration hook for existing records BEFORE index creation
     await run_migrations()
@@ -193,6 +197,11 @@ async def init_db():
         await chat_threads_collection.create_index([("workspace_id", 1), ("user_id", 1), ("mode", 1), ("updated_at", -1)])
     except Exception as e:
         print(f"Warning: chat_threads index creation: {e}")
+
+    try:
+        await voice_logs_collection.create_index([("user_id", 1), ("workspace_id", 1), ("created_at", -1)])
+    except Exception as e:
+        print(f"Warning: voice_logs index creation: {e}")
 
 
 def check_db():

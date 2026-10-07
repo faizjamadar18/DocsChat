@@ -4,7 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.database import init_db, close_db
-from app.routes import auth, sources, chat, workspaces, documents
+from app.routes import auth, sources, chat, workspaces, documents, voice
 
 
 async def catch_unhandled_exceptions(request: Request, call_next):
@@ -32,14 +32,14 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-app = FastAPI(
+fastapi_app = FastAPI(
     title="DocsChat API",
     description="A multi-workspace RAG workspace API powered by Groq Llama 3.3 70B",
     version="2.0.0",
     lifespan=lifespan,
 )
 
-app.middleware("http")(catch_unhandled_exceptions)
+fastapi_app.middleware("http")(catch_unhandled_exceptions)
 
 
 # CORS origins used by health endpoint and middleware
@@ -50,19 +50,20 @@ _cors_origins = [
 ]
 
 # Register all routes on the FastAPI instance before wrapping
-app.include_router(auth.router)
-app.include_router(workspaces.router)
-app.include_router(sources.router)
-app.include_router(documents.router)
-app.include_router(chat.router)
+fastapi_app.include_router(auth.router)
+fastapi_app.include_router(workspaces.router)
+fastapi_app.include_router(sources.router)
+fastapi_app.include_router(documents.router)
+fastapi_app.include_router(chat.router)
+fastapi_app.include_router(voice.router)
 
 
-@app.get("/health")
+@fastapi_app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "docschat-api", "cors_origins": _cors_origins}
 
 
-@app.get("/health/db")
+@fastapi_app.get("/health/db")
 async def db_health():
     """Check database connectivity."""
     try:
@@ -73,8 +74,11 @@ async def db_health():
         return {"status": "disconnected", "error": str(e)}
 
 
+# Backwards-compatible alias: existing code/tests import `app`.
+app = fastapi_app
+
 app = CORSMiddleware(
-    app,
+    fastapi_app,
     allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
