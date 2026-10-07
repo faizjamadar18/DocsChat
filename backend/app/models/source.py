@@ -5,6 +5,7 @@ from typing import Optional
 
 class SourceResponse(BaseModel):
     id: str
+    workspace_id: Optional[str] = None
     filename: str
     file_size: int
     page_count: int

@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock
+from bson import ObjectId
 from app.main import app
 
 client = TestClient(app)
@@ -12,12 +13,12 @@ def mock_google_auth():
 
 @pytest.fixture
 def mock_db():
-    with patch("app.database.users_collection") as mock_users:
-        # Avoid the check_db exception in tests
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.database.workspaces_collection") as mock_workspaces:
         with patch("app.routes.auth.check_db"):
-            yield mock_users
+            yield {"users": mock_users, "workspaces": mock_workspaces}
 
-def test_google_login_new_user(mock_google_auth, mock_db):
+def test_google_login_new_user_provisions_workspace(mock_google_auth, mock_db):
     mock_google_auth.return_value = {
         "email": "test@example.com",
         "name": "Test User",
@@ -25,13 +26,19 @@ def test_google_login_new_user(mock_google_auth, mock_db):
         "sub": "google123"
     }
     
-    # Mock find_one to return None (new user)
-    mock_db.find_one = AsyncMock(return_value=None)
+    mock_db["users"].find_one = AsyncMock(return_value=None)
     
-    # Mock insert_one
-    mock_insert_result = AsyncMock()
-    mock_insert_result.inserted_id = "new_mongo_id"
-    mock_db.insert_one = AsyncMock(return_value=mock_insert_result)
+    new_user_id = ObjectId()
+    mock_user_insert = AsyncMock()
+    mock_user_insert.inserted_id = new_user_id
+    mock_db["users"].insert_one = AsyncMock(return_value=mock_user_insert)
+    
+    new_ws_id = ObjectId()
+    mock_ws_insert = AsyncMock()
+    mock_ws_insert.inserted_id = new_ws_id
+    mock_db["workspaces"].insert_one = AsyncMock(return_value=mock_ws_insert)
+    
+    mock_db["users"].update_one = AsyncMock()
     
     response = client.post("/api/auth/google", json={"credential": "valid_token"})
     
@@ -40,8 +47,11 @@ def test_google_login_new_user(mock_google_auth, mock_db):
     assert "access_token" in data
     assert data["user"]["email"] == "test@example.com"
     assert data["user"]["username"] == "Test User"
+    assert data["user"]["active_workspace_id"] == str(new_ws_id)
     
-    mock_db.insert_one.assert_called_once()
+    mock_db["users"].insert_one.assert_called_once()
+    mock_db["workspaces"].insert_one.assert_called_once()
+    mock_db["users"].update_one.assert_called_once()
 
 def test_google_login_existing_user(mock_google_auth, mock_db):
     mock_google_auth.return_value = {
@@ -51,17 +61,17 @@ def test_google_login_existing_user(mock_google_auth, mock_db):
         "sub": "google456"
     }
     
-    # Mock find_one to return existing user
-    mock_db.find_one = AsyncMock(return_value={
-        "_id": "existing_id",
+    existing_ws_id = str(ObjectId())
+    mock_db["users"].find_one = AsyncMock(return_value={
+        "_id": ObjectId(),
         "email": "existing@example.com",
-        "username": "Old Name", # The username in DB might differ
+        "username": "Old Name",
         "auth_provider": "google",
+        "active_workspace_id": existing_ws_id,
         "created_at": "2023-01-01T00:00:00Z"
     })
     
-    # Mock update_one
-    mock_db.update_one = AsyncMock()
+    mock_db["users"].update_one = AsyncMock()
     
     response = client.post("/api/auth/google", json={"credential": "valid_token"})
     
@@ -69,6 +79,6 @@ def test_google_login_existing_user(mock_google_auth, mock_db):
     data = response.json()
     assert "access_token" in data
     assert data["user"]["email"] == "existing@example.com"
+    assert data["user"]["active_workspace_id"] == existing_ws_id
     
-    # Make sure we didn't insert a new user
-    mock_db.insert_one.assert_not_called()
+    mock_db["users"].insert_one.assert_not_called()

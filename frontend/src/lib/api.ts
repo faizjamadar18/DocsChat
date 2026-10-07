@@ -56,7 +56,7 @@ export const api = {
     return this.request(endpoint, { ...options, method: 'GET' });
   },
 
-  post(endpoint: string, body: any, options?: RequestInit) {
+  post(endpoint: string, body: unknown, options?: RequestInit) {
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,
@@ -65,7 +65,64 @@ export const api = {
     });
   },
 
+  put(endpoint: string, body: unknown, options?: RequestInit) {
+    const isFormData = body instanceof FormData;
+    return this.request(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: isFormData ? body : JSON.stringify(body),
+    });
+  },
+
+  patch(endpoint: string, body: unknown, options?: RequestInit) {
+    const isFormData = body instanceof FormData;
+    return this.request(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: isFormData ? body : JSON.stringify(body),
+    });
+  },
+
   delete(endpoint: string, options?: RequestInit) {
     return this.request(endpoint, { ...options, method: 'DELETE' });
-  }
+  },
+
+  uploadWithProgress<T = unknown>(
+    endpoint: string,
+    formData: FormData,
+    onProgress?: (percent: number) => void
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE_URL}${endpoint}`);
+      const token = auth.getToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percent = Math.min(100, Math.max(0, Math.round((event.loaded / event.total) * 100)));
+          onProgress(percent);
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch {
+            resolve(xhr.responseText as unknown as T);
+          }
+        } else {
+          try {
+            const errJson = JSON.parse(xhr.responseText);
+            reject(new Error(parseErrorDetail(errJson.detail)));
+          } catch {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(formData);
+    });
+  },
 };

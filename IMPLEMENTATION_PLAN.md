@@ -1,349 +1,544 @@
-# DocsChat Evolution — Implementation Plan
+# Ora Workspace Evolution — Implementation Plan
 
-> **Goal**: Evolve the existing DocsChat (FastAPI + Next.js + MongoDB + ChromaDB) into a multi-workspace AI platform with OAuth, persistent vector search, a document editor, and an AI assistant — all built on top of the current codebase.
-
----
-
-## How to use this plan (read first)
-
-This document is a **compass, not a script**. It captures intent, order of work, and known pitfalls. It is **not** 100% accurate against the live codebase, vendor APIs, or free-tier limits — and it will drift as we build.
-
-**Do not follow this plan blindly.** While implementing:
-
-1. **Read the actual code** in this repo before changing it. File lists, function signatures, and line counts in this plan can be stale.
-2. **Research current docs** for Qdrant, Google Identity Services, Google embeddings, FastAPI, Next.js, Tiptap, and any library you add. Prefer official docs and the library version that is actually installed over examples copied from this file.
-3. **If the plan conflicts with reality, reality wins.** Wrong dimension, deprecated API, missing authz, a better data model — stop, choose the sound engineering option, and note the deviation in the PR.
-4. **If a step is technically impossible, missing a dependency, or would ship a security hole, do not implement it as written.** Notify the user, then continue with a better approach.
-5. **File-by-file tables are hints**, not a closed set. You may create, skip, or rename files when that is cleaner. You may touch files this plan forgot (for example landing-page `/register` links, `render.yaml`, `api.ts`).
-6. **Estimated effort is a guess.** Phase 3 is larger than “moderate.” Adjust scope rather than rushing a broken cutover.
-
-### Research protocol (every phase)
-
-Before writing code for a phase, spend a short research pass:
-
-| Check | Why |
-|-------|-----|
-| Current library API for the version in `requirements.txt` / `package.json` | This plan may cite older names (`SearchRequest`, embedding model ids, GIS setup) |
-| Actual embedding vector size from a live `embed_query` (or documented `output_dimensionality`) | Do not hardcode 768 |
-| Qdrant Cloud free-tier limits (RAM, collections) | Collection-per-workspace may be a bad fit |
-| Google Cloud OAuth: JS origins **and** redirect URIs for your exact GIS flow | Console setup in this plan is incomplete |
-| Existing callers of any API you rename | Frontend hooks/components are hardcoded today |
-
-After research, implement the **goal** of the phase. Deviating from a table row is expected. Quietly shipping a known-bad design is not.
-
-### Implementer rules (also belongs in `AGENTS.md`)
-
-- Fulfill the **core goal** of the phase, not the exact diff list.
-- Think independently. If a well-known pattern (payload filters, nested FastAPI routers with a shared ownership dependency, debounce + content-hash reindex) is better than the plan, use it.
-- Stop and tell the user when you hit a major blocker (auth lockout, data loss, quota, breaking production with no migration).
-- Never hardcode secrets. Never push to `main`. Never delete user data without an explicit migration path.
-- Do not change existing API shapes without a coordinated frontend change **or** a documented compatibility window.
+> **Source of Truth**: 
+> 1. **Visual Reference Images**: The screenshots in `/docs/design-reference/` are the **absolute source of truth** for UI layout, micro-interactions, components, typography, colors, and behavior. All implementations must replicate these images verbatim.
+> 2. **AI Workflow Standards**: All agents must strictly follow instructions in `.agents/skills/` (`add-feature`, `write-tests`, `review-changes`, `open-pull-request`) and `AGENTS.md`. Never ask the user to manually test; autonomously verify every change.
 
 ---
 
-## Current Codebase Summary
+## 1. Executive Summary & Feasibility Assessment
 
-Verify this against the tree; it is a snapshot.
+### 1.1 Feasibility Assessment: Evolve vs. Rewrite from Scratch
+**Verdict: Evolve the current codebase. Do NOT start from scratch.**
+- **Why**: The existing repository already contains rock-solid, production-tested foundations:
+  - **FastAPI Backend**: Async MongoDB with Motor ([database.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/database.py)), JWT auth middleware ([auth_middleware.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/middleware/auth_middleware.py)), and clean routing.
+  - **Google OAuth**: Verified Google ID token validation ([auth.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/routes/auth.py)) and user creation.
+  - **Qdrant Vector Database**: Already integrated in [vector_store.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/services/vector_store.py) using the shared collection `docschat_shared_collection_v2` with 3072-dimension vectors, payload filters, and cosine similarity.
+  - **PDF Chunking & RAG Pipeline**: Working `PyPDFLoader` + `RecursiveCharacterTextSplitter`, background task ingestion, and citation matching in [rag_service.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/services/rag_service.py).
+  - **Groq Llama 3.3 70B Streaming**: Already working via SSE in [chat.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/routes/chat.py).
+  - **Frontend Core**: Next.js 16 (App Router), React 19, and Tailwind CSS v4 are already configured and running.
+- **Rewriting from scratch** would needlessly discard working database connections, vector schemas, OAuth credentials, and deployment setups (`render.yaml`).
+- **Evolutionary path** preserves stability, minimizes regressions, and allows testing each phase autonomously.
 
-| Layer | Stack | Key Files |
-|-------|-------|-----------|
-| Frontend | Next.js 16, Tailwind v4, TypeScript | pages: `/`, `/login`, `/register`, `/notebook`; hooks: `useAuth`, `useChat`; `lib/api.ts` (get/post/delete only — **no put**) |
-| Backend | FastAPI, Python (Render uses 3.12 in `render.yaml`) | 3 route files, services including `vector_store.py`, `rag_service.py`, `auth_service.py` |
-| Database | MongoDB Atlas | `users`, `sources`, `messages` |
-| Vector Store | ChromaDB; **in-memory on Render** (`CHROMA_PERSISTENT=false`) | `backend/app/services/vector_store.py` |
-| Embeddings | `GOOGLE_EMBEDDING_MODEL` in `config.py` (currently `models/gemini-embedding-2`, **not** text-embedding-004) | `embedding_service.py` |
-| Auth | JWT + bcrypt email/password | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` |
-
-Known production gaps this plan only partly addresses:
-
-- Vectors reset on Render restart (Phase 1).
-- Uploaded PDFs live on the Render disk (`uploads/`) and are **also** ephemeral. Qdrant does not fix file storage. Call that out; object storage is a later decision, not a silent assumption.
-
----
-
-## Implementation Phases
-
-### Phase 0: AI Workflow Setup
-
-**Why**: Shared instructions so later work is consistent. Keep this **short**. Do not delay Phase 1 (the data-loss fix) for perfect agent docs.
-
-**Do not overwrite** existing `frontend/AGENTS.md` / `frontend/CLAUDE.md` (Next.js stubs) unless you are intentionally extending them.
-
-#### Suggested files
-
-| File | Purpose |
-|------|---------|
-| `AGENTS.md` (project root) | Project context, stack, run/lint/test, folder map, coding rules, implementer “do not follow plans blindly” rules |
-| `CLAUDE.md` / `GEMINI.md` (root) | Pointers to `AGENTS.md` |
-| `.agents/skills/add-feature/SKILL.md` | Research → implement goal → small commits → tests → PR |
-| `.agents/skills/write-tests/SKILL.md` | pytest / frontend tests **if those tools exist**; add flake8/pytest to backend deps before making them a gate |
-| `.agents/skills/review-changes/SKILL.md` | Security, authz, leftover TODOs, “did we follow the plan blindly?” |
-| `.agents/skills/open-pull-request/SKILL.md` | Branch naming, commit style |
-
-If flake8 is not in `requirements.txt`, either add it or do not claim “flake8 must pass” until it is installed.
-
-#### Subagent roles
-
-| Role | Responsibility |
-|------|----------------|
-| **Planner** | Read code + current docs, produce a short plan. Does not write feature code. |
-| **Implementer** | Ship the phase goal. Research APIs. Deviate when the written plan is wrong. Stop on major blockers. |
-| **Reviewer** | Audit against **goals, security, and the live code**, not checkbox compliance with this markdown file. |
-
-#### Definition of Done (any phase)
-
-1. The **user-facing goal** works (even if the approach differs from this document).
-2. Lint for the stacks you actually configured.
-3. No secrets hardcoded.
-4. API breaks are either avoided or shipped together with frontend + a migration note.
-5. PR (or commit message) lists **intentional deviations** from this plan and why.
+### 1.2 Model & Provider Audit
+| Component | Current Implementation | Planned State | Rationale |
+|-----------|------------------------|---------------|-----------|
+| **Chat / Text Agent** | Gemini 2.5 Flash + Groq Llama 3.3 70B (switchable) | **Groq Llama 3.3 70B only** | User requirement: Remove Gemini from chat, remove model selector UI, eliminate dead code. Server-side key only. |
+| **Embeddings** | `models/gemini-embedding-2` (via `GEMINI_API_KEY`, 3072 dims) | **Keep Gemini Embeddings (Recommended)** | Generous free tier, 3072-dim embeddings already indexed in Qdrant. Replacing with local embeddings (e.g. HuggingFace) would crash Render free tier (512MB RAM); replacing with OpenAI/Voyage adds subscription cost and requires re-indexing all existing vectors. |
+| **Voice Agent** | None | **Vapi Web SDK (`@vapi-ai/web`) + Backend Tool Calling** | Browser voice session with floating notch; queries shared backend RAG tool to prevent logic duplication. Pure voice — **no `@` mentions in voice**. |
+| **Model Selector** | `ModelSwitcher.tsx` dropdown in chat bar & messages | **Remove entirely** | Replaced with clean Ora branding badge; no switcher clutter. |
 
 ---
 
-### Phase 1: ChromaDB → Qdrant
-
-**Why first**: Fixes vector loss on Render restart. Later features need a durable store.
-
-**Goal**: Embeddings persist across API restarts; upload / query / delete still work through the same RAG flow.
-
-**Effort**: Small-to-medium. Not “swap one file” if dimensions, IDs, and filters need care.
-
-#### 1.1 Manual: Qdrant Cloud
-
-- Create a cluster; store URL + API key in env (local `.env` **you** edit; `render.yaml` + `.env.example` in git).
-- Re-check free-tier limits at implementation time. Do not assume 1GB / unlimited collections.
-
-#### 1.2 Design decision (research, then choose)
-
-This plan previously suggested one Qdrant collection per user, then per workspace. **That may be wrong** on a small Cloud cluster (collection RAM overhead).
-
-**Preferred default unless research says otherwise:**
-
-- One collection (or one per environment), named stably.
-- Payload on every point: `user_id`, later `workspace_id`, `source_id`, `source_type` (`pdf` | `document`), plus existing chunk metadata.
-- Filter on payload for query/delete.
-
-If you keep per-user collections, document why (isolation vs cost). Do **not** create a collection per workspace without checking quota.
-
-#### 1.3 Backend (suggested touch list — not exclusive)
-
-| Area | Intent |
-|------|--------|
-| `requirements.txt` | Replace chromadb with current `qdrant-client`; pin a version you verified in docs |
-| `config.py` | `QDRANT_URL`, `QDRANT_API_KEY`; remove unused Chroma flags |
-| `vector_store.py` | Same **callers** (`add_documents`, `query_documents`, `delete_source_vectors`, `get_or_create_collection` / equivalent, `get_collection_count`). Internals are Qdrant. |
-| `.env.example`, `render.yaml` | New env vars; drop `CHROMA_PERSISTENT` |
-| README architecture | Chroma → Qdrant |
-
-**Implementation notes (verify against current Qdrant client docs):**
-
-- Point IDs must be UUID or unsigned int. Today Chroma IDs are strings like `chunk_{uuid}` — adapt.
-- Vector size: measure from `generate_single_embedding` (or set embedding `output_dimensionality` explicitly and match Qdrant). **Do not hardcode 768** unless that is the measured size.
-- Use the **current** client methods (`upsert`, `query_points` / documented search API). Ignore outdated `SearchRequest` snippets in this file if the SDK moved on.
-- Similarity: Chroma used `1 - distance`. Map Qdrant scores honestly (cosine vs euclid) so citations are not nonsense.
-- Existing Render vectors cannot be migrated; they are already gone. Users re-upload PDFs. Say so in the PR.
-
-Public function names may change if you improve the module — then update `rag_service.py` / `sources.py` in the same PR. Stability of **behavior** matters more than freezing names forever.
-
-#### 1.4 Test the goal
-
-- Upload a PDF; points appear in Qdrant.
-- Restart the API; query still returns chunks.
-- Citations still resolve via `sources_collection`.
-- Delete source; points with that `source_id` (and `user_id`) are gone.
-
----
-
-### Phase 2: Google-only auth
-
-**Why**: Simpler login. Independent of Qdrant **code**, but do not debug auth and vectors in the same release if you can avoid it.
-
-**Goal**: “Continue with Google” verifies an ID token, upserts a user by email, returns the same JWT + `TokenResponse` shape the frontend already stores.
-
-**Do not** delete email/password until Google login works in production **or** you have an explicit cutover (this may be a tiny user base — write that decision down).
-
-#### 2.1 Manual: Google Cloud Console
-
-Research the **exact** GIS / `@react-oauth/google` flow you pick. Typically you need:
-
-- OAuth client (Web)
-- Authorized JavaScript origins: localhost + production frontend
-- Authorized redirect URIs as required by that library version
-- `GOOGLE_CLIENT_ID` in backend **and** `NEXT_PUBLIC_GOOGLE_CLIENT_ID` on Vercel
-- Add `GOOGLE_CLIENT_ID` to **Render** env, not only `.env.example`
-
-#### 2.2 Backend intent
-
-- `POST /api/auth/google` with `{ "credential": "<id_token>" }`.
-- Verify with current `google.auth` / `google-auth` APIs (`verify_oauth2_token` or documented equivalent). Audience = client ID.
-- Find-or-create by email. Set `auth_provider`, `picture`, `username` from Google profile.
-- Keep `create_access_token` / `decode_access_token` / `GET /api/auth/me`.
-- Update `UserResponse` only if the frontend needs `picture`; keep token response compatible.
-
-**Existing password users:** same email → Google sign-in should log into that account (merge). Different email → they cannot sign in. Call that out. Removing `bcrypt`/`passlib` is optional after cutover, not a trophy.
-
-#### 2.3 Frontend intent
-
-- Google button on `/login` (and treat “sign up” as the same button).
-- Remove or redirect `/register`.
-- **Hunt all `/register` links** (`Nav.tsx`, `Hero.tsx`, `CTA.tsx`, `page.tsx`) — this plan’s file table will miss some.
-- Keep JWT in `auth.ts`; `/notebook` after success.
-
-#### 2.4 Test the goal
-
-- First Google sign-in creates a user.
-- Second sign-in same account does not duplicate.
-- Refresh still authenticated.
-- Logout works.
-- Old password login: either still works during dual-run, or is intentionally gone with a note.
-
----
-
-### Phase 3: Multi-workspace
-
-**Why**: Editor and Ora need a scope. This is the **largest** breaking change. Treat it as large.
-
-**Goal**: A user has many workspaces; sources, chat, and later documents are isolated per workspace; **only the owner** can access a workspace.
-
-#### 3.1 Data model (starting point — adjust if Mongo usage suggests otherwise)
-
-`workspaces`: `user_id`, `name`, `description`, timestamps.
-
-Add `workspace_id` to `sources` and `messages`. Indexes: `(user_id, workspace_id)` (and whatever query patterns you actually use).
-
-#### 3.2 Vectors
-
-Do **not** blindly rename collections to `ws_{id}`. Extend Phase 1 payload with `workspace_id` and filter. Research again if Qdrant limits changed.
-
-#### 3.3 Security (non-negotiable)
-
-Every nested route must:
-
-1. Load workspace by id.
-2. Assert `workspace.user_id == current_user.id` (404 if not — no leaking existence if you prefer).
-3. Then query child resources **and** filter by `workspace_id`.
-
-A shared FastAPI dependency is better than copy-paste. If this plan’s route table forgot that, add it anyway.
-
-#### 3.4 API change strategy
-
-A full path rewrite (`/api/workspaces/{ws_id}/sources`, `.../chat/...`) is cleaner long-term but **breaks** `SourcesSidebar`, `UploadArea`, `useChat` (paths without `/api` prefix in client because `API_BASE_URL` already includes `/api`).
-
-**Pick one and ship it atomically:**
-
-- **A (preferred for a small app):** one release — new routes + all frontend callers + redirect `/notebook` → `/notebook/{defaultWorkspaceId}`.
-- **B:** keep old user-scoped routes as aliases of the default workspace during a short window.
-
-Do not leave `/notebook` as a dead page.
-
-Cascade on workspace delete: Mongo children, disk files if present, Qdrant points for that workspace. Research Motor transactions vs sequential deletes; be consistent.
-
-#### 3.5 Migration
-
-- Script or first-request hook: create “Default Workspace”, backfill `workspace_id` on existing sources/messages.
-- Idempotent. Safe to re-run.
-
-#### 3.6 Frontend
-
-Workspace switcher, `useWorkspaces`, dynamic route. `api.ts` will need whatever methods the new UI uses.
-
-#### 3.7 Test the goal
-
-- User A cannot read User B’s workspace id.
-- Chat and PDFs stay inside the selected workspace.
-- Delete workspace removes its data.
-- Old users get a default workspace and still see prior PDFs/chat.
-
----
-
-### Phase 4: Document editor (Notion-like)
-
-**Depends on** workspaces.
-
-**Goal**: Rich-text docs in a workspace, saved in Mongo, optionally searchable by RAG without melting embedding quota.
-
-#### 4.1 Model (starting point)
-
-`documents`: `user_id`, `workspace_id`, `title`, `content` (editor HTML/JSON — **choose Tiptap’s real storage format from current Tiptap docs**, not necessarily “HTML string”), `plain_text`, timestamps, optional index status.
-
-#### 4.2 API
-
-CRUD under the workspace. Same ownership dependency as Phase 3.
-
-`frontend/src/lib/api.ts` currently has get/post/delete only. Add `put`/`patch` **or** use `request()` consistently — this plan was wrong to say api.ts needs no change.
-
-#### 4.3 Indexing (do not follow the naive “reindex on every PUT”)
-
-A 2s debounce that delete+re-embed on every keystroke burst will race and burn Google quota.
-
-**Sensible default:**
-
-- Auto-save document body to Mongo on debounce (cheap).
-- Reindex to Qdrant when content hash changes **and** (explicit “Update index” **or** a longer idle, e.g. 10–30s, **or** on blur). Skip if text unchanged.
-- Payload: `source_type=document`, `source_id=document_id`, `workspace_id`, `user_id`.
-- **Update `_resolve_citations`** so document hits show the document title, not “Unknown source”. The current helper only reads `sources_collection`.
-
-Tiptap: research current `@tiptap/react` + starter-kit for Next.js App Router / React 19. Extensions listed here are a starting set, not a bill of materials.
-
-#### 4.4 Test the goal
-
-- Create/edit/delete docs.
-- Ask in chat/Ora: answers can cite the doc.
-- Rapid typing does not fire dozens of embedding calls.
-- Another user cannot fetch the doc by id.
-
----
-
-### Phase 5: AI assistant (Ora)
-
-**Goal**: Same RAG chat, workspace-scoped, reachable from workspace pages as a slide-over. Persona rename is optional.
-
-**Not in MVP:** Vapi/voice, cross-workspace search (that undoes Phase 3 isolation). Do not add `/api/ora/ask` unless you need a public alias — reuse `/chat/ask`.
-
-Reuse streaming logic in `useChat` / `ChatPanel`; do not fork a second SSE client unless necessary.
-
----
-
-## Phase order
-
-```mermaid
-graph LR
-    P0[Phase 0: workflow docs] --> P1[Phase 1: Qdrant]
-    P1 --> P2[Phase 2: Google auth]
-    P2 --> P3[Phase 3: Workspaces]
-    P3 --> P4[Phase 4: Editor]
-    P3 --> P5[Phase 5: Ora]
-    P4 --> P5
+## 2. Multi-Workspace Architecture & Data Model
+
+The data model and backend architecture are built **natively multi-workspace capable from day one**. While the initial UI displays the user's active workspace (e.g. "Shreyas HQ"), a user can own multiple workspaces in MongoDB. Scaling to multiple workspaces later requires **zero database migrations or schema rewrites**.
+
+```
++-----------------------------------------------------------------------------------+
+|                                MONGODB DATA MODEL                                 |
++-----------------------------------------------------------------------------------+
+|                                                                                   |
+|  [users]                                                                          |
+|  - _id: ObjectId                                                                  |
+|  - email: str (unique)                                                            |
+|  - username: str                                                                  |
+|  - picture: Optional[str]                                                         |
+|  - active_workspace_id: ObjectId  ----------------------------+                   |
+|  - created_at: datetime                                       |                   |
+|                                                               v                   |
+|  [workspaces]                                          [workspaces]               |
+|  - _id: ObjectId                                       - _id: ObjectId            |
+|  - owner_id: ObjectId (user_id)                        - owner_id: ObjectId       |
+|  - name: str ("Shreyas HQ")                            - name: str ("Project X")  |
+|  - slug: str ("shreyashq")                             - slug: str ("project-x")  |
+|  - logo_url: Optional[str]                             - logo_url: Optional[str]  |
+|  - description: Optional[str]                          - description: str         |
+|  - created_at: datetime                                - created_at: datetime     |
+|          |                                                    |                   |
+|          +--------------------------+                         |                   |
+|                                     |                         |                   |
+|                                     v                         v                   |
+|               +--------------------------------------------------+                |
+|               |              WORKSPACE-SCOPED RESOURCES          |                |
+|               |  - documents (Studio rich-text pages)            |                |
+|               |  - sources (Uploaded PDF assets)                 |                |
+|               |  - chat_threads & messages (Ora chat & voice)    |                |
+|               |  - qdrant points (Filtered by workspace_id)      |                |
+|               +--------------------------------------------------+                |
++-----------------------------------------------------------------------------------+
 ```
 
-- Phase 0 must not block Phase 1.
-- Do **not** parallelize Phase 2 and Phase 3: both touch first-login, `database.py`, and `main.py`. Serial is cheaper than merge pain.
-- After each phase, re-read this document and the code; drop or rewrite steps that are now obsolete.
+### 2.1 Pydantic Models & MongoDB Collections
+
+```python
+# backend/app/models/workspace.py
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+class WorkspaceCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    slug: str = Field(..., min_length=2, max_length=50, pattern=r"^[a-z0-9-]+$")
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+
+class WorkspaceUpdate(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = Field(None, pattern=r"^[a-z0-9-]+$")
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+
+class WorkspaceResponse(BaseModel):
+    id: str
+    owner_id: str
+    name: str
+    slug: str
+    logo_url: Optional[str] = None
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+```
+
+### 2.2 Shared Ownership & Authorization Dependency
+Every workspace-scoped route verifies that the current user owns or has access to the workspace:
+
+```python
+# backend/app/middleware/workspace_middleware.py
+from fastapi import Depends, HTTPException, status
+from bson import ObjectId
+import app.database as database
+from app.middleware.auth_middleware import get_current_user
+
+async def get_current_workspace(
+    workspace_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    if not ObjectId.is_valid(workspace_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid workspace ID")
+    
+    workspace = await database.workspaces_collection.find_one({
+        "_id": ObjectId(workspace_id),
+        "owner_id": current_user["id"],
+    })
+    if not workspace:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
+    
+    return {
+        "id": str(workspace["_id"]),
+        "owner_id": str(workspace["owner_id"]),
+        "name": workspace["name"],
+        "slug": workspace["slug"],
+        "logo_url": workspace.get("logo_url"),
+        "description": workspace.get("description"),
+    }
+```
+
+### 2.3 Auto-Provisioning & Migration for Existing Users
+- **New Users**: On Google OAuth sign-in ([auth.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/routes/auth.py)), if the user has no workspaces, create a default workspace:
+  - `name = f"{user.username or 'My'} HQ"`
+  - `slug = slugify(user.username or 'my-workspace')`
+  - Update `user["active_workspace_id"] = workspace_id`.
+- **Existing Users**: A startup migration hook in [database.py](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/backend/app/database.py) scans users without workspaces, creates their default workspace, backfills `workspace_id` into all existing `sources`, `messages`, and updates Qdrant vector payloads.
+- **Danger Zone ("Delete Workspace")**:
+  - Deleting a workspace executes a cascading wipe of its scoped documents, sources, Qdrant vectors, and chat history.
+  - If the deleted workspace was the user's active workspace, the backend activates their next existing workspace or provisions a fresh clean workspace, ensuring the user is never left in an unrecoverable state.
 
 ---
 
-## Free-tier services (re-verify when you implement)
+## 3. Two Agents Architecture & Shared Retrieval
 
-| Service | Assumed free tier | Used for |
-|---------|-------------------|----------|
-| Qdrant Cloud | Check current limits | Vectors |
-| MongoDB Atlas | 512MB class | App data |
-| Google AI Studio | Free API key / quotas | LLM + embeddings |
-| Groq | Rate-limited | Alternate LLM |
-| Google Cloud OAuth | Free | Sign-in |
-| Render / Vercel | Current free plans | API / frontend |
+Ora is delivered by two specialized agents with distinct jobs:
 
-Quotas change. If a choice in this plan exceeds the tier you actually have, pick a cheaper design (single Qdrant collection, fewer reindexes, etc.).
+```
+                            [User Interaction]
+                                     |
+         +---------------------------+---------------------------+
+         |                                                       |
+         v                                                       v
+   TEXT AGENT (Ora Sidebar)                             VOICE AGENT (Header Notch)
+   - Lives in slide-over drawer                         - Pinned floating dark notch
+   - Supports text chat & citations                     - Pure voice interaction (NO @)
+   - Supports @-mentions (Docs & Assets)                - Vapi Web SDK in React 19
+   - Groq Llama 3.3 70B Streaming                       - Server tool call -> Backend RAG
+         |                                                       |
+         +---------------------------+---------------------------+
+                                     |
+                                     v
+                 UNIFIED RAG RETRIEVAL ENGINE (rag_service.py)
+                 - Qdrant Cloud filtered by workspace_id
+                 - Optional @ scope_ids filter (source_id IN scope_ids)
+                 - Cosine similarity matching (top_k=5)
+                 - Unified citations (PDF filename/page & Studio doc title)
+                 - Grounded fallback when evidence is lacking
+```
+
+### 3.1 Strict Separation of Agent Capabilities
+1. **Header Voice Notch (Vapi)**:
+   - **Pure voice interaction**. **NO `@` mentions in the header or voice notch.**
+   - User clicks the black pill `●● Ora` in the header -> floating dark pill expands at top-center ([06-ora-voice-notch.png](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/docs/design-reference/06-ora-voice-notch.png)).
+   - Persistent across page navigation via React 19 Context (`VoiceAgentContext`).
+   - Mic toggle button, animated audio visualizer dots, red hangup button, status label underneath ("Listening...", "Thinking...", "Speaking...").
+   - Vapi triggers a backend server tool call `search_workspace_knowledge(query)`.
+   - Backend executes `retrieve_workspace_knowledge`, returning extracted facts for Vapi speech synthesis.
+2. **Text Agent (Ora Assistant Sidebar)**:
+   - **The only place with `@` mentions**.
+   - Slide-over drawer on the right ([04-ora-assistant-sidebar.png](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/docs/design-reference/04-ora-assistant-sidebar.png) & [03-assets.png](file:///c:/Users/faizj/OneDrive/Desktop/Projects/Docschat/docs/design-reference/03-assets.png)).
+   - Typing `@` triggers an autocomplete dropdown grouped by `STUDIO DOCUMENTS` and `ASSETS`.
+   - Backend queries Qdrant with `source_id IN [selected_ids]`.
+   - Groq streams markdown response over SSE with verified citation badges.
+
+### 3.2 Shared RAG Implementation (`rag_service.py`)
+```python
+# backend/app/services/rag_service.py
+from qdrant_client import models
+from app.services import vector_store as vs
+import app.database as database
+from bson import ObjectId
+
+async def retrieve_workspace_knowledge(
+    user_id: str,
+    workspace_id: str,
+    query: str,
+    scope_ids: list[str] | None = None,
+    top_k: int = 5,
+) -> tuple[str | None, list[dict]]:
+    """
+    Unified retrieval logic shared by both Text Agent and Voice Agent.
+    Strictly isolates by user_id and workspace_id.
+    Filters by scope_ids if @-mentions were provided (Text Agent only).
+    """
+    results = await vs.query_workspace_documents(
+        user_id=user_id,
+        workspace_id=workspace_id,
+        query=query,
+        scope_ids=scope_ids,
+        top_k=top_k,
+    )
+    if not results:
+        return None, []
+    
+    context = "\n\n---\n\n".join([doc["document"] for doc in results])
+    citations = await _resolve_unified_citations(workspace_id, results)
+    return context, citations
+```
+
+### 3.3 Qdrant Query Filtering (`vector_store.py`)
+```python
+# backend/app/services/vector_store.py
+def query_workspace_documents(
+    user_id: str,
+    workspace_id: str,
+    query: str,
+    scope_ids: list[str] | None = None,
+    top_k: int = 5,
+) -> list[dict]:
+    _ensure_collection_exists()
+    query_embedding = generate_single_embedding(query)
+
+    must_conditions = [
+        models.FieldCondition(key="user_id", match=models.MatchValue(value=user_id)),
+        models.FieldCondition(key="workspace_id", match=models.MatchValue(value=workspace_id)),
+    ]
+
+    # Apply @-mention scope filter if present
+    if scope_ids:
+        must_conditions.append(
+            models.FieldCondition(
+                key="source_id",
+                match=models.MatchAny(any=scope_ids),
+            )
+        )
+
+    search_result = _qdrant_client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_embedding,
+        query_filter=models.Filter(must=must_conditions),
+        limit=top_k,
+        with_payload=True,
+    )
+
+    retrieved = []
+    for i, point in enumerate(search_result.points):
+        retrieved.append({
+            "document": point.payload.get("page_content", ""),
+            "metadata": point.payload,
+            "similarity_score": point.score,
+            "rank": i + 1,
+        })
+    return retrieved
+```
 
 ---
 
-## How to work a phase
+## 4. UI/UX Design Ground Truth & Reference Alignment
 
-1. Branch, e.g. `feature/phase-1-qdrant`.
-2. **Research + read code** (see protocol above).
-3. Implement the **goal**. Skip or replace flawed steps.
-4. Record deviations in the PR.
-5. Test the phase checklist (adapt it if you changed the design).
-6. Do not merge to `main` without review.
+> **CRITICAL DIRECTIVE**: The images in `/docs/design-reference/` are the **single source of truth** for all visual styles, component structures, layouts, and micro-interactions. Every page and component must strictly replicate the reference images.
 
-When prompting an agent: paste **this “How to use this plan” section plus one phase**. Instruct it that the phase tables are suggestions and that official docs + the repository override this file.
+```
+/docs/design-reference/
+├── 01-home-dashboard.png       -> Home page layout, Ask Ora bar, quick chips, recent lists
+├── 02-studio-editor.png         -> Studio sub-sidebar, Tiptap canvas, slash command, auto-save
+├── 03-assets.png                -> PDF library, table/card items, upload button, Ora drawer open
+├── 04-ora-assistant-sidebar.png -> Assistant drawer, empty state, @-mention input
+├── 05-settings-general1.png     -> Account tab (profile, security, Vapi public key)
+├── 05-settings-general2.png     -> General tab (workspace logo, name, URL slug, danger zone)
+└── 06-ora-voice-notch.png       -> Floating top-center dark notch with visualizer & status
+```
+
+### 4.1 Color Tokens & Light Theme Design System
+- **App Background**: `#FBFBFD` / `#F9F9FB`
+- **Panel & Canvas Surface**: `#FFFFFF`
+- **Sidebar Surface**: `#F7F7F9`
+- **Borders & Dividers**: `#E5E7EB` / `#ECECEE`
+- **Primary Text**: `#111827` (Charcoal)
+- **Secondary Text**: `#6B7280` (Muted Slate)
+- **Active Navigation Pill**: `#EFEAFC` (Light Lavender)
+- **Brand Accent**: `#6E56CF` (Purple)
+- **Floating Voice Notch**: `#111113` (High-contrast dark pill with white audio visualizer and red hangup button)
+
+---
+
+## 5. Technology Stack Integration & Official Patterns
+
+### 5.1 Vapi Web SDK (`@vapi-ai/web`) — React 19 Pattern
+Based on the latest `@vapi-ai/web` documentation:
+```tsx
+// frontend/src/context/VoiceAgentContext.tsx
+'use client';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import Vapi from '@vapi-ai/web';
+
+interface VoiceAgentContextType {
+  isActive: boolean;
+  status: 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking';
+  isMuted: boolean;
+  volumeLevel: number;
+  startCall: () => void;
+  endCall: () => void;
+  toggleMute: () => void;
+}
+
+const VoiceAgentContext = createContext<VoiceAgentContextType | null>(null);
+
+export const VoiceAgentProvider: React.FC<{ children: React.ReactNode; publicKey: string }> = ({
+  children,
+  publicKey,
+}) => {
+  const vapi = useMemo(() => new Vapi(publicKey), [publicKey]);
+  const [isActive, setIsActive] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking'>('idle');
+  const [volumeLevel, setVolumeLevel] = useState(0);
+
+  useEffect(() => {
+    vapi.on('call-start', () => { setIsActive(true); setStatus('listening'); });
+    vapi.on('call-end', () => { setIsActive(false); setStatus('idle'); });
+    vapi.on('speech-start', () => setStatus('speaking'));
+    vapi.on('speech-end', () => setStatus('listening'));
+    vapi.on('volume-level', (vol) => setVolumeLevel(vol));
+    vapi.on('error', (err) => { console.error('Vapi Error:', err); setStatus('idle'); });
+
+    return () => { vapi.stop(); };
+  }, [vapi]);
+
+  const startCall = (assistantId?: string) => {
+    setStatus('connecting');
+    vapi.start(assistantId || process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID!);
+  };
+
+  const endCall = () => { vapi.stop(); };
+  const toggleMute = () => {
+    vapi.setMuted(!isMuted);
+    setIsMuted(!isMuted);
+  };
+
+  return (
+    <VoiceAgentContext.Provider value={{ isActive, status, isMuted, volumeLevel, startCall, endCall, toggleMute }}>
+      {children}
+    </VoiceAgentContext.Provider>
+  );
+};
+```
+
+### 5.2 Studio Tiptap Editor — React 19 & Smart Debounced Indexing
+Based on official `@tiptap/react` documentation:
+```tsx
+// frontend/src/components/studio/EditorCanvas.tsx
+'use client';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { useEffect, useRef } from 'react';
+
+export function EditorCanvas({
+  initialContent,
+  onAutoSave,
+}: {
+  initialContent: any;
+  onAutoSave: (json: any, text: string) => void;
+}) {
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: "Start typing or press '/' for commands...",
+      }),
+    ],
+    content: initialContent,
+    onUpdate: ({ editor }) => {
+      // Debounced auto-save to MongoDB (1.5s)
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        onAutoSave(editor.getJSON(), editor.getText());
+      }, 1500);
+    },
+  });
+
+  return (
+    <div className="max-w-3xl mx-auto py-8">
+      <EditorContent editor={editor} className="prose prose-neutral focus:outline-none min-h-125" />
+    </div>
+  );
+}
+```
+
+---
+
+## 6. Phased Implementation Roadmap
+
+> **Branching & Delivery Strategy**:
+> - All phases are developed cumulatively on **one single unified branch** (`feature/ora-workspace-transformation`).
+> - **DO NOT** create a separate branch for each individual phase.
+> - Each phase is committed atomically with Conventional Commits indicating the phase (e.g. `feat(phase-2): ...`).
+> - `main` remains untouched until all 8 roadmap phases are completed, integrated, and verified end-to-end locally. Only then is a final Pull Request opened into `main`.
+
+Every phase follows the structured `.agents` AI workflow:
+1. **Research & Plan**: Re-verify APIs and design reference images.
+2. **Implement**: Code changes respecting subagent boundaries.
+3. **Verify**: Autonomously test via `pytest` or terminal build checks before marking complete.
+4. **Review & Commit**: Run security and quality checks against `review-changes`, then make atomic conventional commits to the unified branch.
+
+### Phase 1: Multi-Workspace Data Model, Auto-Provisioning & Migration
+**Goal**: Establish scalable multi-workspace MongoDB models, migration hook, Qdrant payload filters, and clean up Gemini chat code.
+- **Tasks**:
+  1. Create `backend/app/models/workspace.py` and `backend/app/models/document.py`.
+  2. Update `user.py`, `source.py`, and `chat.py` with `workspace_id`.
+  3. Implement `get_current_workspace` dependency in `backend/app/middleware/workspace_middleware.py`.
+  4. Implement auto-provisioning in `backend/app/routes/auth.py` and migration hook in `database.py`.
+  5. Update `vector_store.py` points payload and `query_workspace_documents` with `workspace_id` filtering.
+  6. Remove `_get_gemini_llm()` from `llm_service.py` and enforce Groq exclusively in `chat.py`.
+- **Autonomous Verification**:
+  - Run `pytest backend/tests/test_auth.py` and verify workspace auto-creation.
+  - Test vector queries with workspace isolation via test script.
+
+### Phase 2: Light Theme Design System & Persistent Workspace Shell
+**Goal**: Overhaul visual styles to light theme and build persistent layout shell matching `01-home-dashboard.png`.
+- **Tasks**:
+  1. Overhaul `frontend/src/app/globals.css` with light theme palette; remove dark theme classes.
+  2. Implement `Sidebar.tsx` with display-only workspace logo & name, nav items (Home, Studio, Assets, Settings) with active lavender pills, expandable "CHATS" section, and user profile footer.
+  3. Implement `Header.tsx` with dynamic breadcrumb, `⌘K` search input, black pill `●● Ora` button, and notification bell.
+  4. Create `AppLayout.tsx` wrapper with persistent header and sidebar.
+- **Autonomous Verification**:
+  - Build frontend via `npm run build` to verify zero type or layout errors.
+  - Inspect layout visually against `01-home-dashboard.png`.
+
+### Phase 3: Home Dashboard (`/` or `/home`)
+**Goal**: Build dashboard matching `01-home-dashboard.png`.
+- **Tasks**:
+  1. Create `HomeDashboard.tsx` with greeting ("Good Morning, [Name]"), "Ask Ora" input box with `@` chip, and "Start writing" card.
+  2. Implement quick prompt action chips (*Improve a draft*, *Research a topic*, *Capture a thought*, *Recap my week*).
+  3. Implement Recent Documents and Recent Assets sections with icons, relative timestamps, and links.
+  4. Implement `GET /api/workspaces/{id}/dashboard` endpoint returning recent docs and assets.
+- **Autonomous Verification**:
+  - Verify dashboard loads recent assets and documents from MongoDB.
+
+### Phase 4: Assets (PDF Library)
+**Goal**: Build PDF asset manager matching `03-assets.png`.
+- **Tasks**:
+  1. Implement `AssetsView.tsx` with search bar ("Search assets..."), sort dropdown ("Recent"), "Ora" trigger button, and "+ Upload" black pill button.
+  2. PDF asset list/cards showing filename, file size, upload timestamp, and actions.
+  3. Drag-and-drop PDF upload modal with size validation (max 20MB).
+  4. Scope `backend/app/routes/sources.py` to `workspace_id`.
+- **Autonomous Verification**:
+  - Upload PDF through API; verify background chunking and Qdrant indexing.
+  - Verify asset deletion cascades to Qdrant vectors and disk file.
+
+### Phase 5: Studio (Notion-like Tiptap Document Editor)
+**Goal**: Build rich document editor matching `02-studio-editor.png`.
+- **Tasks**:
+  1. Install `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/extension-placeholder`.
+  2. Build Studio two-column view:
+     - Left sub-sidebar: "DOCUMENTS" header with `+` button, search bar, and document list.
+     - Canvas: Document title (editable H1), auto-save cloud sync indicator, Ora button, block handle, and slash command dropdown (`/`).
+  3. Create `backend/app/routes/documents.py` for document CRUD.
+  4. Implement debounced auto-save to MongoDB (1.5s) and content-hash chunk re-indexing to Qdrant (15s idle or blur).
+- **Autonomous Verification**:
+  - Create and edit documents; verify auto-save persistence.
+  - Verify document chunks are stored in Qdrant with `source_type="document"`.
+
+### Phase 6: Ora Text Agent (Assistant Sidebar)
+**Goal**: Build slide-over Ora assistant matching `04-ora-assistant-sidebar.png` and `03-assets.png`.
+- **Tasks**:
+  1. Implement slide-over `OraSidebar.tsx` with Ora logo mark, title, close `X`, and empty state.
+  2. Build dynamic `@` mention popup menu grouping `STUDIO DOCUMENTS` and `ASSETS`.
+  3. Implement streaming chat bubbles with Groq `llama-3.3-70b-versatile` over SSE.
+  4. Interactive citation pills linking to specific PDF pages or Studio documents.
+  5. Enforce grounded fallback when confidence/similarity is low.
+- **Autonomous Verification**:
+  - Test `@` scoped question: confirm Qdrant query filters to specified `source_ids`.
+  - Test general question: confirm workspace-wide grounding and true citations.
+
+### Phase 7: Ora Voice Agent (Header & Persistent Floating Notch)
+**Goal**: Build Vapi voice agent with persistent notch matching `06-ora-voice-notch.png`.
+- **Tasks**:
+  1. Install `@vapi-ai/web` and create `VoiceAgentContext.tsx`.
+  2. Build `VoiceNotch.tsx`:
+     - Pinned floating dark pill (`#111113`) at top-center.
+     - Mic mute toggle button.
+     - Animated Ora indicator: two white capsule dots pulsing with audio activity.
+     - End call button (red phone icon).
+     - Subtitle status label underneath ("Listening...", "Thinking...", "Speaking...").
+     - **No `@` mentions in voice notch**.
+  3. Implement `POST /api/vapi/tool-call` webhook in FastAPI for tool calling `search_workspace_knowledge`.
+  4. Save voice transcripts into MongoDB `messages` collection under `channel: "voice"`.
+- **Autonomous Verification**:
+  - Test tool webhook endpoint with mock Vapi payload; verify accurate context returned.
+  - Verify voice notch persists across page navigation without audio interruption.
+
+### Phase 8: Settings (General, Billing, Account)
+**Goal**: Build settings tabs matching `05-settings-general1.png` and `05-settings-general2.png`.
+- **Tasks**:
+  1. Tab 1: `General`:
+     - Workspace Logo preview & upload button.
+     - Workspace Name input.
+     - Workspace URL slug (`plura.in/app/[slug]`).
+     - Workspace Description textarea.
+     - Danger Zone: "Delete Workspace" with cascading delete.
+  2. Tab 2: `Billing`:
+     - Clean placeholder plan overview with upgrade buttons.
+  3. Tab 3: `Account`:
+     - Profile picture upload, Full Name, Email Address.
+     - Password change card.
+     - Voice Assistant: Public VAPI API Key input (masked with eye toggle, encrypted in backend).
+  4. Endpoints: `PUT /api/workspaces/{id}` and `PUT /api/user/profile`.
+- **Autonomous Verification**:
+  - Update workspace details; verify sidebar updates.
+  - Update Vapi key; verify saved and retrievable.
+
+---
+
+## 7. Quality Assurance & Autonomous Verification Strategy
+
+In accordance with `AGENTS.md` and `.agents/skills/write-tests/SKILL.md`:
+- **Backend Tests (`pytest`)**:
+  - `backend/tests/test_workspace.py`: Workspace CRUD, multi-workspace isolation, cascading delete.
+  - `backend/tests/test_documents.py`: Document CRUD, auto-save payload format.
+  - `backend/tests/test_rag.py`: Unified RAG retrieval, `@` scope filtering, citation verification.
+  - `backend/tests/test_vapi.py`: Webhook tool call handling.
+- **Frontend Verification**:
+  - TypeScript build passes cleanly (`npm run build`).
+  - Strict UI audit against screenshots `01` through `06`.
+  - Audio continuity across route changes.

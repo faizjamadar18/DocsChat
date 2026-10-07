@@ -16,9 +16,11 @@ All commits MUST follow Conventional Commits:
 - `test:` for adding/updating tests
 - `chore:` for dependency updates, linting, etc.
 
-## 2. Branch Naming
-- Features: `feature/<kebab-case-name>` (e.g., `feature/phase-1-qdrant`)
-- Fixes: `fix/<kebab-case-name>`
+## 2. Branch & Delivery Workflow
+- Maintain **one single unified branch** (e.g. `feature/ora-workspace-transformation`) for all roadmap phases.
+- Do NOT create fragmented branches per phase.
+- All commits must use Conventional Commits with phase annotations (e.g., `feat(phase-2): add persistent workspace shell`).
+- Keep `main` untouched until all phases are complete and locally tested.
 
 ## 3. PR Template
 Use this exact markdown structure for the Pull Request description:
@@ -28,7 +30,7 @@ Use this exact markdown structure for the Pull Request description:
 [Provide a clear, 1-2 sentence description of the change.]
 
 ## Related Phase
-Implementation Plan Phase: [Insert Phase Number or "N/A"]
+Implementation Plan Phase: [Insert Phase Number or "All Phases (Full Transformation)"]
 
 ## Changes
 - [Detail 1]
@@ -43,4 +45,5 @@ Implementation Plan Phase: [Insert Phase Number or "N/A"]
 ```
 
 ## 4. Execution
+A Pull Request to `main` is opened ONLY after all roadmap phases are finished and verified end-to-end locally.
 Use the GitHub MCP tool `create_pull_request` to submit the PR. Do NOT merge it yourself; the user is the gatekeeper.

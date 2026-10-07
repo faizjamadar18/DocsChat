@@ -13,6 +13,7 @@ class UserInDB(BaseModel):
     email: str
     auth_provider: str = "google"
     picture: Optional[str] = None
+    active_workspace_id: Optional[str] = None
     created_at: datetime
 
 
@@ -22,6 +23,7 @@ class UserResponse(BaseModel):
     email: str
     auth_provider: str = "google"
     picture: Optional[str] = None
+    active_workspace_id: Optional[str] = None
     created_at: datetime
 
 
