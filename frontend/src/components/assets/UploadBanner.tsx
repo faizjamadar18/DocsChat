@@ -3,9 +3,10 @@ import React, { useEffect } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export interface UploadState {
+  id?: string;
   filename: string;
   progress: number;
-  status: 'uploading' | 'completed' | 'error';
+  status: 'uploading' | 'processing' | 'completed' | 'error';
   error?: string;
 }
 
@@ -31,6 +32,7 @@ export default function UploadBanner({ uploadState, onDismiss }: UploadBannerPro
   }, [uploadState.status, onDismiss]);
 
   const isUploading = uploadState.status === 'uploading';
+  const isProcessing = uploadState.status === 'processing';
   const isCompleted = uploadState.status === 'completed';
   const isError = uploadState.status === 'error';
 
@@ -46,6 +48,12 @@ export default function UploadBanner({ uploadState, onDismiss }: UploadBannerPro
         </div>
       )}
 
+      {isProcessing && (
+        <div className="w-full h-0.5 bg-accent-subtle rounded-full overflow-hidden">
+          <div className="h-full bg-accent w-full animate-pulse" />
+        </div>
+      )}
+
       {/* Status Row */}
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -55,6 +63,15 @@ export default function UploadBanner({ uploadState, onDismiss }: UploadBannerPro
               <span className="text-text-secondary truncate">
                 Uploading <span className="font-medium text-text-primary">{uploadState.filename}</span>{' '}
                 <span className="text-text-muted">{uploadState.progress}%</span>
+              </span>
+            </>
+          )}
+
+          {isProcessing && (
+            <>
+              <Loader2 className="w-4 h-4 text-accent animate-spin shrink-0" />
+              <span className="text-text-secondary truncate">
+                Processing <span className="font-medium text-text-primary">{uploadState.filename}</span>...
               </span>
             </>
           )}
@@ -72,7 +89,7 @@ export default function UploadBanner({ uploadState, onDismiss }: UploadBannerPro
             <>
               <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
               <span className="text-red-600 truncate">
-                Failed to upload <span className="font-medium">{uploadState.filename}</span>
+                Failed to process <span className="font-medium">{uploadState.filename}</span>
                 {uploadState.error ? `: ${uploadState.error}` : ''}
               </span>
             </>
@@ -80,7 +97,7 @@ export default function UploadBanner({ uploadState, onDismiss }: UploadBannerPro
         </div>
 
         {/* Right Dismiss Button (Image 2) */}
-        {!isUploading && (
+        {!isUploading && !isProcessing && (
           <button
             type="button"
             onClick={onDismiss}

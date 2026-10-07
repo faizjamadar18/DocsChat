@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Plus, File, MoreVertical, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 import UploadModal from '@/components/assets/UploadModal';
@@ -82,6 +82,14 @@ export default function AssetsPage() {
     };
   }, []);
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const handleStartUpload = async (file: File) => {
     setUploadState({
       filename: file.name,
@@ -93,7 +101,7 @@ export default function AssetsPage() {
     formData.append('file', file);
 
     try {
-      await api.uploadWithProgress(
+      const source = await api.uploadWithProgress<{ id: string; status: string }>(
         '/sources/upload',
         formData,
         (percent) => {
@@ -105,15 +113,72 @@ export default function AssetsPage() {
         }
       );
 
-      // On completion, immediately show 100% and success state
+      // Upload finished (bytes transferred to server)
+      // Now transition into processing state while RAG pipeline parses, chunks & embeds
       setUploadState({
+        id: source.id,
         filename: file.name,
         progress: 100,
-        status: 'completed',
+        status: 'processing',
       });
 
-      // Refresh the asset list so the newly uploaded file appears on top
+      // Refresh list so the file appears immediately in the assets list
       await fetchSources();
+
+      // Poll source status until processing finishes (status === 'ready')
+      const pollInterval = 1500;
+      const maxAttempts = 40; // 60s max
+      let attempts = 0;
+
+      const checkProcessingStatus = async () => {
+        if (!isMountedRef.current) return;
+        try {
+          const updated = await api.get(`/sources/${source.id}`);
+          if (updated.status === 'ready') {
+            if (isMountedRef.current) {
+              setUploadState({
+                id: source.id,
+                filename: file.name,
+                progress: 100,
+                status: 'completed',
+              });
+              await fetchSources();
+            }
+            return;
+          }
+          if (updated.status === 'error' || updated.status === 'failed') {
+            if (isMountedRef.current) {
+              setUploadState({
+                id: source.id,
+                filename: file.name,
+                progress: 0,
+                status: 'error',
+                error: 'Failed to process document content.',
+              });
+              await fetchSources();
+            }
+            return;
+          }
+        } catch {
+          // Continue polling on transient errors
+        }
+
+        attempts += 1;
+        if (attempts < maxAttempts && isMountedRef.current) {
+          setTimeout(checkProcessingStatus, pollInterval);
+        } else if (isMountedRef.current) {
+          // Fallback after polling window
+          setUploadState({
+            id: source.id,
+            filename: file.name,
+            progress: 100,
+            status: 'completed',
+          });
+          await fetchSources();
+        }
+      };
+
+      setTimeout(checkProcessingStatus, pollInterval);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Upload failed';
       setUploadState({
