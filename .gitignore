@@ -16,7 +16,6 @@
 !/.agents/
 !AGENTS.md
 !CLAUDE.md
-!GEMINI.md
 !IMPLEMENTATION_PLAN.md
 
 # Ignore top-level env files just in case

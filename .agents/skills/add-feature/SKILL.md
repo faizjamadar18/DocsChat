@@ -31,16 +31,17 @@ When instructed to add a new feature or execute a phase from `IMPLEMENTATION_PLA
 - Ensure frontend lints pass (`npm run lint`) and TypeScript checks pass (`npx tsc --noEmit`).
 
 ## 5. Strict Pre-Commit Verification Gate (MANDATORY BEFORE ANY COMMIT)
-Under NO circumstances should any code be committed to git before all of the following verification steps have been executed and passed with ZERO errors:
-1. **Frontend Verification**:
+Under NO circumstances should any code be committed to git before all of the following verification steps have been executed and passed with ZERO errors. Run ONLY the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):
+1. **Frontend Verification** (only if `frontend/` changed):
    - Run `npm run lint` in `frontend/` — must pass with 0 errors.
    - Run `npx tsc --noEmit` in `frontend/` — all module imports, types, and paths must resolve without errors.
    - Check the terminal logs of any running dev servers (e.g., Next.js dev server) to confirm zero compilation or module resolution errors.
-2. **Backend Verification**:
+2. **Backend Verification** (only if `backend/` changed):
+   - Ensure dev dependencies are installed (`pip install -r requirements-dev.txt` in `backend/`).
    - Run `pytest` in `backend/` using the virtual environment (`.\venv\Scripts\pytest` or `$env:PYTHONPATH="."; .\venv\Scripts\pytest`) — must achieve a 100% pass rate.
    - Run backend linter (`flake8 app/` or equivalent) with zero syntax or import errors.
-3. **IDE Problems Window**:
-   - Check and resolve all errors and warnings reported in the IDE Problems window (`current_problems`) before committing.
+3. **Reported Diagnostics**:
+   - Resolve all errors and warnings reported by the IDE or `current_problems` tooling before committing. (Tool-neutral: use whatever diagnostics the current harness surfaces.)
 4. **Edge Case Walkthrough**:
    - Perform a quick sanity check for minute edge cases (empty/null states, boundary inputs, layout clipping/overflow, overlay positioning) so the user does not need to babysit.
 5. **Zero-Tolerance Commit Rule**:

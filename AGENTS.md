@@ -55,7 +55,7 @@ DocsChat/
 ├── IMPLEMENTATION_PLAN.md       # Roadmap for evolution
 ├── backend/                     # FastAPI python app
 ├── frontend/                    # Next.js app
-└── .agents/                     # AI Skills & Workflows
+├── .agents/skills/              # AI Skills & Workflows
 ```
 
 ---
