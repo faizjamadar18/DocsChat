@@ -1,11 +1,11 @@
 ---
 name: review-changes
-description: Checklist for auditing code before opening a PR.
+description: Checklist for auditing code before committing.
 ---
 
 # Review Changes & Pre-Commit Verification Checklist
 
-Before making ANY commit or opening a Pull Request, you MUST review and execute this checklist:
+Before making ANY commit, you MUST review and execute this checklist:
 
 ## 1. Pre-Commit Quality & Verification Gate
 Run ONLY the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):

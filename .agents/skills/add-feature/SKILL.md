@@ -17,6 +17,7 @@ When instructed to add a new feature or execute a phase from `IMPLEMENTATION_PLA
 - Maintain **one single unified branch** (e.g. `feature/ora-workspace-transformation`) across all phases.
 - Build each phase cumulatively on this unified branch.
 - Each phase must be committed with suitable, atomic Conventional Commits indicating the phase (e.g., `feat(phase-2): ...`, `test(phase-2): ...`).
+- Commit types: `feat:` (new features), `fix:` (bug fixes), `refactor:` (restructuring without behavior change), `docs:` (documentation), `test:` (tests), `chore:` (dependencies, linting, etc.).
 - **NEVER** push or merge directly into `main` after each phase. `main` remains untouched until all roadmap phases are finished and verified locally.
 
 ## 3. Test-Driven Development (TDD) - Write Tests FIRST
@@ -48,7 +49,7 @@ Under NO circumstances should any code be committed to git before all of the fol
    - Never commit code with failing tests, broken imports, compiler errors, unaddressed linter errors, IDE problem warnings, or unverified edge cases.
    - Only execute `git commit` after all gates above have passed cleanly.
 
-## 6. Review & Final PR
+## 6. Review & Hand Off
 - Call the `review-changes` skill to audit your work after each phase.
 - Keep commits on the unified transformation branch.
-- Only call `open-pull-request` to submit a PR to `main` once **ALL** roadmap phases are completed, integrated, and verified locally.
+- **NEVER open a Pull Request.** The user verifies the unified branch and opens the single PR into `main` themselves when ready. If asked, provide a ready-to-paste PR title and description summarizing the branch — but do not submit anything.

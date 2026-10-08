@@ -2,7 +2,7 @@
 
 > **Source of Truth**: 
 > 1. **Visual Reference Images**: The screenshots in `/docs/design-reference/` are the **absolute source of truth** for UI layout, micro-interactions, components, typography, colors, and behavior. All implementations must replicate these images verbatim.
-> 2. **AI Workflow Standards**: All agents must strictly follow instructions in `.agents/skills/` (`add-feature`, `write-tests`, `review-changes`, `open-pull-request`) and `AGENTS.md`. Never ask the user to manually test; autonomously verify every change.
+> 2. **AI Workflow Standards**: All agents must strictly follow instructions in `.agents/skills/` (`add-feature`, `write-tests`, `review-changes`) and `AGENTS.md`. Never ask the user to manually test; autonomously verify every change.
 
 ---
 
@@ -413,7 +413,7 @@ export function EditorCanvas({
 > - All phases are developed cumulatively on **one single unified branch** (`feature/ora-workspace-transformation`).
 > - **DO NOT** create a separate branch for each individual phase.
 > - Each phase is committed atomically with Conventional Commits indicating the phase (e.g. `feat(phase-2): ...`).
-> - `main` remains untouched until all 8 roadmap phases are completed, integrated, and verified end-to-end locally. Only then is a final Pull Request opened into `main`.
+> - `main` remains untouched until all 8 roadmap phases are completed, integrated, and verified end-to-end locally. Only then does the user open the single Pull Request from the unified branch into `main` — agents never open PRs.
 
 Every phase follows the structured `.agents` AI workflow:
 1. **Research & Plan**: Re-verify APIs and design reference images.
