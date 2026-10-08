@@ -43,3 +43,26 @@ class DisconnectResponse(BaseModel):
     message: str
     vectors_removed: int = 0
     sources_deleted: int = 0
+
+
+class DriveAuthUrlResponse(BaseModel):
+    auth_url: str
+
+
+class DrivePickerTokenResponse(BaseModel):
+    access_token: str
+
+
+class DriveFileItem(BaseModel):
+    id: str = Field(..., description="Drive fileId from Picker")
+    name: str = "Untitled"
+    mimeType: Optional[str] = None
+
+
+class DriveImportRequest(BaseModel):
+    files: list[DriveFileItem] = Field(..., min_length=1, max_length=50)
+
+
+class DriveImportResponse(BaseModel):
+    imported: list[dict]
+    total: int

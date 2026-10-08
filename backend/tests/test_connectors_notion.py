@@ -102,6 +102,58 @@ def test_disconnect_not_connected_returns_404_or_ok():
         assert response.status_code in (200, 404)
 
 
+# ---------------------------------------------------------------------------
+# Google Drive (Phase 2)
+# ---------------------------------------------------------------------------
+
+def test_drive_auth_url_uses_file_scope_only():
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.database.sync_jobs_collection", create=True) as mock_jobs, \
+         patch("app.routes.connectors.check_db"), \
+         patch("app.routes.connectors.settings") as mock_settings:
+        _mock_user(mock_users)
+        mock_settings.GOOGLE_DRIVE_CLIENT_ID = "test-drive-client-id"
+        mock_settings.GOOGLE_DRIVE_REDIRECT_URI = "http://localhost:8000/api/connectors/drive/callback"
+        mock_jobs.insert_one = AsyncMock(return_value=None)
+        response = client.get(
+            "/api/connectors/drive/auth-url",
+            headers={"Authorization": f"Bearer {USER_TOKEN}"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        url = data["auth_url"]
+        assert "accounts.google.com" in url
+        assert "drive.file" in url
+        # Must never request broad/restricted scopes
+        assert "drive.readonly" not in url.replace("drive.file", "")
+        assert "scope=" in url
+
+
+def test_drive_picker_token_404_when_not_connected():
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.database.connector_accounts_collection", create=True) as mock_accounts, \
+         patch("app.routes.connectors.check_db"):
+        _mock_user(mock_users)
+        mock_accounts.find_one = AsyncMock(return_value=None)
+        response = client.get(
+            "/api/connectors/drive/picker-token",
+            headers={"Authorization": f"Bearer {USER_TOKEN}"},
+        )
+        assert response.status_code == 404
+
+
+def test_drive_import_requires_files():
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.routes.connectors.check_db"):
+        _mock_user(mock_users)
+        response = client.post(
+            "/api/connectors/drive/import",
+            json={"files": []},
+            headers={"Authorization": f"Bearer {USER_TOKEN}"},
+        )
+        assert response.status_code in (400, 422)
+
+
 class _EmptyCursor:
     def sort(self, *a, **k):
         return self

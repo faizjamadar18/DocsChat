@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     NOTION_REDIRECT_URI: str = ""
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # Google Drive Connector (OAuth, drive.file scope only — non-sensitive)
+    GOOGLE_DRIVE_CLIENT_ID: str = ""
+    GOOGLE_DRIVE_CLIENT_SECRET: str = ""
+    GOOGLE_DRIVE_REDIRECT_URI: str = ""
+
     # Deployment
     CORS_ORIGINS: str = "https://docschats.vercel.app"
 

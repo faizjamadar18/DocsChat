@@ -166,16 +166,9 @@ async def sync_notion_page(
     page_url: Optional[str] = None,
 ) -> int:
     """Fetch a Notion page + blocks, convert to markdown, index via shared RAG pipeline."""
-    import app.database as database
-    from bson import ObjectId
+    from app.services.sync_db import set_source_fields
 
-    try:
-        await database.sources_collection.update_one(
-            {"_id": ObjectId(source_id)},
-            {"$set": {"status": "syncing", "sync_error": None}},
-        )
-    except Exception:
-        pass
+    await set_source_fields(source_id, {"status": "syncing", "sync_error": None})
 
     try:
         async with httpx.AsyncClient() as client:
@@ -193,28 +186,16 @@ async def sync_notion_page(
             user_id, source_id, final_title, full_text, workspace_id
         )
 
-        try:
-            await database.sources_collection.update_one(
-                {"_id": ObjectId(source_id)},
-                {"$set": {
-                    "status": "ready",
-                    "chunk_count": chunk_count,
-                    "filename": f"[Notion] {final_title}",
-                    "last_synced_at": datetime.now(timezone.utc),
-                    "sync_error": None,
-                }},
-            )
-        except Exception:
-            pass
+        await set_source_fields(source_id, {
+            "status": "ready",
+            "chunk_count": chunk_count,
+            "filename": f"[Notion] {final_title}",
+            "last_synced_at": datetime.now(timezone.utc),
+            "sync_error": None,
+        })
         logger.info("[OK] Synced Notion page %s -> %d chunks", page_id, chunk_count)
         return chunk_count
     except Exception as e:
         logger.error("[ERR] Notion sync failed for page %s: %s", page_id, e)
-        try:
-            await database.sources_collection.update_one(
-                {"_id": ObjectId(source_id)},
-                {"$set": {"status": "error", "sync_error": str(e)[:500]}},
-            )
-        except Exception:
-            pass
+        await set_source_fields(source_id, {"status": "error", "sync_error": str(e)[:500]})
         raise

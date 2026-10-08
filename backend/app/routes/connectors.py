@@ -26,6 +26,8 @@ from app.models.connector import (
     ConnectorsStatusResponse, ConnectorStatus,
     NotionAuthUrlResponse, NotionPagesResponse, NotionPageItem,
     NotionImportRequest, NotionImportResponse, DisconnectResponse,
+    DriveAuthUrlResponse, DrivePickerTokenResponse,
+    DriveImportRequest, DriveImportResponse,
 )
 from app.services import vector_store as vs
 from app.services.connector_token_service import encrypt_token, decrypt_token
@@ -178,6 +180,181 @@ async def notion_callback(code: str = Query(...), state: str = Query(...)):
     return RedirectResponse(f"{frontend}/connectors?notion=connected", status_code=302)
 
 
+# ---------------------------------------------------------------------------
+# Google Drive (OAuth, drive.file scope only + Picker)
+# ---------------------------------------------------------------------------
+
+DRIVE_OAUTH_AUTHORIZE = "https://accounts.google.com/o/oauth2/v2/auth"
+DRIVE_OAUTH_TOKEN = "https://oauth2.googleapis.com/token"
+DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+
+
+@router.get("/drive/auth-url", response_model=DriveAuthUrlResponse)
+async def drive_auth_url(current_user: dict = Depends(get_current_user)):
+    """Build Google OAuth URL with drive.file scope only (non-sensitive)."""
+    _require_db()
+    if not settings.GOOGLE_DRIVE_CLIENT_ID or not settings.GOOGLE_DRIVE_REDIRECT_URI:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google Drive integration not configured on server",
+        )
+    state = secrets.token_urlsafe(24)
+    try:
+        await database.sync_jobs_collection.insert_one({
+            "user_id": current_user["id"],
+            "kind": "drive_oauth_state",
+            "state": state,
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
+    params = {
+        "client_id": settings.GOOGLE_DRIVE_CLIENT_ID,
+        "response_type": "code",
+        "scope": DRIVE_FILE_SCOPE,
+        "redirect_uri": settings.GOOGLE_DRIVE_REDIRECT_URI,
+        "access_type": "offline",  # need refresh token for re-sync
+        "prompt": "consent",  # force refresh_token on every connect
+        "include_granted_scopes": "false",  # keep token scoped to drive.file only
+        "state": f"{current_user['id']}.{state}",
+    }
+    return DriveAuthUrlResponse(auth_url=f"{DRIVE_OAUTH_AUTHORIZE}?{urlencode(params)}")
+
+
+@router.get("/drive/callback")
+async def drive_callback(code: str = Query(...), state: str = Query(...)):
+    """OAuth callback. Exchanges code -> refresh token, stores encrypted."""
+    from fastapi.responses import RedirectResponse
+
+    _require_db()
+    frontend = (settings.FRONTEND_URL or "").rstrip("/") or "http://localhost:3000"
+    try:
+        user_id, rand = state.split(".", 1)
+    except ValueError:
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+    if not ObjectId.is_valid(user_id):
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(DRIVE_OAUTH_TOKEN, data={
+                "client_id": settings.GOOGLE_DRIVE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_DRIVE_CLIENT_SECRET,
+                "code": code,
+                "redirect_uri": settings.GOOGLE_DRIVE_REDIRECT_URI,
+                "grant_type": "authorization_code",
+            })
+            resp.raise_for_status()
+            token_data = resp.json()
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+
+    refresh_token = token_data.get("refresh_token")
+    access_token = token_data.get("access_token")
+    if not refresh_token or not access_token:
+        # No refresh token (already consented before) -> ask user to reconnect
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=reconsent", status_code=302)
+
+    try:
+        from datetime import timedelta
+        await database.connector_accounts_collection.update_one(
+            {"user_id": user_id, "provider": "drive"},
+            {"$set": {
+                "user_id": user_id,
+                "provider": "drive",
+                "refresh_enc": encrypt_token(refresh_token),
+                "access_enc": encrypt_token(access_token),
+                "token_expires_at": datetime.now(timezone.utc) + timedelta(
+                    seconds=int(token_data.get("expires_in", 3600))),
+                "connected_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+    return RedirectResponse(f"{frontend}/connectors/drive?drive=connected", status_code=302)
+
+
+@router.get("/drive/picker-token", response_model=DrivePickerTokenResponse)
+async def drive_picker_token(current_user: dict = Depends(get_current_user)):
+    """Short-lived access token for the Google Picker in the browser.
+
+    Only the access token (1h) is exposed — the refresh token never leaves
+    the server. Picker requires a browser-side token by design.
+    """
+    _require_db()
+    from app.services.drive_sync_service import get_fresh_access_token
+    try:
+        token = await get_fresh_access_token(current_user["id"])
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return DrivePickerTokenResponse(access_token=token)
+
+
+@router.post("/drive/import", response_model=DriveImportResponse, status_code=status.HTTP_201_CREATED)
+async def drive_import_files(
+    body: DriveImportRequest,
+    background_tasks: BackgroundTasks,
+    workspace_id: Optional[str] = Query(None),
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Create source rows for Picker-picked files and sync in background."""
+    _require_db()
+    if not body.files:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Pick at least one file to import")
+    target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": "drive"}
+    )
+    if not acct or not acct.get("refresh_enc"):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Google Drive not connected")
+
+    from app.services.drive_sync_service import sync_drive_file
+
+    imported: list[dict] = []
+    for f in body.files[:50]:
+        existing = await database.sources_collection.find_one({
+            "user_id": current_user["id"],
+            "source_type": "drive",
+            "remote_id": f.id,
+            **({"workspace_id": target_ws} if target_ws else {}),
+        })
+        if existing:
+            imported.append({"source_id": str(existing["_id"]), "file_id": f.id,
+                             "name": f.name, "status": existing.get("status", "ready")})
+            continue
+        doc = {
+            "user_id": current_user["id"],
+            "workspace_id": target_ws,
+            "source_type": "drive",
+            "provider": "drive",
+            "remote_id": f.id,
+            "remote_url": f"https://drive.google.com/file/d/{f.id}/view",
+            "remote_mime": f.mimeType,
+            "filename": f"[Drive] {f.name}",
+            "file_path": None,
+            "file_size": 0,
+            "page_count": 0,
+            "chunk_count": 0,
+            "status": "processing",
+            "sync_error": None,
+            "last_synced_at": None,
+            "uploaded_at": datetime.now(timezone.utc),
+        }
+        res = await database.sources_collection.insert_one(doc)
+        source_id = str(res.inserted_id)
+        background_tasks.add_task(
+            sync_drive_file, current_user["id"], target_ws, source_id,
+            f.id, f.name, f.mimeType,
+        )
+        imported.append({"source_id": source_id, "file_id": f.id,
+                         "name": f.name, "status": "processing"})
+    return DriveImportResponse(imported=imported, total=len(imported))
+
+
 @router.post("/notion/pages", response_model=NotionPagesResponse)
 async def notion_list_pages(
     query: Optional[str] = None,
@@ -324,13 +501,13 @@ async def resync_source(
     if not acct:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"{provider} not connected. Please reconnect.")
-    try:
-        token = decrypt_token(acct["token_enc"])
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="Stored token invalid. Please reconnect.")
 
     if provider == "notion":
+        try:
+            token = decrypt_token(acct["token_enc"])
+        except (ValueError, KeyError):
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Stored token invalid. Please reconnect.")
         from app.services.notion_sync_service import sync_notion_page
         background_tasks.add_task(
             sync_notion_page, current_user["id"], source.get("workspace_id"),
@@ -338,9 +515,17 @@ async def resync_source(
             (source.get("filename") or "").replace("[Notion] ", ""),
             source.get("remote_url"),
         )
+    elif provider == "drive":
+        from app.services.drive_sync_service import sync_drive_file
+        background_tasks.add_task(
+            sync_drive_file, current_user["id"], source.get("workspace_id"),
+            source_id, source.get("remote_id"),
+            (source.get("filename") or "").replace("[Drive] ", ""),
+            source.get("remote_mime"),
+        )
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Drive re-sync arrives in Phase 2")
+                            detail="Only imported connector sources can be re-synced")
     return {"message": "Re-sync started", "source_id": source_id}
 
 
@@ -365,7 +550,8 @@ async def disconnect_provider(
         pass  # Notion: token invalidated by user removing integration; local delete suffices
     else:
         try:
-            token = decrypt_token(acct["token_enc"])
+            from app.services.drive_sync_service import get_fresh_access_token
+            token = await get_fresh_access_token(current_user["id"])
             async with httpx.AsyncClient(timeout=15.0) as client:
                 await client.post("https://oauth2.googleapis.com/revoke",
                                   params={"token": token})
