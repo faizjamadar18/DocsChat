@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     GOOGLE_DRIVE_CLIENT_SECRET: str = ""
     GOOGLE_DRIVE_REDIRECT_URI: str = ""
 
+    # GitHub Connector (GitHub App, user flow, Contents read-only)
+    GITHUB_APP_CLIENT_ID: str = ""
+    GITHUB_APP_CLIENT_SECRET: str = ""
+    GITHUB_APP_REDIRECT_URI: str = ""
+
     # Deployment
     CORS_ORIGINS: str = "https://docschats.vercel.app"
 

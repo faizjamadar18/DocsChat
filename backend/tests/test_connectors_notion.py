@@ -154,6 +154,70 @@ def test_drive_import_requires_files():
         assert response.status_code in (400, 422)
 
 
+# ---------------------------------------------------------------------------
+# GitHub (Phase 3)
+# ---------------------------------------------------------------------------
+
+def test_status_includes_github():
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.database.connector_accounts_collection", create=True) as mock_accounts, \
+         patch("app.database.sources_collection", create=True) as mock_sources, \
+         patch("app.routes.connectors.check_db"):
+        _mock_user(mock_users)
+        mock_accounts.find_one = AsyncMock(return_value=None)
+        mock_sources.count_documents = AsyncMock(return_value=0)
+        response = client.get(
+            "/api/connectors/status",
+            headers={"Authorization": f"Bearer {USER_TOKEN}"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "github" in data
+        assert "connected" in data["github"]
+
+
+def test_github_auth_url_points_to_github():
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.database.sync_jobs_collection", create=True) as mock_jobs, \
+         patch("app.routes.connectors.check_db"), \
+         patch("app.routes.connectors.settings") as mock_settings:
+        _mock_user(mock_users)
+        mock_settings.GITHUB_APP_CLIENT_ID = "Iv1.testid"
+        mock_settings.GITHUB_APP_REDIRECT_URI = "http://localhost:8000/api/connectors/github/callback"
+        mock_jobs.insert_one = AsyncMock(return_value=None)
+        response = client.get(
+            "/api/connectors/github/auth-url",
+            headers={"Authorization": f"Bearer {USER_TOKEN}"},
+        )
+        assert response.status_code == 200
+        assert "github.com/login/oauth" in response.json()["auth_url"]
+
+
+def test_github_import_requires_repos():
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.routes.connectors.check_db"):
+        _mock_user(mock_users)
+        response = client.post(
+            "/api/connectors/github/import",
+            json={"repos": []},
+            headers={"Authorization": f"Bearer {USER_TOKEN}"},
+        )
+        assert response.status_code in (400, 422)
+
+
+def test_github_repos_404_when_not_connected():
+    with patch("app.database.users_collection") as mock_users, \
+         patch("app.database.connector_accounts_collection", create=True) as mock_accounts, \
+         patch("app.routes.connectors.check_db"):
+        _mock_user(mock_users)
+        mock_accounts.find_one = AsyncMock(return_value=None)
+        response = client.get(
+            "/api/connectors/github/repos",
+            headers={"Authorization": f"Bearer {USER_TOKEN}"},
+        )
+        assert response.status_code == 404
+
+
 class _EmptyCursor:
     def sort(self, *a, **k):
         return self

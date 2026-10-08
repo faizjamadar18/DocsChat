@@ -13,6 +13,7 @@ class ConnectorStatus(BaseModel):
 class ConnectorsStatusResponse(BaseModel):
     notion: ConnectorStatus
     drive: ConnectorStatus
+    github: ConnectorStatus
 
 
 class NotionAuthUrlResponse(BaseModel):
@@ -64,5 +65,30 @@ class DriveImportRequest(BaseModel):
 
 
 class DriveImportResponse(BaseModel):
+    imported: list[dict]
+    total: int
+
+
+class GitHubAuthUrlResponse(BaseModel):
+    auth_url: str
+
+
+class GitHubRepoItem(BaseModel):
+    id: str = Field(..., description="owner/repo, e.g. octocat/hello-world")
+    name: str = "Untitled"
+    url: Optional[str] = None
+    private: bool = False
+    default_branch: Optional[str] = None
+
+
+class GitHubReposResponse(BaseModel):
+    repos: list[GitHubRepoItem]
+
+
+class GitHubImportRequest(BaseModel):
+    repos: list[GitHubRepoItem] = Field(..., min_length=1, max_length=10)
+
+
+class GitHubImportResponse(BaseModel):
     imported: list[dict]
     total: int

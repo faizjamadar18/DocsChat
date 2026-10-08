@@ -28,6 +28,8 @@ from app.models.connector import (
     NotionImportRequest, NotionImportResponse, DisconnectResponse,
     DriveAuthUrlResponse, DrivePickerTokenResponse,
     DriveImportRequest, DriveImportResponse,
+    GitHubAuthUrlResponse, GitHubReposResponse, GitHubRepoItem,
+    GitHubImportRequest, GitHubImportResponse,
 )
 from app.services import vector_store as vs
 from app.services.connector_token_service import encrypt_token, decrypt_token
@@ -96,6 +98,7 @@ async def connectors_status(
     return ConnectorsStatusResponse(
         notion=await _provider_state("notion"),
         drive=await _provider_state("drive"),
+        github=await _provider_state("github"),
     )
 
 
@@ -476,6 +479,197 @@ async def notion_import_pages(
     return NotionImportResponse(imported=imported, total=len(imported))
 
 
+# ---------------------------------------------------------------------------
+# GitHub (GitHub App, user flow, Contents read-only)
+# ---------------------------------------------------------------------------
+
+GITHUB_OAUTH_AUTHORIZE = "https://github.com/login/oauth/authorize"
+GITHUB_OAUTH_TOKEN = "https://github.com/login/oauth/access_token"
+
+
+@router.get("/github/auth-url", response_model=GitHubAuthUrlResponse)
+async def github_auth_url(current_user: dict = Depends(get_current_user)):
+    """Start GitHub App user authorization (read-only contents)."""
+    _require_db()
+    if not settings.GITHUB_APP_CLIENT_ID or not settings.GITHUB_APP_REDIRECT_URI:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="GitHub integration not configured on server",
+        )
+    state = secrets.token_urlsafe(24)
+    try:
+        await database.sync_jobs_collection.insert_one({
+            "user_id": current_user["id"],
+            "kind": "github_oauth_state",
+            "state": state,
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
+    params = {
+        "client_id": settings.GITHUB_APP_CLIENT_ID,
+        "redirect_uri": settings.GITHUB_APP_REDIRECT_URI,
+        "state": f"{current_user['id']}.{state}",
+    }
+    return GitHubAuthUrlResponse(auth_url=f"{GITHUB_OAUTH_AUTHORIZE}?{urlencode(params)}")
+
+
+@router.get("/github/callback")
+async def github_callback(code: str = Query(...), state: str = Query(...)):
+    """OAuth callback. Exchanges code -> user token, stores encrypted."""
+    from fastapi.responses import RedirectResponse
+
+    _require_db()
+    frontend = (settings.FRONTEND_URL or "").rstrip("/") or "http://localhost:3000"
+    try:
+        user_id, rand = state.split(".", 1)
+    except ValueError:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+    if not ObjectId.is_valid(user_id):
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                GITHUB_OAUTH_TOKEN,
+                headers={"Accept": "application/json"},
+                data={
+                    "client_id": settings.GITHUB_APP_CLIENT_ID,
+                    "client_secret": settings.GITHUB_APP_CLIENT_SECRET,
+                    "code": code,
+                    "redirect_uri": settings.GITHUB_APP_REDIRECT_URI,
+                },
+            )
+            resp.raise_for_status()
+            token_data = resp.json()
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+
+    access_token = token_data.get("access_token")
+    refresh_token = token_data.get("refresh_token")
+    if not access_token:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+
+    try:
+        from datetime import timedelta
+        doc: dict = {
+            "user_id": user_id,
+            "provider": "github",
+            "access_enc": encrypt_token(access_token),
+            "token_expires_at": datetime.now(timezone.utc) + timedelta(
+                seconds=int(token_data.get("expires_in", 28800))),
+            "connected_at": datetime.now(timezone.utc),
+        }
+        if refresh_token:
+            doc["refresh_enc"] = encrypt_token(refresh_token)
+        await database.connector_accounts_collection.update_one(
+            {"user_id": user_id, "provider": "github"}, {"$set": doc}, upsert=True,
+        )
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+    return RedirectResponse(f"{frontend}/connectors/github?github=connected", status_code=302)
+
+
+@router.get("/github/repos", response_model=GitHubReposResponse)
+async def github_list_repos(current_user: dict = Depends(get_current_user)):
+    """Repos the user shared with the app (respects their install choice)."""
+    _require_db()
+    from app.services.github_sync_service import get_fresh_access_token, list_user_repos
+    try:
+        token = await get_fresh_access_token(current_user["id"])
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    try:
+        repos = await list_user_repos(token)
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail=f"GitHub API error: {e.response.status_code}")
+    return GitHubReposResponse(repos=[
+        GitHubRepoItem(
+            id=r.get("full_name", ""),
+            name=r.get("full_name", "Untitled"),
+            url=r.get("html_url"),
+            private=bool(r.get("private")),
+            default_branch=r.get("default_branch"),
+        )
+        for r in repos if r.get("full_name")
+    ])
+
+
+@router.post("/github/import", response_model=GitHubImportResponse, status_code=status.HTTP_201_CREATED)
+async def github_import_repos(
+    body: GitHubImportRequest,
+    background_tasks: BackgroundTasks,
+    workspace_id: Optional[str] = Query(None),
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Create one source per picked repo (docs subset) and sync in background."""
+    _require_db()
+    if not body.repos:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Pick at least one repository to import")
+    from app.services.github_sync_service import MAX_REPOS_PER_USER, sync_github_repo
+
+    target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": "github"}
+    )
+    if not acct or not acct.get("access_enc"):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="GitHub not connected")
+
+    existing_count = await database.sources_collection.count_documents({
+        "user_id": current_user["id"], "source_type": "github",
+        **({"workspace_id": target_ws} if target_ws else {}),
+    })
+    room = MAX_REPOS_PER_USER - existing_count
+    if room <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Repo limit reached ({MAX_REPOS_PER_USER}). Delete one to add another.")
+
+    imported: list[dict] = []
+    for repo in body.repos[:room]:
+        full = repo.id.strip()
+        if "/" not in full:
+            continue
+        existing = await database.sources_collection.find_one({
+            "user_id": current_user["id"],
+            "source_type": "github",
+            "remote_id": full.lower(),
+            **({"workspace_id": target_ws} if target_ws else {}),
+        })
+        if existing:
+            imported.append({"source_id": str(existing["_id"]), "repo": full,
+                             "status": existing.get("status", "ready")})
+            continue
+        doc = {
+            "user_id": current_user["id"],
+            "workspace_id": target_ws,
+            "source_type": "github",
+            "provider": "github",
+            "remote_id": full.lower(),
+            "remote_url": repo.url or f"https://github.com/{full}",
+            "filename": f"[GitHub] {full}",
+            "file_path": None,
+            "file_size": 0,
+            "page_count": 0,
+            "chunk_count": 0,
+            "status": "processing",
+            "sync_error": None,
+            "last_synced_at": None,
+            "uploaded_at": datetime.now(timezone.utc),
+        }
+        res = await database.sources_collection.insert_one(doc)
+        source_id = str(res.inserted_id)
+        background_tasks.add_task(
+            sync_github_repo, current_user["id"], target_ws, source_id,
+            full, repo.url,
+        )
+        imported.append({"source_id": source_id, "repo": full, "status": "processing"})
+    return GitHubImportResponse(imported=imported, total=len(imported))
+
+
 @router.post("/sources/{source_id}/resync")
 async def resync_source(
     source_id: str,
@@ -523,6 +717,12 @@ async def resync_source(
             (source.get("filename") or "").replace("[Drive] ", ""),
             source.get("remote_mime"),
         )
+    elif provider == "github":
+        from app.services.github_sync_service import sync_github_repo
+        background_tasks.add_task(
+            sync_github_repo, current_user["id"], source.get("workspace_id"),
+            source_id, source.get("remote_id"), source.get("remote_url"),
+        )
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Only imported connector sources can be re-synced")
@@ -537,7 +737,7 @@ async def disconnect_provider(
 ):
     """Revoke token and optionally delete all imported content + vectors."""
     _require_db()
-    if provider not in ("notion", "drive"):
+    if provider not in ("notion", "drive", "github"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown provider")
     acct = await database.connector_accounts_collection.find_one(
         {"user_id": current_user["id"], "provider": provider}
@@ -548,6 +748,20 @@ async def disconnect_provider(
     # Best-effort remote revoke (Notion has no revoke endpoint — deleting locally is the revoke)
     if provider == "notion":
         pass  # Notion: token invalidated by user removing integration; local delete suffices
+    elif provider == "github":
+        try:
+            from app.services.github_sync_service import get_fresh_access_token
+            gtoken = await get_fresh_access_token(current_user["id"])
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                await client.delete(
+                    f"https://api.github.com/applications/{settings.GITHUB_APP_CLIENT_ID}/token",
+                    auth=(settings.GITHUB_APP_CLIENT_ID, settings.GITHUB_APP_CLIENT_SECRET),
+                    json={"access_token": gtoken},
+                )
+        except Exception:
+            pass
+        # Note: deleting locally is the real revoke — user can also uninstall
+        # the app at github.com/settings/installations to cut access instantly.
     else:
         try:
             from app.services.drive_sync_service import get_fresh_access_token
