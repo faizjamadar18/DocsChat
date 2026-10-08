@@ -170,6 +170,49 @@ def test_tool_call_inventory_answered_from_catalog():
         mock_retrieve.assert_not_called()
 
 
+def test_bootstrap_returns_key_and_token_in_one_call():
+    client = _make_client()
+    from app.middleware.auth_middleware import get_current_user
+    from app.services import vapi_key_service as svc
+    target = _override_app()
+    me = _auth_override()
+    target.dependency_overrides[get_current_user] = lambda: me
+    try:
+        with patch("app.routes.voice.check_db", return_value=None), \
+             patch("app.routes.voice._workspace_owned_by", new=AsyncMock(return_value=True)), \
+             patch("app.database.users_collection") as mock_users:
+            mock_users.find_one = AsyncMock(return_value={
+                "_id": ObjectId(me["id"]),
+                "vapi_public_key_enc": svc.encrypt_key("pk-test-bootstrap123"),
+            })
+            resp = client.post("/api/voice/bootstrap", json={"workspace_id": me["active_workspace_id"]})
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["has_key"] is True
+            assert data["public_key"] == "pk-test-bootstrap123"
+            assert data["token"]
+    finally:
+        target.dependency_overrides.clear()
+
+
+def test_bootstrap_no_key_costs_nothing():
+    client = _make_client()
+    from app.middleware.auth_middleware import get_current_user
+    target = _override_app()
+    me = _auth_override()
+    target.dependency_overrides[get_current_user] = lambda: me
+    try:
+        with patch("app.routes.voice.check_db", return_value=None), \
+             patch("app.routes.voice._workspace_owned_by", new=AsyncMock(return_value=True)), \
+             patch("app.database.users_collection") as mock_users:
+            mock_users.find_one = AsyncMock(return_value={"_id": ObjectId(me["id"])})
+            resp = client.post("/api/voice/bootstrap", json={"workspace_id": me["active_workspace_id"]})
+            assert resp.status_code == 200
+            assert resp.json()["has_key"] is False
+    finally:
+        target.dependency_overrides.clear()
+
+
 def test_voice_logs_are_separate_from_chat():
     client = _make_client()
     from app.middleware.auth_middleware import get_current_user

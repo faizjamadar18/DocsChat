@@ -104,7 +104,7 @@ export default function Header({
           onClick={() => {
             void startVoice();
           }}
-          disabled={voiceStatus === 'checking' || voiceStatus === 'connecting'}
+          disabled={voiceStatus === 'checking' || voiceStatus === 'warming' || voiceStatus === 'connecting'}
           className="bg-[#111113] hover:bg-black text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all shadow-xs hover:shadow-sm disabled:opacity-60"
           title="Talk to Ora (voice)"
         >
