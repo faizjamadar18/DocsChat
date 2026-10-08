@@ -1,0 +1,8 @@
+# Dev-only dependencies for the autonomous verification gates in
+# `.agents/skills/add-feature/SKILL.md` and `.agents/skills/review-changes/SKILL.md`.
+# Install with: pip install -r requirements-dev.txt
+# (Production installs use requirements.txt only.)
+pytest==9.1.1
+pytest-asyncio==1.4.0
+flake8==7.4.1
+httpx==0.28.1

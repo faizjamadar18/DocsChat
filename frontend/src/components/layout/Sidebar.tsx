@@ -335,7 +335,7 @@ export default function Sidebar({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm('Delete this voice log?')) void deleteVoiceLog(log.id);
+                        void deleteVoiceLog(log.id);
                       }}
                       className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
                       title="Delete voice log"

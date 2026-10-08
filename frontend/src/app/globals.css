@@ -1,28 +1,250 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap');
+
+@font-face {
+  font-family: 'GeneralSans';
+  src: url('/fonts/GeneralSans_Light-s.p.752830dc.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GeneralSans';
+  src: url('/fonts/GeneralSans_Regular-s.p.3b339388.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GeneralSans';
+  src: url('/fonts/GeneralSans_Semibold-s.p.c5626765.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GeneralSans';
+  src: url('/fonts/GeneralSans_Bold-s.p.00b21177.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GeneralSans';
+  src: url('/fonts/GeneralSans_Variable-s.p.f249fe39.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ClashGrotesk';
+  src: url('/fonts/ClashGrotesk_Light-s.p.a636b6c5.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ClashGrotesk';
+  src: url('/fonts/ClashGrotesk_Regular-s.p.456b20e8.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ClashGrotesk';
+  src: url('/fonts/ClashGrotesk_Semibold-s.p.a715fa6f.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ClashGrotesk';
+  src: url('/fonts/ClashGrotesk_Bold-s.p.59d625f2.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ClashGrotesk';
+  src: url('/fonts/ClashGrotesk_Variable-s.p.c74b7c21.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-sans: 'GeneralSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-base: 'GeneralSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'ClashGrotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-handwriting: 'Caveat', cursive;
+
+  --radius: 0.7rem;
+  --primary: #9a7bae;
+  --primary-50: #f8f7fa;
+  --primary-100: #f0edf4;
+  --primary-200: #e1daea;
+  --primary-300: #c9b9d7;
+  --primary-400: #b095c2;
+  --primary-500: #9a7bae;
+  --primary-600: #8666a0;
+  --primary-700: #6f5289;
+  --primary-800: #5b4270;
+  --primary-900: #4a355c;
+  --primary-950: #2d1e38;
+  --primary-foreground: #ffffff;
+  --primary-btn: #7f5f97;
+  --primary-btn-hover: #6b4e82;
+  --background2: #f4f1eb;
+  --background: #f6f5f3;
+  --foreground: #1b1b1b;
+  --secondary: #eee7f3;
+  --secondary-foreground: #333333;
+  --accent: #eee7f3;
+  --accent-foreground: #463a57;
+  --destructive-foreground: #ffffff;
+  --border: #e6e2dc;
+  --muted: #f3f0ed;
+  --muted-foreground: #6f6c66;
+  --card: #fefdfb;
+  --card-foreground: var(--foreground);
+  --popover: #fefdfb;
+  --popover-foreground: var(--foreground);
+}
+
+.dark {
+  --background: #0e0e10;
+  --background2: #131316;
+  --foreground: #f4f3f1;
+  --card: #18181b;
+  --card-foreground: #f4f3f1;
+  --popover: #18181b;
+  --popover-foreground: #f4f3f1;
+  --primary: #b095c2;
+  --primary-foreground: #1b1426;
+  --primary-btn: #9a7bae;
+  --primary-btn-hover: #b095c2;
+  --secondary-foreground: #e4e2dc;
+  --muted: #1a1a1d;
+  --muted-foreground: #8e8b85;
+  --accent: #2a2233;
+  --accent-foreground: #e1d5ee;
+  --destructive-foreground: #ffffff;
+  --border: #26262a;
+}
 
 @theme {
-  --color-base: #FBFBFD;
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-base: var(--font-base);
+  --font-handwriting: var(--font-handwriting);
+
+  --color-background: var(--background);
+  --color-background2: var(--background2);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* Workspace app backward compatibility */
+  --color-surface-base: #FBFBFD;
   --color-surface: #FFFFFF;
   --color-sidebar: #F7F7F9;
-  --color-card: #FFFFFF;
-  --color-border: #ECECEE;
   --color-border-subtle: #E5E7EB;
   --color-text-primary: #111827;
   --color-text-secondary: #6B7280;
   --color-text-muted: #9CA3AF;
-  --color-accent: #6E56CF;
   --color-accent-subtle: #EFEAFC;
   --color-accent-hover: #5B45B2;
+}
+
+.bg-base {
+  background-color: #FBFBFD;
 }
 
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #FBFBFD;
-  color: #111827;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-base);
   min-height: 100vh;
 }
 
+.font-heading {
+  font-family: var(--font-heading) !important;
+}
+
+.font-sans, .font-base {
+  font-family: var(--font-base) !important;
+}
+
+.font-handwriting {
+  font-family: var(--font-handwriting) !important;
+}
+
+.font-head {
+  font-family: var(--font-heading);
+  font-weight: 550;
+}
+
+.heading {
+  max-width: 48rem;
+  text-align: center;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 550;
+  letter-spacing: -0.025em;
+  font-family: var(--font-heading);
+  color: var(--foreground);
+}
+@media (min-width: 768px) {
+  .heading {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+}
+
+.paragraph {
+  max-width: 36rem;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+  color: var(--muted-foreground);
+}
+@media (min-width: 768px) {
+  .paragraph {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+.gradient-secondary {
+  color: var(--muted-foreground);
+}
+
+/* Scrollbar styles */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -41,7 +263,6 @@ body {
   background-color: rgba(0, 0, 0, 0.22);
 }
 
-/* Hide scrollbar while maintaining scrollability */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -51,12 +272,12 @@ body {
   scrollbar-width: none;
 }
 
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(6px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -64,10 +285,10 @@ body {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-/* TipTap Editor Styles */
+/* TipTap Editor Styles preserved for workspace */
 .tiptap {
   outline: none;
   min-height: 380px;
@@ -161,69 +382,4 @@ body {
   color: #6E56CF;
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-/* TipTap Task List Styles */
-ul[data-type="taskList"] {
-  list-style: none !important;
-  padding-left: 0 !important;
-  margin: 0.5rem 0 !important;
-}
-
-ul[data-type="taskList"] li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.25rem;
-}
-
-ul[data-type="taskList"] li > label {
-  user-select: none;
-  margin-top: 0.2rem;
-  cursor: pointer;
-}
-
-ul[data-type="taskList"] li > label input[type="checkbox"] {
-  accent-color: #6E56CF;
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-ul[data-type="taskList"] li > div {
-  flex: 1 1 auto;
-}
-
-ul[data-type="taskList"] li[data-checked="true"] > div {
-  text-decoration: line-through;
-  color: #9CA3AF;
-}
-
-/* TipTap Table Styles */
-.tiptap table {
-  border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
-  margin: 1rem 0;
-  overflow: hidden;
-  border-radius: 6px;
-  border: 1px solid #E5E7EB;
-}
-
-.tiptap table td,
-.tiptap table th {
-  min-width: 1em;
-  border: 1px solid #E5E7EB;
-  padding: 8px 12px;
-  vertical-align: top;
-  box-sizing: border-box;
-  position: relative;
-  font-size: 0.875rem;
-}
-
-.tiptap table th {
-  font-weight: 600;
-  text-align: left;
-  background-color: #F9FAFB;
 }

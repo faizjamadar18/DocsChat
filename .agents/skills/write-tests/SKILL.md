@@ -7,7 +7,7 @@ description: Guidelines for writing tests and checking code quality.
 
 ## Backend Testing (Python) - TDD Required
 - **Test-Driven Development**: You MUST write the `pytest` test script BEFORE you write the actual code implementation.
-- **Framework**: `pytest` and `pytest-asyncio` for async endpoints.
+- **Framework**: `pytest` and `pytest-asyncio` for async endpoints. Install dev dependencies first: `pip install -r requirements-dev.txt` in `backend/`.
 - **Location**: Write tests in a `tests/` directory within `backend/` or alongside the code.
 - **Scope**: Ensure new API endpoints have at least one success path test and one error path test.
 - **Execution**: Run `pytest` and ensure 100% pass rate before committing. Run `flake8 app/` for linting.

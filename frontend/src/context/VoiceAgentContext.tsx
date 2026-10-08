@@ -15,6 +15,7 @@ import { useWorkspace } from './WorkspaceContext';
 export type VoiceStatus =
   | 'idle'
   | 'checking'
+  | 'warming'
   | 'connecting'
   | 'listening'
   | 'thinking'
@@ -91,6 +92,24 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
   const savedRef = useRef(false);
   const callConnectedRef = useRef(false);
   const workspaceRef = useRef<string | undefined>(undefined);
+  // Tap-to-talk sequence guard: ending the call cancels a start still in flight.
+  const startSeqRef = useRef(0);
+  // Warmed-up bundle (key + tool token) prepared in the background after login.
+  const bundleRef = useRef<{
+    publicKey: string;
+    token: string;
+    workspaceId: string;
+    at: number;
+  } | null>(null);
+  const warmedForRef = useRef<string | null>(null);
+
+  // Bundle is good for 8 min (server tokens live 10 min).
+  const freshBundleFor = useCallback((wsId: string) => {
+    const b = bundleRef.current;
+    if (!b || b.workspaceId !== wsId) return null;
+    if (Date.now() - b.at > 8 * 60 * 1000) return null;
+    return b;
+  }, []);
 
   const setBothStatus = useCallback((s: VoiceStatus) => {
     statusRef.current = s;
@@ -128,6 +147,8 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
   const endVoice = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (_reason?: string) => {
+      // Cancel any tap-to-talk still warming up in the background.
+      startSeqRef.current += 1;
       clearTimer();
       try {
         vapiRef.current?.stop();
@@ -262,11 +283,52 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
     [endVoice, setBothStatus, startTimer]
   );
 
+  // Background warmup after login: preload the voice toolkit + fetch one
+  // bootstrap bundle (key + tool token) so a later tap skips all waiting.
+  // Runs before any Vapi call connects, so it never touches Vapi billing.
+  const warmupVoice = useCallback(
+    async (wsId: string) => {
+      try {
+        if (!VapiClassRef.current) {
+          const mod = await import('@vapi-ai/web');
+          VapiClassRef.current = mod.default;
+        }
+        const data = await api.post(
+          '/voice/bootstrap',
+          { workspace_id: wsId },
+          { headers: { 'X-Workspace-Id': wsId } }
+        );
+        if (data?.has_key && data?.public_key && data?.token) {
+          bundleRef.current = {
+            publicKey: data.public_key,
+            token: data.token,
+            workspaceId: data.workspace_id || wsId,
+            at: Date.now(),
+          };
+        }
+      } catch {
+        // Warmup is best-effort; the tap path retries everything anyway.
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const wsId = currentWorkspace?.id;
+    if (!wsId || warmedForRef.current === wsId) return;
+    warmedForRef.current = wsId;
+    void warmupVoice(wsId);
+  }, [currentWorkspace?.id, warmupVoice]);
+
   const startVoice = useCallback(async () => {
     if (statusRef.current !== 'idle' && statusRef.current !== 'error') return;
+    const seq = ++startSeqRef.current;
+    const tapAt = performance.now();
+    const alive = () => seq === startSeqRef.current;
     setErrorMsg(null);
     setNeedsKey(false);
-    setBothStatus('checking');
+    // Bubble opens instantly with roaming eyes — waiting now has feedback.
+    setBothStatus('warming');
 
     const wsId = currentWorkspace?.id;
     if (!wsId) {
@@ -277,23 +339,33 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
     }
 
     try {
-      // 1. Does this user have their own key? (no call, no cost if missing)
-      const keyStatus = await api.get('/voice/key-status');
-      if (!keyStatus?.has_key) {
-        setNeedsKey(true);
-        setBothStatus('idle');
-        return;
+      // One backend round trip (key + tool token together). Reuses the
+      // background bundle when fresh so warm taps skip even this call.
+      let bundle = freshBundleFor(wsId);
+      if (!bundle) {
+        const t = performance.now();
+        const data = await api.post(
+          '/voice/bootstrap',
+          { workspace_id: wsId },
+          { headers: { 'X-Workspace-Id': wsId } }
+        );
+        console.info(`[Ora voice] bootstrap took ${Math.round(performance.now() - t)}ms`);
+        if (!alive()) return;
+        if (!data?.has_key) {
+          setNeedsKey(true);
+          setBothStatus('idle');
+          return;
+        }
+        bundle = {
+          publicKey: data.public_key,
+          token: data.token,
+          workspaceId: data.workspace_id || wsId,
+          at: Date.now(),
+        };
+        bundleRef.current = bundle;
       }
-      // 2. Raw public key for browser SDK (owner-only, HTTPS, never logged).
-      const { public_key: publicKey } = await api.get('/voice/key');
-      if (!publicKey) throw new Error('missing-key');
-      // 3. Short-lived session token so Vapi servers can ask our helper safely.
-      const session = await api.post(
-        '/voice/session',
-        { workspace_id: wsId },
-        { headers: { 'X-Workspace-Id': wsId } }
-      );
-      const toolUrl = toAbsoluteToolUrl(`/voice/tool-call?token=${encodeURIComponent(session.token)}`);
+      if (!bundle.publicKey) throw new Error('missing-key');
+      const toolUrl = toAbsoluteToolUrl(`/voice/tool-call?token=${encodeURIComponent(bundle.token)}`);
       if (!toolUrl) {
         setErrorMsg('Voice needs a public site address. Deploy with NEXT_PUBLIC_API_URL set, or test with an https tunnel.');
         setBothStatus('error');
@@ -302,15 +374,18 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
       }
 
       if (!VapiClassRef.current) {
+        const t = performance.now();
         const mod = await import('@vapi-ai/web');
         VapiClassRef.current = mod.default;
+        console.info(`[Ora voice] SDK import took ${Math.round(performance.now() - t)}ms`);
       }
+      if (!alive()) return;
       try {
         vapiRef.current?.stop();
       } catch {
         // ignore
       }
-      const vapi = new VapiClassRef.current(publicKey);
+      const vapi = new VapiClassRef.current(bundle.publicKey);
       vapiRef.current = vapi;
       attachListeners(vapi);
 
@@ -323,6 +398,7 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
       setBothStatus('connecting');
 
       // Transient assistant: zero dashboard setup for users + cost-saver stack.
+      const t = performance.now();
       await vapi.start({
         model: {
           provider: 'openai',
@@ -361,7 +437,11 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
         maxDurationSeconds: MAX_CALL_SECONDS,
         startSpeakingPlan: {
           waitSeconds: 1.2,
-          smartEndpointingPlan: { provider: 'livekit' },
+          transcriptionEndpointingPlan: {
+            onPunctuationSeconds: 1.5,
+            onNoPunctuationSeconds: 3.0,
+            onNumberSeconds: 2.0,
+          },
         },
         stopSpeakingPlan: {
           numWords: 0,
@@ -369,7 +449,21 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
           backoffSeconds: 1.5,
         },
       } as never);
+      console.info(
+        `[Ora voice] vapi join took ${Math.round(performance.now() - t)}ms ` +
+          `(tap-to-join ${Math.round(performance.now() - tapAt)}ms total)`
+      );
+      if (!alive()) {
+        // User cancelled (red button / outside tap) while joining.
+        try {
+          vapi.stop();
+        } catch {
+          // ignore
+        }
+        return;
+      }
     } catch (err) {
+      if (!alive()) return; // cancelled — endVoice already reset the UI
       console.error('[Ora voice] start failed:', err);
       const raw = extractErrorText(err);
       if (/missing authorization|unauthorized|\b401\b|invalid.*key/i.test(raw)) {

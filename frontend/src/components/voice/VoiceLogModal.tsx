@@ -123,9 +123,7 @@ export default function VoiceLogModal({
         <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-border/70 bg-white">
           <button
             type="button"
-            onClick={() => {
-              if (confirm('Delete this voice conversation?')) onDelete(log.id);
-            }}
+            onClick={() => onDelete(log.id)}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />

@@ -4,16 +4,12 @@ import Link from 'next/link';
 import { Mic, MicOff, PhoneOff } from 'lucide-react';
 import { useVoiceAgent } from '../../context/VoiceAgentContext';
 
-function formatTime(total: number): string {
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
 function statusLabel(status: string): string {
   switch (status) {
     case 'checking':
       return 'Checking...';
+    case 'warming':
+      return 'Waking up...';
     case 'connecting':
       return 'Connecting...';
     case 'listening':
@@ -27,13 +23,55 @@ function statusLabel(status: string): string {
   }
 }
 
+/** Center "eyes" of the notch — a different mood per voice state (design photos). */
+function NotchEyes({ status }: { status: string }) {
+  // Speaking: 4-bar pulsing equalizer (dot, tall, medium, medium-tall).
+  if (status === 'speaking') {
+    const bars = [
+      { h: 'h-2', delay: '0s', dur: '0.7s' },
+      { h: 'h-6', delay: '0.15s', dur: '0.9s' },
+      { h: 'h-4', delay: '0.3s', dur: '0.8s' },
+      { h: 'h-[18px]', delay: '0.45s', dur: '1s' },
+    ];
+    return (
+      <div className="flex items-center gap-1 px-1 h-7" aria-hidden>
+        {bars.map((b, i) => (
+          <span
+            key={i}
+            className={`w-[5px] ${b.h} rounded-full bg-white animate-eq-bar ora-eyes-glow`}
+            style={{ animationDelay: b.delay, animationDuration: b.dur }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Listening: two fixed pills, slightly big, staring in one place.
+  if (status === 'listening') {
+    return (
+      <div className="flex items-center gap-1.5 px-1 h-6" aria-hidden>
+        <span className="w-2 h-4 rounded-full bg-white ora-eyes-glow" />
+        <span className="w-2 h-4 rounded-full bg-white ora-eyes-glow" />
+      </div>
+    );
+  }
+
+  // Thinking / connecting / checking: small eyes roaming side to side.
+  return (
+    <div className="flex items-center h-6 px-1" aria-hidden>
+      <div className="flex items-center gap-1.5 animate-eyes-roam">
+        <span className="w-2 h-3 rounded-full bg-white ora-eyes-glow" />
+        <span className="w-2 h-3 rounded-full bg-white ora-eyes-glow" />
+      </div>
+    </div>
+  );
+}
+
 export default function VoiceNotch() {
   const {
     status,
     isActive,
     isMuted,
-    volumeLevel,
-    elapsedSeconds,
     errorMsg,
     needsKey,
     endVoice,
@@ -116,7 +154,6 @@ export default function VoiceNotch() {
 
   if (!isActive) return null;
 
-  const pulse = Math.min(1, Math.max(0.15, volumeLevel || 0.15));
   const label = statusLabel(status);
 
   return (
@@ -126,23 +163,13 @@ export default function VoiceNotch() {
           type="button"
           onClick={toggleMute}
           title={isMuted ? 'Unmute mic' : 'Mute mic'}
-          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-            isMuted ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white hover:bg-white/20'
-          }`}
+          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer ${isMuted ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
         >
           {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
 
-        <div className="flex items-center gap-1.5 px-1" aria-hidden>
-          <span
-            className="w-2 h-4 rounded-full bg-white transition-all duration-150"
-            style={{ transform: `scaleY(${0.5 + pulse})`, opacity: 0.6 + pulse * 0.4 }}
-          />
-          <span
-            className="w-2 h-4 rounded-full bg-white transition-all duration-150"
-            style={{ transform: `scaleY(${0.5 + (1 - pulse) * 0.8})`, opacity: 0.6 + (1 - pulse) * 0.4 }}
-          />
-        </div>
+        <NotchEyes status={status} />
 
         <button
           type="button"
@@ -155,7 +182,6 @@ export default function VoiceNotch() {
       </div>
       <div className="mt-1.5 flex items-center gap-2">
         {label ? <span className="text-xs text-text-secondary">{label}</span> : null}
-        <span className="text-[11px] text-text-muted tabular-nums">{formatTime(elapsedSeconds)}</span>
       </div>
     </div>
   );

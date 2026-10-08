@@ -219,6 +219,46 @@ async def create_session(
     return {"token": token, "workspace_id": target_ws, "expires_in_seconds": 600}
 
 
+@router.post("/bootstrap")
+async def bootstrap(
+    request: CreateSessionRequest,
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """One-call voice starter: key status + raw public key + tool session token.
+
+    The browser calls this once per tap (or warmed up in the background), so a
+    voice start costs a single backend round trip instead of three. Everything
+    here happens before the Vapi call connects, so it never touches Vapi billing.
+    """
+    try:
+        check_db()
+    except DatabaseNotReadyError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
+    target_ws = request.workspace_id or x_workspace_id or current_user.get("active_workspace_id")
+    if not target_ws:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workspace_id is required")
+    if not await _workspace_owned_by(current_user["id"], target_ws):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
+    user = await database.users_collection.find_one({"_id": ObjectId(current_user["id"])})
+    enc = (user or {}).get("vapi_public_key_enc")
+    if not enc:
+        return {"has_key": False, "workspace_id": target_ws}
+    try:
+        raw = key_svc.decrypt_key(enc)
+    except ValueError:
+        return {"has_key": False, "workspace_id": target_ws}
+    token = sess_svc.create_session_token(current_user["id"], target_ws)
+    return {
+        "has_key": True,
+        "hint": key_svc.masked_hint(raw),
+        "public_key": raw,
+        "token": token,
+        "workspace_id": target_ws,
+        "expires_in_seconds": 600,
+    }
+
+
 @router.post("/tool-call")
 async def tool_call(request: dict | None = None, token: Optional[str] = Query(None)):
     """Vapi server webhook. Always answers HTTP 200 (per Vapi docs).

@@ -1,19 +1,20 @@
 ---
 name: review-changes
-description: Checklist for auditing code before opening a PR.
+description: Checklist for auditing code before committing.
 ---
 
 # Review Changes & Pre-Commit Verification Checklist
 
-Before making ANY commit or opening a Pull Request, you MUST review and execute this checklist:
+Before making ANY commit, you MUST review and execute this checklist:
 
 ## 1. Pre-Commit Quality & Verification Gate
-- [ ] Backend: All `pytest` tests pass with a 100% pass rate (`pytest` executed in virtual environment).
+Run ONLY the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):
+- [ ] Backend: All `pytest` tests pass with a 100% pass rate (`pytest` executed in virtual environment with `requirements-dev.txt` installed).
 - [ ] Backend: Code passes `flake8 app/` with no syntax or unhandled import errors.
 - [ ] Frontend: `npm run lint` passes with 0 errors.
 - [ ] Frontend: `npx tsc --noEmit` passes with 0 errors (all imports and path aliases resolve).
 - [ ] Terminal: Running dev servers (Next.js, FastAPI) show zero 500 runtime or module resolution errors.
-- [ ] **IDE Problems Window**: Check and resolve all errors and warnings in the IDE Problems window (`current_problems`) before committing.
+- [ ] **Reported Diagnostics**: All errors and warnings surfaced by the IDE or `current_problems` tooling are resolved before committing.
 - [ ] **Edge Case Walkthrough**: Briefly review subtle edge cases (null/empty states, boundary inputs, layout clipping/overflow, modal/overlay behavior) before committing.
 - [ ] Under NO circumstance should code be committed before all checks above are green.
 

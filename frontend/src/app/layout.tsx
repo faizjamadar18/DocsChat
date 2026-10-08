@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import AuthProvider from "../components/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "DocsChat",
-  description: "AI-powered workspace and document research assistant",
+  title: "Home | Plura",
+  description: "Your second brain for content creation. The unified workspace for modern creators.",
+  icons: {
+    icon: "/icons/logo/plogo.svg",
+  },
 };
 
 export default function RootLayout({
@@ -15,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.className} bg-base text-text-primary antialiased min-h-screen`}>
+      <body className="min-h-dvh relative bg-background text-foreground font-base antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>
