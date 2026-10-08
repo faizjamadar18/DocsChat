@@ -34,6 +34,12 @@ export interface NotionPage {
   last_edited_time?: string | null;
 }
 
+export interface DriveFile {
+  id: string;
+  name: string;
+  mimeType?: string | null;
+}
+
 export function useConnectors() {
   const [status, setStatus] = useState<ConnectorsStatus | null>(null);
   const [sources, setSources] = useState<ConnectorSource[]>([]);
@@ -69,6 +75,24 @@ export function useConnectors() {
     }
   }, []);
 
+  const connectDrive = useCallback(async () => {
+    const data = await api.get('/connectors/drive/auth-url');
+    if (data?.auth_url) {
+      window.location.href = data.auth_url as string;
+    }
+  }, []);
+
+  const getPickerToken = useCallback(async () => {
+    const data = await api.get('/connectors/drive/picker-token');
+    return data.access_token as string;
+  }, []);
+
+  const importDriveFiles = useCallback(async (files: DriveFile[]) => {
+    const data = await api.post('/connectors/drive/import', { files });
+    await refresh();
+    return data;
+  }, [refresh]);
+
   const listNotionPages = useCallback(async (query?: string) => {
     const data = await api.post('/connectors/notion/pages', { query: query || undefined });
     return (data.pages || []) as NotionPage[];
@@ -100,6 +124,7 @@ export function useConnectors() {
   return {
     status, sources, loading, error, refresh,
     connectNotion, listNotionPages, importNotionPages,
+    connectDrive, getPickerToken, importDriveFiles,
     resyncSource, disconnectProvider, deleteSource,
   };
 }

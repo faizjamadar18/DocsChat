@@ -82,7 +82,13 @@ export default function ConnectorsPage() {
               <p className="text-xs font-semibold text-text-primary">Google Drive</p>
               <p className="text-[11px] text-text-secondary">Import Docs and PDFs from Drive</p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800">Phase 2</span>
+            {loading ? (
+              <span className="text-[11px] text-text-muted">Loading...</span>
+            ) : status?.drive.connected ? (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">Not connected</span>
+            )}
             <ChevronRight className="w-4 h-4 text-text-muted" />
           </Link>
         ) : null}

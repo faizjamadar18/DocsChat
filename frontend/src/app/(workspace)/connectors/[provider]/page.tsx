@@ -4,8 +4,58 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, RefreshCw, Trash2, ExternalLink, X } from 'lucide-react';
-import { useConnectors, type NotionPage } from '@/hooks/useConnectors';
+import { useConnectors, type NotionPage, type DriveFile } from '@/hooks/useConnectors';
 import { NotionIcon, GoogleDriveIcon } from '@/components/connectors/ConnectorIcons';
+import { StatusPill, isSyncing } from '@/components/connectors/StatusPill';
+
+const PICKER_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
+const PICKER_APP_ID = process.env.NEXT_PUBLIC_GOOGLE_APP_ID || '';
+
+type PickerWindow = Window & {
+  gapi?: { load: (mod: string, cb: () => void) => void };
+  google?: { picker?: unknown };
+};
+
+interface PickerBuilderLike {
+  addView: (v: unknown) => PickerBuilderLike;
+  setOAuthToken: (t: string) => PickerBuilderLike;
+  setDeveloperKey: (k: string) => PickerBuilderLike;
+  setAppId: (id: string) => PickerBuilderLike;
+  enableFeature: (f: unknown) => PickerBuilderLike;
+  setCallback: (cb: (d: { action: string; docs?: DriveFile[] }) => void) => PickerBuilderLike;
+  build: () => { setVisible: (v: boolean) => void };
+}
+
+let pickerJsLoading: Promise<void> | null = null;
+function loadPickerJs(): Promise<void> {
+  if (typeof window !== 'undefined' && (window as PickerWindow).google?.picker) {
+    return Promise.resolve();
+  }
+  if (!pickerJsLoading) {
+    pickerJsLoading = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[src="https://apis.google.com/js/api.js"]');
+      const onload = () => {
+        try {
+          (window as PickerWindow).gapi?.load('picker', () => resolve());
+        } catch (e) {
+          reject(e instanceof Error ? e : new Error('Picker failed to load'));
+        }
+      };
+      if (existing) {
+        onload();
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = 'https://apis.google.com/js/api.js';
+      s.async = true;
+      s.defer = true;
+      s.onload = onload;
+      s.onerror = () => reject(new Error('Picker failed to load'));
+      document.head.appendChild(s);
+    });
+  }
+  return pickerJsLoading;
+}
 
 function timeAgo(iso?: string | null): string {
   if (!iso) return 'never';
@@ -38,8 +88,9 @@ export default function ConnectorDetailPage() {
   const meta = PROVIDERS[provider];
 
   const {
-    status, sources, loading, error,
+    status, sources, loading, error, refresh,
     connectNotion, listNotionPages, importNotionPages,
+    connectDrive, getPickerToken, importDriveFiles,
     resyncSource, disconnectProvider, deleteSource,
   } = useConnectors();
 
@@ -60,6 +111,10 @@ export default function ConnectorDetailPage() {
     const flag = searchParams.get('notion');
     if (flag === 'connected') setNotice('Notion connected. Pick pages to import.');
     else if (flag === 'error') setNotice('Notion connection failed. Try again.');
+    const dflag = searchParams.get('drive');
+    if (dflag === 'connected') setNotice('Google Drive connected. Choose files to import.');
+    else if (dflag === 'reconsent') setNotice('Drive needs one more consent to stay synced. Disconnect and connect again.');
+    else if (dflag === 'error') setNotice('Google Drive connection failed. Try again.');
   }, [searchParams]);
 
   useEffect(() => {
@@ -75,6 +130,17 @@ export default function ConnectorDetailPage() {
       document.body.style.overflow = prev;
     };
   }, [showImport]);
+
+  // Auto-refresh while anything is syncing, so the status/chunks
+  // always settle to the truth without a manual page reload.
+  const hasActive = sources.some((s) => isSyncing(s.status));
+  useEffect(() => {
+    if (!hasActive) return;
+    const t = setInterval(() => {
+      void refresh();
+    }, 3000);
+    return () => clearInterval(t);
+  }, [hasActive, refresh]);
 
   const normId = (raw?: string | null) => (raw || '').replace(/-/g, '').toLowerCase();
   const notionSources = useMemo(
@@ -93,6 +159,73 @@ export default function ConnectorDetailPage() {
     times.sort();
     return times[times.length - 1];
   }, [notionSources]);
+
+  const driveSources = useMemo(
+    () => sources.filter((s) => s.source_type === 'drive'),
+    [sources],
+  );
+  const driveLastSync = useMemo(() => {
+    const times = driveSources
+      .map((s) => s.last_synced_at || s.uploaded_at)
+      .filter(Boolean) as string[];
+    if (times.length === 0) return null;
+    times.sort();
+    return times[times.length - 1];
+  }, [driveSources]);
+  const driveConnected = provider === 'drive' ? !!status?.drive.connected : false;
+  const pickerConfigured = !!PICKER_API_KEY && !!PICKER_APP_ID;
+
+  const openPicker = async () => {
+    if (!pickerConfigured) {
+      setNotice('Picker not configured. Ask the owner to set NEXT_PUBLIC_GOOGLE_API_KEY and NEXT_PUBLIC_GOOGLE_APP_ID.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const accessToken = await getPickerToken();
+      await loadPickerJs();
+      pickWithPicker(accessToken);
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : 'Could not open file picker');
+      setBusy(false);
+    }
+  };
+
+  const pickWithPicker = (accessToken: string) => {
+    const w = window as PickerWindow;
+    const pickerNs = w.google?.picker as unknown as {
+      PickerBuilder: new () => PickerBuilderLike;
+      ViewId: { DOCS: unknown };
+      Feature: { MULTISELECT_ENABLED: unknown };
+      Action: { PICKED: string };
+    };
+    if (!pickerNs) {
+      setNotice('Picker failed to load. Check ad-blocker and reload.');
+      setBusy(false);
+      return;
+    }
+    const picker = new pickerNs.PickerBuilder()
+      .addView(pickerNs.ViewId.DOCS)
+      .setOAuthToken(accessToken)
+      .setDeveloperKey(PICKER_API_KEY)
+      .setAppId(PICKER_APP_ID)
+      .enableFeature(pickerNs.Feature.MULTISELECT_ENABLED)
+      .setCallback((data: { action: string; docs?: DriveFile[] }) => {
+        setBusy(false);
+        if (data.action === pickerNs.Action.PICKED && data.docs?.length) {
+          const files = data.docs.slice(0, 50).map((d) => ({
+            id: d.id, name: d.name || 'Untitled', mimeType: d.mimeType || null,
+          }));
+          setBusy(true);
+          importDriveFiles(files)
+            .then(() => setNotice(`Import started for ${files.length} file${files.length > 1 ? 's' : ''}.`))
+            .catch((e) => setNotice(e instanceof Error ? e.message : 'Import failed'))
+            .finally(() => setBusy(false));
+        }
+      })
+      .build();
+    picker.setVisible(true);
+  };
 
   if (!meta) {
     return (
@@ -142,12 +275,154 @@ export default function ConnectorDetailPage() {
       {error ? <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-xs text-red-700">{error}</div> : null}
 
       {provider === 'drive' ? (
-        <div className="rounded-xl border border-border bg-white p-6 text-center space-y-2">
-          <p className="text-sm font-semibold text-text-primary">Google Drive arrives in Phase 2</p>
-          <p className="text-xs text-text-secondary">
-            Notion first. Drive import (Picker + per-file access) reuses the same pipeline right after.
-          </p>
-        </div>
+        <>
+          {/* Connection card */}
+          <div className="rounded-xl border border-border bg-white divide-y divide-border overflow-hidden">
+            <div className="flex items-center gap-3 p-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-text-primary">Connection</p>
+                <p className="text-[11px] text-text-secondary">Only files you pick — never your whole Drive</p>
+              </div>
+              {loading ? (
+                <span className="text-[11px] text-text-muted">Loading...</span>
+              ) : driveConnected ? (
+                <div className="flex items-center gap-2">
+                  {driveLastSync ? (
+                    <span className="text-[11px] text-text-muted">Synced {timeAgo(driveLastSync)}</span>
+                  ) : null}
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void connectDrive()}
+                  className="px-4 py-1.5 rounded-lg bg-text-primary text-white text-xs font-medium hover:opacity-90 cursor-pointer"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+            {driveConnected ? (
+              <div className="flex items-center gap-3 p-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-text-primary">Imported sources</p>
+                  <p className="text-[11px] text-text-secondary">
+                    {driveSources.length} file{driveSources.length === 1 ? '' : 's'} available to Ora and voice
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void openPicker()}
+                  className="px-4 py-1.5 rounded-lg bg-accent-hover text-white text-xs font-medium hover:opacity-90 cursor-pointer disabled:opacity-60"
+                >
+                  {busy ? 'Opening...' : 'Choose from Drive'}
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Sources */}
+          {driveConnected ? (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-text-primary">Sources</h2>
+              <div className="rounded-xl border border-border bg-white overflow-hidden">
+                <div className="hidden sm:grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <span>Source</span>
+                  <span>Status</span>
+                  <span>Chunks</span>
+                  <span>Synced</span>
+                  <span className="text-right">Actions</span>
+                </div>
+                {driveSources.length === 0 ? (
+                  <p className="p-4 text-[11px] text-text-muted italic">
+                    No files imported yet. Click Choose from Drive above.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {driveSources.map((s) => (
+                      <div key={s.id} className="grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 items-center px-4 py-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <GoogleDriveIcon className="w-4 h-4 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
+                            {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                          </div>
+                        </div>
+                        <StatusPill status={s.status} />
+                        <span className="text-[11px] text-text-secondary">{s.chunk_count}</span>
+                        <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
+                        <span className="flex items-center justify-end gap-0.5">
+                          {s.remote_url ? (
+                            <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          ) : null}
+                          <button
+                            type="button"
+                            title="Re-sync"
+                            onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
+                            className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Delete"
+                            onClick={() => {
+                              if (confirm('Delete this imported source?')) void deleteSource(s.id);
+                            }}
+                            className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Disconnect */}
+          {driveConnected ? (
+            <div className="rounded-xl border border-border bg-white p-4 space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-text-primary">Disconnect Google Drive</p>
+                <p className="text-[11px] text-text-secondary">Revoke access. Optionally delete everything already imported.</p>
+              </div>
+              <label className="flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={deleteOnDisconnect}
+                  onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
+                  className="accent-[#6E56CF]"
+                />
+                Also delete copied content when disconnecting
+              </label>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={async () => {
+                  if (!confirm('Disconnect Google Drive?')) return;
+                  setBusy(true);
+                  try {
+                    await disconnectProvider('drive', deleteOnDisconnect);
+                    setNotice('Google Drive disconnected.');
+                  } catch (e) {
+                    setNotice(e instanceof Error ? e.message : 'Disconnect failed');
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+                className="px-4 py-1.5 rounded-lg border border-border text-xs text-text-secondary hover:text-red-600 cursor-pointer disabled:opacity-60"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : (
         <>
           {/* Connection card */}
@@ -222,13 +497,7 @@ export default function ConnectorDetailPage() {
                             {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
                           </div>
                         </div>
-                        <span className={`w-fit px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                          s.status === 'ready' ? 'bg-emerald-100 text-emerald-800'
-                          : s.status === 'error' ? 'bg-red-100 text-red-700'
-                          : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {s.status}
-                        </span>
+                        <StatusPill status={s.status} />
                         <span className="text-[11px] text-text-secondary">{s.chunk_count}</span>
                         <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
                         <span className="flex items-center justify-end gap-0.5">
