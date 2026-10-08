@@ -1,5 +1,5 @@
-@import 'tailwindcss';
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap');
+@import 'tailwindcss';
 
 @font-face {
   font-family: 'GeneralSans';
@@ -161,8 +161,9 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
+  /* Workspace canonical tokens (DESIGN.md): never repoint these at Plura vars. */
+  --color-border: #ECECEE;
+  --color-accent: #6E56CF;
   --color-accent-foreground: var(--accent-foreground);
 
   /* Workspace app backward compatibility */

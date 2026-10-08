@@ -10,7 +10,8 @@ import LenisProvider from '../components/LenisProvider';
 export default function Home() {
   return (
     <LenisProvider>
-      <div className="min-h-dvh relative bg-background text-foreground font-base antialiased">
+      {/* Landing is dark-only (DESIGN.md): .dark scopes all Plura var-based classes below. */}
+      <div className="dark min-h-dvh relative bg-background text-foreground font-base antialiased">
         <Header />
         <main>
           <Hero />

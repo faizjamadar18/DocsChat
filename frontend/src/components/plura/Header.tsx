@@ -122,19 +122,19 @@ export default function Header() {
 
             <div className="hidden lg:flex items-center justify-center absolute inset-x-0 left-1/2 -translate-x-1/2 mx-auto gap-2">
               <Link
-                className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-secondary text-foreground"
+                className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-white/10 text-foreground"
                 href="/#features"
               >
                 Features
               </Link>
               <Link
-                className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-secondary text-foreground"
+                className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-white/10 text-foreground"
                 href="/pricing"
               >
                 Pricing
               </Link>
               <Link
-                className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-secondary text-foreground"
+                className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-white/10 text-foreground"
                 href="/blog"
               >
                 Blog
@@ -161,7 +161,7 @@ export default function Header() {
               <button
                 data-slot="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none active:scale-95 cursor-pointer select-none text-muted-foreground hover:bg-secondary hover:text-muted-foreground/90 size-8 lg:hidden"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 outline-none active:scale-95 cursor-pointer select-none text-muted-foreground hover:bg-white/10 hover:text-white size-8 lg:hidden"
                 aria-label="Toggle Menu"
               >
                 <svg
@@ -188,21 +188,21 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="w-full px-4 pt-4 pb-3 flex flex-col gap-2 bg-background/95 backdrop-blur-md border-b border-border mt-2 lg:hidden">
             <Link
-              className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-secondary text-foreground"
+              className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-white/10 text-foreground"
               href="/#features"
               onClick={() => setMobileMenuOpen(false)}
             >
               Features
             </Link>
             <Link
-              className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-secondary text-foreground"
+              className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-white/10 text-foreground"
               href="/pricing"
               onClick={() => setMobileMenuOpen(false)}
             >
               Pricing
             </Link>
             <Link
-              className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-secondary text-foreground"
+              className="block px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-white/10 text-foreground"
               href="/blog"
               onClick={() => setMobileMenuOpen(false)}
             >
