@@ -25,10 +25,10 @@ Run ONLY the gates for the stack you touched (backend-only changes skip frontend
 
 ## 3. Contract Adherence
 - [ ] Existing API response shapes were NOT broken without a documented migration.
-- [ ] The core functionality specified in the `IMPLEMENTATION_PLAN.md` is fully addressed.
+- [ ] The core functionality requested by the user is fully addressed.
 
 ## 4. Code Cleanliness
-- [ ] No leftover `TODO` or `FIXME` comments unless explicitly planned for a future phase.
+- [ ] No leftover `TODO` or `FIXME` comments unless explicitly deferred by the user.
 - [ ] No unused imports, broken paths, or dead code.
 
 If any of these fail, STOP, fix the code, and autonomously verify before committing.
