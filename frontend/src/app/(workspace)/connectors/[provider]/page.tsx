@@ -4,8 +4,8 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, RefreshCw, Trash2, ExternalLink, X } from 'lucide-react';
-import { useConnectors, type NotionPage, type DriveFile } from '@/hooks/useConnectors';
-import { NotionIcon, GoogleDriveIcon } from '@/components/connectors/ConnectorIcons';
+import { useConnectors, type NotionPage, type DriveFile, type GitHubRepo } from '@/hooks/useConnectors';
+import { NotionIcon, GoogleDriveIcon, GitHubIcon } from '@/components/connectors/ConnectorIcons';
 import { StatusPill, isSyncing } from '@/components/connectors/StatusPill';
 
 const PICKER_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
@@ -79,6 +79,11 @@ const PROVIDERS: Record<string, { name: string; desc: string; icon: React.ReactN
     desc: 'Import Docs and PDFs from Drive as sources for Q&A and voice.',
     icon: <GoogleDriveIcon className="w-8 h-8" />,
   },
+  github: {
+    name: 'GitHub',
+    desc: 'Import READMEs and docs from repos as sources for Q&A and voice.',
+    icon: <GitHubIcon className="w-8 h-8" />,
+  },
 };
 
 export default function ConnectorDetailPage() {
@@ -91,6 +96,7 @@ export default function ConnectorDetailPage() {
     status, sources, loading, error, refresh,
     connectNotion, listNotionPages, importNotionPages,
     connectDrive, getPickerToken, importDriveFiles,
+    connectGithub, listGithubRepos, importGithubRepos,
     resyncSource, disconnectProvider, deleteSource,
   } = useConnectors();
 
@@ -101,6 +107,10 @@ export default function ConnectorDetailPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [deleteOnDisconnect, setDeleteOnDisconnect] = useState(true);
+  const [showRepos, setShowRepos] = useState(false);
+  const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [reposLoading, setReposLoading] = useState(false);
+  const [selectedRepos, setSelectedRepos] = useState<Record<string, GitHubRepo>>({});
   const isMounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -115,12 +125,18 @@ export default function ConnectorDetailPage() {
     if (dflag === 'connected') setNotice('Google Drive connected. Choose files to import.');
     else if (dflag === 'reconsent') setNotice('Drive needs one more consent to stay synced. Disconnect and connect again.');
     else if (dflag === 'error') setNotice('Google Drive connection failed. Try again.');
+    const gflag = searchParams.get('github');
+    if (gflag === 'connected') setNotice('GitHub connected. Pick repos to import.');
+    else if (gflag === 'error') setNotice('GitHub connection failed. Try again.');
   }, [searchParams]);
 
   useEffect(() => {
-    if (!showImport) return;
+    if (!showImport && !showRepos) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowImport(false);
+      if (e.key === 'Escape') {
+        setShowImport(false);
+        setShowRepos(false);
+      }
     };
     window.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
@@ -129,7 +145,7 @@ export default function ConnectorDetailPage() {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [showImport]);
+  }, [showImport, showRepos]);
 
   // Auto-refresh while anything is syncing, so the status/chunks
   // always settle to the truth without a manual page reload.
@@ -174,6 +190,37 @@ export default function ConnectorDetailPage() {
   }, [driveSources]);
   const driveConnected = provider === 'drive' ? !!status?.drive.connected : false;
   const pickerConfigured = !!PICKER_API_KEY && !!PICKER_APP_ID;
+
+  const githubSources = useMemo(
+    () => sources.filter((s) => s.source_type === 'github'),
+    [sources],
+  );
+  const importedRepoIds = useMemo(
+    () => new Set(githubSources.map((s) => (s.remote_id || '').toLowerCase()).filter(Boolean)),
+    [githubSources],
+  );
+  const githubLastSync = useMemo(() => {
+    const times = githubSources
+      .map((s) => s.last_synced_at || s.uploaded_at)
+      .filter(Boolean) as string[];
+    if (times.length === 0) return null;
+    times.sort();
+    return times[times.length - 1];
+  }, [githubSources]);
+  const githubConnected = provider === 'github' ? !!status?.github.connected : false;
+
+  const openRepos = async () => {
+    setShowRepos(true);
+    setReposLoading(true);
+    try {
+      const list = await listGithubRepos();
+      setRepos(list);
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : 'Could not list GitHub repos');
+    } finally {
+      setReposLoading(false);
+    }
+  };
 
   const openPicker = async () => {
     if (!pickerConfigured) {
@@ -423,6 +470,154 @@ export default function ConnectorDetailPage() {
             </div>
           ) : null}
         </>
+      ) : provider === 'github' ? (
+        <>
+          {/* Connection card */}
+          <div className="rounded-xl border border-border bg-white divide-y divide-border overflow-hidden">
+            <div className="flex items-center gap-3 p-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-text-primary">Connection</p>
+                <p className="text-[11px] text-text-secondary">Read-only access to repos you shared</p>
+              </div>
+              {loading ? (
+                <span className="text-[11px] text-text-muted">Loading...</span>
+              ) : githubConnected ? (
+                <div className="flex items-center gap-2">
+                  {githubLastSync ? (
+                    <span className="text-[11px] text-text-muted">Synced {timeAgo(githubLastSync)}</span>
+                  ) : null}
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void connectGithub()}
+                  className="px-4 py-1.5 rounded-lg bg-text-primary text-white text-xs font-medium hover:opacity-90 cursor-pointer"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+            {githubConnected ? (
+              <div className="flex items-center gap-3 p-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-text-primary">Imported sources</p>
+                  <p className="text-[11px] text-text-secondary">
+                    {githubSources.length} repo{githubSources.length === 1 ? '' : 's'} available to Ora and voice
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={openRepos}
+                  className="px-4 py-1.5 rounded-lg bg-accent-hover text-white text-xs font-medium hover:opacity-90 cursor-pointer"
+                >
+                  Import repos
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Sources */}
+          {githubConnected ? (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-text-primary">Sources</h2>
+              <div className="rounded-xl border border-border bg-white overflow-hidden">
+                <div className="hidden sm:grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                  <span>Source</span>
+                  <span>Status</span>
+                  <span>Chunks</span>
+                  <span>Synced</span>
+                  <span className="text-right">Actions</span>
+                </div>
+                {githubSources.length === 0 ? (
+                  <p className="p-4 text-[11px] text-text-muted italic">
+                    No repos imported yet. Click Import repos above (README + docs only).
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {githubSources.map((s) => (
+                      <div key={s.id} className="grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 items-center px-4 py-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <GitHubIcon className="w-4 h-4 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
+                            {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                          </div>
+                        </div>
+                        <StatusPill status={s.status} />
+                        <span className="text-[11px] text-text-secondary">{s.chunk_count}</span>
+                        <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
+                        <span className="flex items-center justify-end gap-0.5">
+                          {s.remote_url ? (
+                            <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          ) : null}
+                          <button
+                            type="button"
+                            title="Re-sync"
+                            onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
+                            className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Delete"
+                            onClick={() => {
+                              if (confirm('Delete this imported source?')) void deleteSource(s.id);
+                            }}
+                            className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Disconnect */}
+          {githubConnected ? (
+            <div className="rounded-xl border border-border bg-white p-4 space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-text-primary">Disconnect GitHub</p>
+                <p className="text-[11px] text-text-secondary">Revoke access. Optionally delete everything already imported.</p>
+              </div>
+              <label className="flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={deleteOnDisconnect}
+                  onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
+                  className="accent-[#6E56CF]"
+                />
+                Also delete copied content when disconnecting
+              </label>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={async () => {
+                  if (!confirm('Disconnect GitHub?')) return;
+                  setBusy(true);
+                  try {
+                    await disconnectProvider('github', deleteOnDisconnect);
+                    setNotice('GitHub disconnected.');
+                  } catch (e) {
+                    setNotice(e instanceof Error ? e.message : 'Disconnect failed');
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+                className="px-4 py-1.5 rounded-lg border border-border text-xs text-text-secondary hover:text-red-600 cursor-pointer disabled:opacity-60"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : (
         <>
           {/* Connection card */}
@@ -655,6 +850,109 @@ export default function ConnectorDetailPage() {
                           setNotice(`Import started for ${picked.length} page${picked.length > 1 ? 's' : ''}.`);
                           setShowImport(false);
                           setSelected({});
+                        })
+                        .catch((e) => setNotice(e instanceof Error ? e.message : 'Import failed'))
+                        .finally(() => setBusy(false));
+                    }}
+                    className="px-4 py-1.5 rounded-lg bg-accent-hover text-white text-xs font-medium disabled:opacity-50 cursor-pointer"
+                  >
+                    {busy ? 'Importing...' : 'Import'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )
+        : null}
+
+      {/* Repos modal (GitHub) */}
+      {showRepos && isMounted
+        ? createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setShowRepos(false)}
+            />
+            <div className="relative z-10 bg-white rounded-xl border border-border shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">Import from GitHub</p>
+                  <p className="text-[11px] text-text-secondary">README + docs only — max 10 repos</p>
+                </div>
+                <button type="button" onClick={() => setShowRepos(false)} className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto flex-1">
+                {reposLoading ? (
+                  <p className="text-xs text-text-muted">Loading repos you shared...</p>
+                ) : repos.length === 0 ? (
+                  <p className="text-xs text-text-muted">No repos found. Install the app on repos first (GitHub asked during Connect).</p>
+                ) : (
+                  <div className="space-y-2">
+                    {repos.map((r) => {
+                      const checked = !!selectedRepos[r.id];
+                      const alreadyImported = importedRepoIds.has(r.id.toLowerCase());
+                      return (
+                        <label
+                          key={r.id}
+                          className={`flex items-center gap-3 p-2.5 rounded-lg border border-border ${
+                            alreadyImported ? 'opacity-60' : 'hover:bg-sidebar cursor-pointer'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={alreadyImported ? true : checked}
+                            disabled={alreadyImported}
+                            onChange={() => setSelectedRepos((prev) => {
+                              const next = { ...prev };
+                              if (next[r.id]) delete next[r.id];
+                              else next[r.id] = r;
+                              return next;
+                            })}
+                            className="accent-[#6E56CF]"
+                          />
+                          <GitHubIcon className="w-4 h-4 shrink-0" />
+                          <span className="flex-1 min-w-0">
+                            <span className="flex items-center gap-2">
+                              <span className="block text-xs font-medium text-text-primary truncate">{r.name}</span>
+                              {r.private ? (
+                                <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">
+                                  Private
+                                </span>
+                              ) : null}
+                              {alreadyImported ? (
+                                <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">
+                                  Imported
+                                </span>
+                              ) : null}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className="p-4 border-t border-border flex items-center justify-between">
+                <p className="text-[11px] text-text-muted">{Object.keys(selectedRepos).length} selected</p>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setShowRepos(false)} className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-secondary cursor-pointer">
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || Object.keys(selectedRepos).length === 0}
+                    onClick={() => {
+                      const picked = Object.values(selectedRepos);
+                      if (picked.length === 0) return;
+                      setBusy(true);
+                      importGithubRepos(picked)
+                        .then(() => {
+                          setNotice(`Import started for ${picked.length} repo${picked.length > 1 ? 's' : ''}.`);
+                          setShowRepos(false);
+                          setSelectedRepos({});
                         })
                         .catch((e) => setNotice(e instanceof Error ? e.message : 'Import failed'))
                         .finally(() => setBusy(false));

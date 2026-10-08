@@ -10,7 +10,6 @@ import {
 
 const COMING_SOON = [
   { key: 'slack', name: 'Slack', desc: 'Import threads and shared docs', icon: <SlackIcon /> },
-  { key: 'github', name: 'GitHub', desc: 'Import READMEs and docs', icon: <GitHubIcon /> },
   { key: 'm365', name: 'Microsoft 365', desc: 'Import Word and OneDrive files', icon: <MicrosoftIcon /> },
   { key: 'atlassian', name: 'Atlassian', desc: 'Import Confluence pages', icon: <AtlassianIcon /> },
   { key: 'linear', name: 'Linear', desc: 'Import issues and specs', icon: <LinearIcon /> },
@@ -24,6 +23,7 @@ export default function ConnectorsPage() {
   const q = query.toLowerCase();
   const showNotion = 'notion'.includes(q) || query === '';
   const showDrive = 'drive'.includes(q) || 'google'.includes(q) || query === '';
+  const showGithub = 'github'.includes(q) || 'git'.includes(q) || query === '';
   const filteredComingSoon = COMING_SOON.filter((c) =>
     c.name.toLowerCase().includes(q),
   );
@@ -85,6 +85,27 @@ export default function ConnectorsPage() {
             {loading ? (
               <span className="text-[11px] text-text-muted">Loading...</span>
             ) : status?.drive.connected ? (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">Not connected</span>
+            )}
+            <ChevronRight className="w-4 h-4 text-text-muted" />
+          </Link>
+        ) : null}
+
+        {showGithub ? (
+          <Link
+            href="/connectors/github"
+            className="flex items-center gap-3 p-4 hover:bg-sidebar/60 transition-colors cursor-pointer"
+          >
+            <GitHubIcon />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-text-primary">GitHub</p>
+              <p className="text-[11px] text-text-secondary">Import READMEs and docs from repos</p>
+            </div>
+            {loading ? (
+              <span className="text-[11px] text-text-muted">Loading...</span>
+            ) : status?.github.connected ? (
               <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
             ) : (
               <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">Not connected</span>

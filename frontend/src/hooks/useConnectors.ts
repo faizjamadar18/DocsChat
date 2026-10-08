@@ -12,6 +12,7 @@ export interface ProviderState {
 export interface ConnectorsStatus {
   notion: ProviderState;
   drive: ProviderState;
+  github: ProviderState;
 }
 
 export interface ConnectorSource {
@@ -40,6 +41,13 @@ export interface DriveFile {
   mimeType?: string | null;
 }
 
+export interface GitHubRepo {
+  id: string;
+  name: string;
+  url?: string | null;
+  private?: boolean;
+}
+
 export function useConnectors() {
   const [status, setStatus] = useState<ConnectorsStatus | null>(null);
   const [sources, setSources] = useState<ConnectorSource[]>([]);
@@ -56,7 +64,7 @@ export function useConnectors() {
       ]);
       setStatus(statusData as ConnectorsStatus);
       const all = (sourcesData.sources || []) as ConnectorSource[];
-      setSources(all.filter((s) => s.source_type === 'notion' || s.source_type === 'drive'));
+      setSources(all.filter((s) => s.source_type === 'notion' || s.source_type === 'drive' || s.source_type === 'github'));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load connectors');
     } finally {
@@ -93,6 +101,24 @@ export function useConnectors() {
     return data;
   }, [refresh]);
 
+  const connectGithub = useCallback(async () => {
+    const data = await api.get('/connectors/github/auth-url');
+    if (data?.auth_url) {
+      window.location.href = data.auth_url as string;
+    }
+  }, []);
+
+  const listGithubRepos = useCallback(async () => {
+    const data = await api.get('/connectors/github/repos');
+    return (data.repos || []) as GitHubRepo[];
+  }, []);
+
+  const importGithubRepos = useCallback(async (repos: GitHubRepo[]) => {
+    const data = await api.post('/connectors/github/import', { repos });
+    await refresh();
+    return data;
+  }, [refresh]);
+
   const listNotionPages = useCallback(async (query?: string) => {
     const data = await api.post('/connectors/notion/pages', { query: query || undefined });
     return (data.pages || []) as NotionPage[];
@@ -110,7 +136,7 @@ export function useConnectors() {
     return data;
   }, [refresh]);
 
-  const disconnectProvider = useCallback(async (provider: 'notion' | 'drive', deleteContent: boolean) => {
+  const disconnectProvider = useCallback(async (provider: 'notion' | 'drive' | 'github', deleteContent: boolean) => {
     const data = await api.delete(`/connectors/${provider}?delete_content=${deleteContent ? 'true' : 'false'}`);
     await refresh();
     return data;
@@ -125,6 +151,7 @@ export function useConnectors() {
     status, sources, loading, error, refresh,
     connectNotion, listNotionPages, importNotionPages,
     connectDrive, getPickerToken, importDriveFiles,
+    connectGithub, listGithubRepos, importGithubRepos,
     resyncSource, disconnectProvider, deleteSource,
   };
 }
