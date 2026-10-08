@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     QDRANT_URL: str
     QDRANT_API_KEY: str
 
+    # Notion Connector (OAuth public integration)
+    NOTION_CLIENT_ID: str = ""
+    NOTION_CLIENT_SECRET: str = ""
+    NOTION_REDIRECT_URI: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
+
     # Deployment
     CORS_ORIGINS: str = "https://docschats.vercel.app"
 

@@ -4,7 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.database import init_db, close_db
-from app.routes import auth, sources, chat, workspaces, documents, voice
+from app.routes import auth, sources, chat, workspaces, documents, voice, connectors
 
 
 async def catch_unhandled_exceptions(request: Request, call_next):
@@ -56,6 +56,7 @@ fastapi_app.include_router(sources.router)
 fastapi_app.include_router(documents.router)
 fastapi_app.include_router(chat.router)
 fastapi_app.include_router(voice.router)
+fastapi_app.include_router(connectors.router)
 
 
 @fastapi_app.get("/health")
