@@ -52,7 +52,6 @@ App at `http://localhost:3000`.
 ```
 DocsChat/
 ├── AGENTS.md                    # ← Master instructions
-├── IMPLEMENTATION_PLAN.md       # Roadmap for evolution
 ├── backend/                     # FastAPI python app
 ├── frontend/                    # Next.js app
 ├── .agents/skills/              # AI Skills & Workflows
