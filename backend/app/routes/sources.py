@@ -40,6 +40,9 @@ async def list_sources(
         uploaded_at = doc.get("uploaded_at")
         if uploaded_at and uploaded_at.tzinfo is None:
             uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
+        last_synced = doc.get("last_synced_at")
+        if last_synced and getattr(last_synced, "tzinfo", None) is None:
+            last_synced = last_synced.replace(tzinfo=timezone.utc)
         sources.append(SourceResponse(
             id=str(doc["_id"]),
             workspace_id=doc.get("workspace_id"),
@@ -49,6 +52,11 @@ async def list_sources(
             chunk_count=doc.get("chunk_count", 0),
             status=doc["status"],
             uploaded_at=uploaded_at,
+            source_type=doc.get("source_type", "pdf"),
+            remote_id=doc.get("remote_id"),
+            remote_url=doc.get("remote_url"),
+            last_synced_at=last_synced,
+            sync_error=doc.get("sync_error"),
         ))
 
     return SourceListResponse(sources=sources, total=len(sources))
@@ -93,6 +101,7 @@ async def upload_pdf(
     source_doc = {
         "user_id": current_user["id"],
         "workspace_id": target_ws,
+        "source_type": "pdf",
         "filename": file.filename,
         "file_path": file_path,
         "file_size": len(content),
@@ -126,6 +135,7 @@ async def upload_pdf(
         chunk_count=0,
         status="processing",
         uploaded_at=source_doc["uploaded_at"],
+        source_type="pdf",
     )
 
 
@@ -152,6 +162,10 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
     if uploaded_at and uploaded_at.tzinfo is None:
         uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
 
+    last_synced = source.get("last_synced_at")
+    if last_synced and getattr(last_synced, "tzinfo", None) is None:
+        last_synced = last_synced.replace(tzinfo=timezone.utc)
+
     return SourceResponse(
         id=str(source["_id"]),
         workspace_id=source.get("workspace_id"),
@@ -161,6 +175,11 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
         chunk_count=source.get("chunk_count", 0),
         status=source["status"],
         uploaded_at=uploaded_at,
+        source_type=source.get("source_type", "pdf"),
+        remote_id=source.get("remote_id"),
+        remote_url=source.get("remote_url"),
+        last_synced_at=last_synced,
+        sync_error=source.get("sync_error"),
     )
 
 

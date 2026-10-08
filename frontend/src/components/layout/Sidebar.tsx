@@ -8,6 +8,7 @@ import {
   Sparkles,
   FileEdit,
   Folder,
+  Plug2,
   Settings,
   ChevronDown,
   ChevronsUpDown,
@@ -87,6 +88,7 @@ export default function Sidebar({
     { label: 'Ora', href: '/playground', icon: Sparkles },
     { label: 'Studio', href: '/studio', icon: FileEdit },
     { label: 'Assets', href: '/assets', icon: Folder },
+    { label: 'Connectors', href: '/connectors', icon: Plug2 },
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
