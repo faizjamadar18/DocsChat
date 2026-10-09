@@ -1,27 +1,36 @@
-import Header from '../components/plura/Header';
-import Hero from '../components/plura/Hero';
-import Problem from '../components/plura/Problem';
-import Features from '../components/plura/Features';
-import Workflow from '../components/plura/Workflow';
-import CTA from '../components/plura/CTA';
-import Footer from '../components/plura/Footer';
+import React from 'react';
+import Navbar from '../components/agentwork/Navbar';
+import Hero from '../components/agentwork/Hero';
+import HowItWorks from '../components/agentwork/HowItWorks';
+import UseCases from '../components/agentwork/UseCases';
+import Features from '../components/agentwork/Features';
+import IntegrationsBoundary from '../components/agentwork/IntegrationsBoundary';
+import AgentworkForAgents from '../components/agentwork/AgentworkForAgents';
+import SecurityCompliance from '../components/agentwork/SecurityCompliance';
+import FAQSection from '../components/agentwork/FAQSection';
+import CTABanner from '../components/agentwork/CTABanner';
+import Footer from '../components/agentwork/Footer';
 import LenisProvider from '../components/LenisProvider';
 
 export default function Home() {
   return (
     <LenisProvider>
-      {/* Landing is dark-only (DESIGN.md): .dark scopes all Plura var-based classes below. */}
-      <div className="dark min-h-dvh relative bg-background text-foreground font-base antialiased">
-        <Header />
+      <div className="agentwork-scope min-h-dvh relative bg-[#fdfdfc] text-[#21201c] antialiased selection:bg-[#ffd7c0] selection:text-[#592d18]">
+        <Navbar />
         <main>
           <Hero />
-          <Problem />
+          <HowItWorks />
+          <UseCases />
           <Features />
-          <Workflow />
-          <CTA />
+          <IntegrationsBoundary />
+          <AgentworkForAgents />
+          <SecurityCompliance />
+          <FAQSection />
+          <CTABanner />
         </main>
         <Footer />
       </div>
     </LenisProvider>
   );
 }
+

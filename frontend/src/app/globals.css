@@ -2,6 +2,14 @@
 @import 'tailwindcss';
 
 @font-face {
+  font-family: 'Mona Sans';
+  src: url('/fonts/MonaSansVF.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'GeneralSans';
   src: url('/fonts/GeneralSans_Light-s.p.752830dc.woff2') format('woff2');
   font-weight: 300;
@@ -399,3 +407,81 @@ body {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* ========================================================
+   Agentwork Design Tokens & Utilities
+   ======================================================== */
+.agentwork-scope {
+  --sand-0: #ffffff;
+  --sand-1: #fdfdfc;
+  --sand-2: #f9f9f8;
+  --sand-3: #f1f0ef;
+  --sand-4: #e9e8e6;
+  --sand-5: #e2e1de;
+  --sand-6: #dad9d6;
+  --sand-7: #cfceca;
+  --sand-8: #bcbbb5;
+  --sand-9: #8d8d86;
+  --sand-10: #82827c;
+  --sand-11: #63635e;
+  --sand-12: #21201c;
+
+  --orange-1: #fefcfb;
+  --orange-2: #fff5ef;
+  --orange-3: #ffeadc;
+  --orange-4: #ffd7c0;
+  --orange-5: #ffcaac;
+  --orange-6: #ffba95;
+  --orange-7: #ffa67e;
+  --orange-8: #f48e5f;
+  --orange-9: #ff6a00;
+  --orange-10: #f35c00;
+  --orange-11: #d64800;
+  --orange-12: #592d18;
+
+  --accent: var(--orange-9);
+  --hairline: max(1px, 0.0625rem);
+  font-family: 'Mona Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.border-hairline {
+  border-width: var(--hairline, 1px);
+}
+.border-b-hairline {
+  border-bottom-width: var(--hairline, 1px);
+}
+.border-t-hairline {
+  border-top-width: var(--hairline, 1px);
+}
+.border-y-hairline {
+  border-top-width: var(--hairline, 1px);
+  border-bottom-width: var(--hairline, 1px);
+}
+.h-hairline {
+  height: var(--hairline, 1px);
+}
+
+.shadow-ui-visual {
+  box-shadow: 0 159.4px 127.5px 0 rgba(0, 0, 0, 0.11), 0 66.6px 53.3px 0 rgba(0, 0, 0, 0.08), 0 35.6px 28.5px 0 rgba(0, 0, 0, 0.07), 0 20px 16px 0 rgba(0, 0, 0, 0.06);
+}
+
+.shadow-popover {
+  box-shadow: 0 9px 29px 0 rgba(0, 0, 0, 0.07), 0 2px 6.5px 0 rgba(0, 0, 0, 0.04);
+}
+
+@keyframes integrations-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-integrations-marquee {
+  animation: integrations-marquee 45s linear infinite;
+}
+
+.animate-integrations-marquee:hover {
+  animation-play-state: paused;
+}

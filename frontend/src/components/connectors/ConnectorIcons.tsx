@@ -158,6 +158,60 @@ export function GenericIcon({ letter, className = 'w-5 h-5' }: { letter: string;
 }
 
 /**
+ * Source-type icons for RAG citations, Studio docs, and Assets.
+ * PdfIcon: Official premium Adobe Acrobat red PDF document icon.
+ * StudioDocIcon / GoogleDocIcon: Official Google Docs document icon with folded corner and signature lines.
+ */
+
+export function PdfIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      {/* Official Adobe Red document sheet with folded top-right corner */}
+      <path
+        d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+        fill="#E5252A"
+      />
+      {/* Darker red top-right fold */}
+      <path
+        d="M14 2v5.5a.5.5 0 0 0 .5.5H20L14 2z"
+        fill="#B71C1C"
+      />
+      {/* Official Adobe Acrobat ribbon loop */}
+      <path
+        d="M18.2 13.8c-.3-.3-.9-.5-1.7-.5-.6 0-1.3.1-2.1.2-.4-.3-.7-.6-1.1-1-.5-.6-1-1.2-1.3-1.8.2-.7.3-1.4.4-2 .1-.4 0-.8-.1-1.1-.1-.4-.4-.6-.8-.6-.4 0-.7.2-.8.6-.2.5-.1 1.2.2 2 .2.7.6 1.5 1.1 2.2-.2.6-.5 1.3-.7 2-.4 1-.9 1.9-1.4 2.7-.9.4-1.7.8-2.1 1.3-.3.4-.4.8-.3 1.2.1.4.5.6.9.6.6 0 1.3-.4 2-1.2.7-.8 1.4-1.7 2-2.9 1-.3 2.1-.5 3.1-.6.7.6 1.4 1 2.1 1.3.4.1.8.2 1.1.1.4-.1.7-.3.8-.6.2-.4.1-.9-.2-1.2zm-6.6-4.7c-.1-.4-.1-.8 0-1.1 0-.1.1-.2.2-.2.1 0 .2.1.2.2.1.2.1.4.1.7-.1.5-.2 1-.3 1.5-.1-.5-.2-.8-.2-1.1zm-3.5 10.2c-.1-.2 0-.4.1-.5.3-.3.9-.7 1.6-1-.5.7-.9 1.3-1.4 1.6-.2.1-.3.1-.3-.1zm4.8-3.4c.2-.5.5-1 .6-1.5.3.3.6.6.9.8-.7.2-1.5.4-2.2.5.2-.2.5-.4.7-.8zm4.6.2c-.1.2-.2.2-.4.3-.2 0-.5 0-.9-.1-.5-.2-1.1-.5-1.6-.9.5 0 1 0 1.4.1.5.1 1 .2 1.2.4.1.1.2.2.3.2z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  );
+}
+
+export function StudioDocIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      {/* Official Google Docs blue document sheet with folded top-right corner */}
+      <path
+        d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+        fill="#4285F4"
+      />
+      {/* Lighter blue fold */}
+      <path
+        d="M14 2v5.5a.5.5 0 0 0 .5.5H20L14 2z"
+        fill="#A1C2FA"
+      />
+      {/* White document lines */}
+      <path
+        d="M8 12h8M8 15h8M8 18h5"
+        stroke="#FFFFFF"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export const GoogleDocIcon = StudioDocIcon;
+
+/**
  * AI provider brand marks for the MCP Server tab.
  * Official brand SVGs matching authentic brand guidelines and vectors.
  */

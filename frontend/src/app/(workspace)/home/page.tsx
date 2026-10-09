@@ -5,14 +5,13 @@ import {
   ArrowUp,
   PenLine,
   ChevronRight,
-  FileText,
   Search,
   Feather,
   Clock,
-  File,
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { api } from '../../../lib/api';
+import { StudioDocIcon, PdfIcon } from '../../../components/connectors/ConnectorIcons';
 
 interface RecentItem {
   id: string;
@@ -183,8 +182,8 @@ export default function HomePage() {
               className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-text-secondary shrink-0">
-                  <FileText className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                  <StudioDocIcon className="w-4 h-4" />
                 </div>
                 <div>
                   <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
@@ -219,8 +218,8 @@ export default function HomePage() {
               className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-text-secondary shrink-0">
-                  <File className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                  <PdfIcon className="w-4 h-4" />
                 </div>
                 <div>
                   <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">

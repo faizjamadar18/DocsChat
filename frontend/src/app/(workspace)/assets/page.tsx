@@ -1,7 +1,13 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, FileText, MoreVertical, Download, Trash2, X } from 'lucide-react';
+import { Search, Plus, MoreVertical, Download, Trash2, X, Eye } from 'lucide-react';
 import { api } from '@/lib/api';
+import {
+  NotionIcon,
+  GoogleDriveIcon,
+  GitHubIcon,
+  PdfIcon,
+} from '@/components/connectors/ConnectorIcons';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
 import UploadBanner, { UploadState } from '@/components/assets/UploadBanner';
@@ -14,6 +20,30 @@ export interface Source {
   page_count: number;
   uploaded_at: string;
   file_size: number;
+  source_type?: string; // "pdf" | "notion" | "drive" | "github" (legacy = pdf)
+}
+
+/**
+ * Official provider icon per asset origin. Uploads are PDFs;
+ * connector syncs carry their provider in source_type.
+ */
+function AssetTypeIcon({ source }: { source: Source }) {
+  const cls = 'w-4 h-4 shrink-0';
+  switch ((source.source_type || '').toLowerCase()) {
+    case 'notion':
+      return <NotionIcon className={cls} />;
+    case 'drive':
+      return <GoogleDriveIcon className={cls} />;
+    case 'github':
+      return <GitHubIcon className={cls} />;
+    case 'pdf':
+      return <PdfIcon className={cls} />;
+    default:
+      // Legacy rows without source_type: PDFs by extension, else generic.
+      if (source.filename.toLowerCase().endsWith('.pdf')) return <PdfIcon className={cls} />;
+      if (source.filename.startsWith('[Notion]')) return <NotionIcon className={cls} />;
+      return <PdfIcon className={cls} />;
+  }
 }
 
 function formatFileSize(bytes: number): string {
@@ -290,6 +320,30 @@ export default function AssetsPage() {
     }
   };
 
+  // View reuses the same authenticated download endpoint but opens the PDF
+  // in a new tab instead of saving. Fetch-on-click only: no preload cost,
+  // no modal/iframe held in the React tree. Object URL revoked after a minute.
+  const handleView = async (source: Source) => {
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/sources/${source.id}/download`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('View failed');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(
+        new Blob([blob], { type: 'application/pdf' })
+      );
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      console.error('Failed to view source:', err);
+    }
+  };
+
 
   return (
     <div className="flex h-full w-full overflow-hidden">
@@ -394,7 +448,7 @@ export default function AssetsPage() {
               ) : (
                 <div className="py-14 text-center bg-surface rounded-xl border border-border">
                   <div className="w-9 h-9 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2.5">
-                    <FileText className="w-4 h-4 text-text-muted" />
+                    <PdfIcon className="w-5 h-5" />
                   </div>
                   <p className="text-[13px] font-medium text-text-primary">No assets yet</p>
                   <p className="text-xs text-text-muted mt-0.5 max-w-xs mx-auto">
@@ -440,7 +494,7 @@ export default function AssetsPage() {
                       setOraScopeIds([source.id]);
                       setIsOraDrawerOpen(true);
                     }}
-                    title="Click to ask Ora about this PDF"
+                    title="Click to ask Ora about this asset"
                     className={`relative flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group active:cursor-grabbing ${
                       isSelected
                         ? 'bg-white border-border shadow-2xs'
@@ -453,7 +507,7 @@ export default function AssetsPage() {
                     )}
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-lg bg-sidebar border border-border/60 flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4 text-text-secondary" />
+                        <AssetTypeIcon source={source} />
                       </div>
                       <div className="min-w-0">
                         <h4 className="text-[13px] font-medium text-text-primary truncate leading-tight">
@@ -478,7 +532,7 @@ export default function AssetsPage() {
                           setIsOraDrawerOpen(true);
                         }}
                         className="hidden sm:inline-flex px-2.5 py-1 text-[11px] font-medium rounded-lg bg-accent-subtle text-accent-hover hover:bg-accent hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                        title="Ask Ora about this PDF"
+                        title="Ask Ora about this asset"
                       >
                         Ask
                       </button>
@@ -503,6 +557,19 @@ export default function AssetsPage() {
                           onClick={(e) => e.stopPropagation()}
                           className="absolute right-0 top-full mt-1.5 w-40 rounded-xl bg-white border border-border shadow-xl p-1.5 z-30 animate-fade-in"
                         >
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdownId(null);
+                              void handleView(source);
+                            }}
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-text-muted" />
+                            <span>View</span>
+                          </button>
+
                           <button
                             type="button"
                             onClick={(e) => {

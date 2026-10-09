@@ -43,7 +43,7 @@ export default function Header({
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="h-14 px-4 sm:px-6 bg-surface border-b border-border flex items-center justify-between shrink-0 select-none">
+    <header className="h-14 pl-3 sm:pl-3.5 pr-4 sm:pr-6 bg-sidebar flex items-center justify-between shrink-0 select-none">
       {/* Left side: Sidebar collapse toggle & Breadcrumb */}
       <div className="flex items-center gap-3">
         {/* Desktop Sidebar Toggle */}

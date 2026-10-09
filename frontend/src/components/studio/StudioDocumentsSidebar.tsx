@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import {
   Plus,
   Search,
-  FileText,
   MoreVertical,
   Pencil,
   Trash2,
   X,
 } from 'lucide-react';
 import DeleteDocModal from './DeleteDocModal';
+import { StudioDocIcon } from '../connectors/ConnectorIcons';
 
 export interface StudioDoc {
   id: string;
@@ -148,7 +148,7 @@ export function StudioDocumentsSidebar({
             ) : (
               <div className="px-2 py-10 text-center">
                 <div className="w-9 h-9 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2.5">
-                  <FileText className="w-4 h-4 text-text-muted" />
+                  <StudioDocIcon className="w-4 h-4" />
                 </div>
                 <p className="text-[13px] font-medium text-text-primary">No documents yet</p>
                 <p className="text-xs text-text-muted mt-0.5">
@@ -182,7 +182,7 @@ export function StudioDocumentsSidebar({
                       : 'text-text-secondary hover:bg-[#EFEFF2] hover:text-text-primary'
                   }`}
                 >
-                  <FileText className={`w-4 h-4 shrink-0 ${isActive ? 'text-accent-hover' : 'text-text-muted group-hover:text-text-secondary'}`} />
+                  <StudioDocIcon className="w-4 h-4 shrink-0" />
                   {isRenaming ? (
                     <input
                       type="text"
