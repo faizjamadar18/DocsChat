@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     GITHUB_APP_CLIENT_SECRET: str = ""
     GITHUB_APP_REDIRECT_URI: str = ""
 
+    # MCP Server (remote, Streamable HTTP — free, official MCP SDK)
+    # Public URL of this backend, e.g. https://docschat-api.onrender.com
+    # Used for OAuth discovery metadata. Empty = derived from the request.
+    MCP_SERVER_URL: str = ""
+    MCP_ISSUER_URL: str = ""
+
     # Deployment
     CORS_ORIGINS: str = "https://docschats.vercel.app"
 

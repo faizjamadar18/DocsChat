@@ -21,6 +21,10 @@ chat_threads_collection: AsyncIOMotorCollection | None = None
 voice_logs_collection: AsyncIOMotorCollection | None = None
 connector_accounts_collection: AsyncIOMotorCollection | None = None
 sync_jobs_collection: AsyncIOMotorCollection | None = None
+mcp_keys_collection: AsyncIOMotorCollection | None = None
+oauth_clients_collection: AsyncIOMotorCollection | None = None
+oauth_codes_collection: AsyncIOMotorCollection | None = None
+oauth_tokens_collection: AsyncIOMotorCollection | None = None
 
 
 def slugify(text: str) -> str:
@@ -152,6 +156,8 @@ async def init_db():
     global client, db, users_collection, workspaces_collection, documents_collection
     global sources_collection, messages_collection, chat_threads_collection
     global voice_logs_collection, connector_accounts_collection, sync_jobs_collection
+    global mcp_keys_collection, oauth_clients_collection
+    global oauth_codes_collection, oauth_tokens_collection
 
     client = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client[settings.DB_NAME]
@@ -165,6 +171,10 @@ async def init_db():
     voice_logs_collection = db["voice_logs"]
     connector_accounts_collection = db["connector_accounts"]
     sync_jobs_collection = db["sync_jobs"]
+    mcp_keys_collection = db["mcp_keys"]
+    oauth_clients_collection = db["oauth_clients"]
+    oauth_codes_collection = db["oauth_codes"]
+    oauth_tokens_collection = db["oauth_tokens"]
 
     # Run auto-migration hook for existing records BEFORE index creation
     await run_migrations()
@@ -219,6 +229,29 @@ async def init_db():
         await sync_jobs_collection.create_index([("source_id", 1)])
     except Exception as e:
         print(f"Warning: sync_jobs index creation: {e}")
+
+    try:
+        await mcp_keys_collection.create_index([("user_id", 1), ("created_at", -1)])
+        await mcp_keys_collection.create_index("key_hash", unique=True, sparse=True)
+    except Exception as e:
+        print(f"Warning: mcp_keys index creation: {e}")
+
+    try:
+        await oauth_clients_collection.create_index("client_id", unique=True)
+    except Exception as e:
+        print(f"Warning: oauth_clients index creation: {e}")
+
+    try:
+        await oauth_codes_collection.create_index("code", unique=True, sparse=True)
+        await oauth_codes_collection.create_index("expires_at", expireAfterSeconds=0)
+    except Exception as e:
+        print(f"Warning: oauth_codes index creation: {e}")
+
+    try:
+        await oauth_tokens_collection.create_index("token_hash", unique=True, sparse=True)
+        await oauth_tokens_collection.create_index([("user_id", 1), ("created_at", -1)])
+    except Exception as e:
+        print(f"Warning: oauth_tokens index creation: {e}")
 
 
 def check_db():

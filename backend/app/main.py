@@ -5,6 +5,9 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from app.database import init_db, close_db
 from app.routes import auth, sources, chat, workspaces, documents, voice, connectors
+from app.routes import mcp as mcp_route
+from app.routes import mcp_keys as mcp_keys_route
+from app.routes import mcp_oauth as mcp_oauth_route
 
 
 async def catch_unhandled_exceptions(request: Request, call_next):
@@ -57,6 +60,9 @@ fastapi_app.include_router(documents.router)
 fastapi_app.include_router(chat.router)
 fastapi_app.include_router(voice.router)
 fastapi_app.include_router(connectors.router)
+fastapi_app.include_router(mcp_keys_route.router)
+fastapi_app.include_router(mcp_oauth_route.router)
+fastapi_app.include_router(mcp_route.router)
 
 
 @fastapi_app.get("/health")
