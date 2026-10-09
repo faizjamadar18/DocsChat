@@ -9,6 +9,7 @@ import {
   FileEdit,
   Folder,
   Plug2,
+  Server,
   Settings,
   ChevronDown,
   ChevronsUpDown,
@@ -89,6 +90,7 @@ export default function Sidebar({
     { label: 'Studio', href: '/studio', icon: FileEdit },
     { label: 'Assets', href: '/assets', icon: Folder },
     { label: 'Connectors', href: '/connectors', icon: Plug2 },
+    { label: 'MCP Server', href: '/mcp', icon: Server },
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
 

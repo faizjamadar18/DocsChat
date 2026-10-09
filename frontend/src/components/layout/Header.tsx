@@ -30,6 +30,10 @@ export default function Header({
       }
     } else if (pathname?.startsWith('/assets')) {
       parts.push({ label: 'Assets', href: '/assets' });
+    } else if (pathname?.startsWith('/connectors')) {
+      parts.push({ label: 'Connectors', href: '/connectors' });
+    } else if (pathname?.startsWith('/mcp')) {
+      parts.push({ label: 'MCP Server', href: '/mcp' });
     } else if (pathname?.startsWith('/settings')) {
       parts.push({ label: 'Settings', href: '/settings' });
     }
