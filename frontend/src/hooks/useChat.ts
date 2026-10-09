@@ -115,8 +115,58 @@ export function useChat(
   }, [activeThreadId, initialMode]);
 
   useEffect(() => {
-    void fetchHistory(activeWorkspaceId, activeThreadId);
-  }, [fetchHistory, activeWorkspaceId, activeThreadId]);
+    let cancelled = false;
+    (async () => {
+      // Never clobber an actively streaming conversation with a refetch —
+      // e.g. the URL thread sync that fires mid-stream after thread creation.
+      // The streamed temp messages are the source of truth until done.
+      if (abortControllerRef.current) return;
+      const targetThread = activeThreadId;
+
+      if (!targetThread) {
+        // No thread selected means a fresh new chat per mode.
+        // Never fall back to workspace-wide history here: that would leak
+        // universal / assets / studio conversations into each other.
+        await Promise.resolve();
+        if (cancelled) return;
+        setMessages([]);
+        setActiveThreadInfo(null);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
+      try {
+        await Promise.resolve();
+        if (cancelled) return;
+        setLoading(true);
+        const data = await api.get(`/chat/threads/${targetThread}/messages`);
+        if (cancelled) return;
+        const loadedMessages = data.messages || [];
+        const threadInfo = (data.thread || null) as ChatThreadInfo | null;
+        // Enforce conversation isolation: never render a thread belonging to
+        // a different mode inside this pipeline.
+        if (threadInfo?.mode && threadInfo.mode !== initialMode) {
+          setMessages([]);
+          setActiveThreadInfo(null);
+          setError(`This conversation belongs to ${threadInfo.mode} chat and is not available here.`);
+        } else {
+          setMessages(loadedMessages);
+          setActiveThreadInfo(threadInfo);
+          setError(null);
+        }
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : 'Failed to load chat history';
+        setError(msg);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeThreadId, initialMode]);
 
   const clearHistory = async (wsId?: string, tId?: string) => {
     const targetWs = wsId || activeWorkspaceId;

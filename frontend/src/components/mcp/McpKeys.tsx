@@ -28,8 +28,20 @@ export default function McpKeys({ workspaceId }: { workspaceId?: string }) {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.get('/mcp-keys');
+        if (cancelled) return;
+        setKeys(((data.keys || []) as McpKey[]).slice(0, 3));
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load keys');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const copyFreshKey = useCallback(async () => {
     if (!freshKey) return;

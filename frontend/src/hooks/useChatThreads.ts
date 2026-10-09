@@ -47,7 +47,32 @@ export function useChatThreads(
   }, [workspaceId, mode]);
 
   useEffect(() => {
-    void fetchThreads();
+    let cancelled = false;
+    (async () => {
+      if (!workspaceId) {
+        await Promise.resolve();
+        if (!cancelled) {
+          setThreads([]);
+          setLoading(false);
+        }
+        return;
+      }
+      try {
+        const modeParam = mode ? `&mode=${mode}` : '';
+        const data = await api.get(`/chat/threads?workspace_id=${workspaceId}${modeParam}`, {
+          headers: { 'X-Workspace-Id': workspaceId },
+        });
+        if (cancelled) return;
+        setThreads(data.threads || []);
+        setError(null);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : 'Failed to fetch chat threads';
+        setError(msg);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
     const handleSync = () => {
       void fetchThreads();
@@ -55,9 +80,10 @@ export function useChatThreads(
 
     window.addEventListener('chat-threads-updated', handleSync);
     return () => {
+      cancelled = true;
       window.removeEventListener('chat-threads-updated', handleSync);
     };
-  }, [fetchThreads]);
+  }, [fetchThreads, workspaceId, mode]);
 
   const createThread = async (
     title: string = 'New Conversation',

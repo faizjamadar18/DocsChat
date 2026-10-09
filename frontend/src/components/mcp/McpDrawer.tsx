@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plug2 } from 'lucide-react';
 import type { McpProvider } from './mcpProviders';
@@ -20,11 +20,6 @@ export default function McpDrawer({
   const [showConnect, setShowConnect] = useState(false);
 
   useEffect(() => {
-    if (!provider) return;
-    setShowConnect(false);
-  }, [provider]);
-
-  useEffect(() => {
     if (!provider || showConnect) return;
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -42,16 +37,17 @@ export default function McpDrawer({
     };
   }, [provider]);
 
-  // Portaled to document.body: the page wrapper keeps an entry-animation
-  // transform, which would otherwise trap this fixed overlay to the page box
-  // instead of the viewport (dimming + drawer cut off mid-page).
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
+  // Mounted flag via subscription (not a setState-in-effect): the page wrapper
+  // keeps an entry-animation transform, which would otherwise trap this fixed
+  // overlay to the page box. Resets together with showConnect via key-remount
+  // from the parent (key={provider.id}), so no reset effect is needed either.
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
-  if (!provider || !mounted) return null;
+  if (!provider || !isMounted) return null;
 
   const Icon = provider.icon;
   const isReady = provider.status === 'ready';

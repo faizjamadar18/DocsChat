@@ -416,8 +416,9 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Full voice conversation viewer */}
+      {/* Full voice conversation viewer (key-remount resets copy state per log) */}
       <VoiceLogModal
+        key={selectedVoiceLog?.id ?? 'closed'}
         log={selectedVoiceLog}
         onClose={() => setSelectedVoiceLog(null)}
         onDelete={(id) => {

@@ -47,8 +47,19 @@ export default function SourcesSidebar({
   }, []);
 
   useEffect(() => {
-    fetchSources();
-  }, [fetchSources]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.get('/sources');
+        if (!cancelled) setSources(data.sources || []);
+      } catch (err) {
+        console.error("Failed to fetch sources", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const hasProcessing = sources.some(s => s.status === 'processing');
 

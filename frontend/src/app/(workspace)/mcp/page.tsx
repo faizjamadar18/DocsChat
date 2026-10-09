@@ -68,8 +68,10 @@ export default function McpPage() {
         })}
       </div>
 
-      {/* Side drawer (owns the Connect popup inside it) */}
+      {/* Side drawer (owns the Connect popup inside it). Key-remount per
+          provider so Connect/keys state resets when switching cards. */}
       <McpDrawer
+        key={selected?.id ?? 'closed'}
         provider={selected}
         workspaceId={currentWorkspace?.id}
         serverUrl={serverUrl}

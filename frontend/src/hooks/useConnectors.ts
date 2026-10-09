@@ -73,8 +73,31 @@ export function useConnectors() {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const [statusData, sourcesData] = await Promise.all([
+          api.get('/connectors/status'),
+          api.get('/sources'),
+        ]);
+        if (cancelled) return;
+        setStatus(statusData as ConnectorsStatus);
+        const all = (sourcesData.sources || []) as ConnectorSource[];
+        setSources(all.filter((s) => s.source_type === 'notion' || s.source_type === 'drive' || s.source_type === 'github'));
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load connectors');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const connectNotion = useCallback(async () => {
     const data = await api.get('/connectors/notion/auth-url');

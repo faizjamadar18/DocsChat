@@ -105,7 +105,21 @@ export default function ConnectorDetailPage() {
   const [pagesLoading, setPagesLoading] = useState(false);
   const [selected, setSelected] = useState<Record<string, NotionPage>>({});
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  // OAuth callbacks land here with a full page load (?notion=connected ...),
+  // so the landing params are captured once as initial state — no effect needed.
+  const [notice, setNotice] = useState<string | null>(() => {
+    const flag = searchParams.get('notion');
+    const dflag = searchParams.get('drive');
+    const gflag = searchParams.get('github');
+    if (gflag === 'connected') return 'GitHub connected. Pick repos to import.';
+    if (gflag === 'error') return 'GitHub connection failed. Try again.';
+    if (dflag === 'connected') return 'Google Drive connected. Choose files to import.';
+    if (dflag === 'reconsent') return 'Drive needs one more consent to stay synced. Disconnect and connect again.';
+    if (dflag === 'error') return 'Google Drive connection failed. Try again.';
+    if (flag === 'connected') return 'Notion connected. Pick pages to import.';
+    if (flag === 'error') return 'Notion connection failed. Try again.';
+    return null;
+  });
   const [deleteOnDisconnect, setDeleteOnDisconnect] = useState(true);
   const [showRepos, setShowRepos] = useState(false);
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
@@ -116,19 +130,6 @@ export default function ConnectorDetailPage() {
     () => true,
     () => false,
   );
-
-  useEffect(() => {
-    const flag = searchParams.get('notion');
-    if (flag === 'connected') setNotice('Notion connected. Pick pages to import.');
-    else if (flag === 'error') setNotice('Notion connection failed. Try again.');
-    const dflag = searchParams.get('drive');
-    if (dflag === 'connected') setNotice('Google Drive connected. Choose files to import.');
-    else if (dflag === 'reconsent') setNotice('Drive needs one more consent to stay synced. Disconnect and connect again.');
-    else if (dflag === 'error') setNotice('Google Drive connection failed. Try again.');
-    const gflag = searchParams.get('github');
-    if (gflag === 'connected') setNotice('GitHub connected. Pick repos to import.');
-    else if (gflag === 'error') setNotice('GitHub connection failed. Try again.');
-  }, [searchParams]);
 
   useEffect(() => {
     if (!showImport && !showRepos) return;
