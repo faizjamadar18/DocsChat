@@ -1,8 +1,9 @@
-"""Personal API keys for the MCP server — create / list / revoke.
+"""Personal API keys for the MCP server.
 
-All routes use the app's existing JWT login (get_current_user), so only the
-logged-in user can manage their own keys. Keys are scoped per user (and
-optionally per workspace) and never leak the raw secret after creation.
+All routes use the app's JWT login, so only the
+logged-in user manages their own keys. Keys are scoped
+per user (optionally per workspace) and never leak the
+raw secret after creation.
 """
 from datetime import datetime, timezone
 
@@ -18,7 +19,11 @@ from app.models.mcp import (
     McpKeyListResponse,
     McpKeyPublic,
 )
-from app.services.mcp_key_service import generate_raw_key, hash_key, key_prefix
+from app.services.mcp_key_service import (
+    generate_raw_key,
+    hash_key,
+    key_prefix,
+)
 
 router = APIRouter(prefix="/api/mcp-keys", tags=["MCP Keys"])
 
@@ -28,7 +33,8 @@ def _require_db():
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database not ready",
         )
 
 
@@ -44,13 +50,21 @@ def _to_public(doc: dict) -> McpKeyPublic:
     )
 
 
-@router.post("", response_model=McpKeyCreated, status_code=status.HTTP_201_CREATED)
-async def create_key(body: McpKeyCreate, current_user: dict = Depends(get_current_user)):
-    """Create a personal key. The raw key is returned exactly once."""
+@router.post(
+    "", response_model=McpKeyCreated, status_code=status.HTTP_201_CREATED
+)
+async def create_key(
+    body: McpKeyCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    """Create a personal key. The raw key is returned once."""
     _require_db()
-    if body.workspace_id and not ObjectId.is_valid(body.workspace_id):
+    if body.workspace_id and not ObjectId.is_valid(
+        body.workspace_id
+    ):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid workspace ID"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid workspace ID",
         )
 
     raw = generate_raw_key()
