@@ -35,11 +35,34 @@ export function useVoiceLogs(workspaceId?: string) {
   }, [workspaceId]);
 
   useEffect(() => {
-    void fetchLogs();
+    let cancelled = false;
+    (async () => {
+      if (!workspaceId) {
+        await Promise.resolve();
+        if (!cancelled) {
+          setLogs([]);
+          setLoading(false);
+        }
+      } else {
+        try {
+          const data = await api.get(`/voice/logs?workspace_id=${workspaceId}`, {
+            headers: { 'X-Workspace-Id': workspaceId },
+          });
+          if (!cancelled) setLogs(data.logs || []);
+        } catch {
+          // Voice history is best-effort; text chat must never break because of it.
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      }
+    })();
     const handleSync = () => void fetchLogs();
     window.addEventListener('voice-logs-updated', handleSync);
-    return () => window.removeEventListener('voice-logs-updated', handleSync);
-  }, [fetchLogs]);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('voice-logs-updated', handleSync);
+    };
+  }, [fetchLogs, workspaceId]);
 
   const deleteLog = useCallback(async (logId: string) => {
     try {

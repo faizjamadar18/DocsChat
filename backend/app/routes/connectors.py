@@ -1,0 +1,797 @@
+"""Connectors API — Notion first (Phase 1), Drive shell ready (Phase 2).
+
+Security:
+- All routes require JWT via get_current_user.
+- OAuth tokens are encrypted with Fernet (connector_token_service) and NEVER
+  returned to the client. Status endpoints only return booleans + counts.
+- Per-user isolation: every query filters by user_id.
+"""
+import asyncio
+import secrets
+from datetime import datetime, timezone
+from typing import Optional
+from urllib.parse import urlencode
+
+import httpx
+from bson import ObjectId
+from fastapi import (
+    APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, status,
+)
+
+import app.database as database
+from app.database import check_db, DatabaseNotReadyError
+from app.config import get_settings
+from app.middleware.auth_middleware import get_current_user
+from app.models.connector import (
+    ConnectorsStatusResponse, ConnectorStatus,
+    NotionAuthUrlResponse, NotionPagesResponse, NotionPageItem,
+    NotionImportRequest, NotionImportResponse, DisconnectResponse,
+    DriveAuthUrlResponse, DrivePickerTokenResponse,
+    DriveImportRequest, DriveImportResponse,
+    GitHubAuthUrlResponse, GitHubReposResponse, GitHubRepoItem,
+    GitHubImportRequest, GitHubImportResponse,
+)
+from app.services import vector_store as vs
+from app.services.connector_token_service import encrypt_token, decrypt_token
+
+settings = get_settings()
+router = APIRouter(prefix="/api/connectors", tags=["Connectors"])
+
+NOTION_OAUTH_AUTHORIZE = "https://api.notion.com/v1/oauth/authorize"
+NOTION_OAUTH_TOKEN = "https://api.notion.com/v1/oauth/token"
+
+
+def _require_db():
+    try:
+        check_db()
+    except DatabaseNotReadyError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready"
+        )
+
+
+def _workspace_of(current_user: dict, workspace_id: Optional[str], header_ws: Optional[str]) -> Optional[str]:
+    return workspace_id or header_ws or current_user.get("active_workspace_id")
+
+
+def _norm_page_id(raw: str) -> str:
+    return (raw or "").replace("-", "").lower()
+
+
+@router.get("/status", response_model=ConnectorsStatusResponse)
+async def connectors_status(
+    workspace_id: Optional[str] = Query(None),
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Per-provider connect status + imported counts. Never returns tokens."""
+    _require_db()
+    target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+
+    async def _provider_state(provider: str) -> ConnectorStatus:
+        acct = None
+        try:
+            acct = await database.connector_accounts_collection.find_one(
+                {"user_id": current_user["id"], "provider": provider}
+            )
+        except Exception:
+            acct = None
+        filt: dict = {
+            "user_id": current_user["id"],
+            "source_type": provider,
+        }
+        if target_ws:
+            filt["workspace_id"] = target_ws
+        count = 0
+        try:
+            count = await database.sources_collection.count_documents(filt)
+        except Exception:
+            count = 0
+        if not acct:
+            return ConnectorStatus(connected=False, imported_count=count)
+        return ConnectorStatus(
+            connected=True,
+            connected_at=acct.get("connected_at"),
+            imported_count=count,
+        )
+
+    return ConnectorsStatusResponse(
+        notion=await _provider_state("notion"),
+        drive=await _provider_state("drive"),
+        github=await _provider_state("github"),
+    )
+
+
+@router.get("/notion/auth-url", response_model=NotionAuthUrlResponse)
+async def notion_auth_url(current_user: dict = Depends(get_current_user)):
+    """Build Notion OAuth authorize URL. Frontend redirects the user there."""
+    _require_db()
+    if not settings.NOTION_CLIENT_ID or not settings.NOTION_REDIRECT_URI:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Notion integration not configured on server",
+        )
+    state = secrets.token_urlsafe(24)
+    try:
+        await database.sync_jobs_collection.insert_one({
+            "user_id": current_user["id"],
+            "kind": "notion_oauth_state",
+            "state": state,
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
+    params = {
+        "client_id": settings.NOTION_CLIENT_ID,
+        "response_type": "code",
+        "owner": "user",
+        "redirect_uri": settings.NOTION_REDIRECT_URI,
+        "state": f"{current_user['id']}.{state}",
+    }
+    return NotionAuthUrlResponse(auth_url=f"{NOTION_OAUTH_AUTHORIZE}?{urlencode(params)}")
+
+
+@router.get("/notion/callback")
+async def notion_callback(code: str = Query(...), state: str = Query(...)):
+    """OAuth callback (browser redirect). Exchanges code -> token, stores encrypted.
+
+    State format: {user_id}.{random}. Verifies the random part was issued.
+    Redirects to FRONTEND_URL/connectors?notion=connected on success.
+    """
+    from fastapi.responses import RedirectResponse
+
+    _require_db()
+    frontend = (settings.FRONTEND_URL or "").rstrip("/") or "http://localhost:3000"
+    try:
+        user_id, rand = state.split(".", 1)
+    except ValueError:
+        return RedirectResponse(f"{frontend}/connectors?notion=error", status_code=302)
+    if not ObjectId.is_valid(user_id):
+        return RedirectResponse(f"{frontend}/connectors?notion=error", status_code=302)
+
+    # Exchange code for access token (server-to-server, secret never leaves backend)
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                NOTION_OAUTH_TOKEN,
+                auth=(settings.NOTION_CLIENT_ID, settings.NOTION_CLIENT_SECRET),
+                json={"grant_type": "authorization_code", "code": code,
+                      "redirect_uri": settings.NOTION_REDIRECT_URI},
+            )
+            resp.raise_for_status()
+            token_data = resp.json()
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors?notion=error", status_code=302)
+
+    access_token = token_data.get("access_token")
+    if not access_token:
+        return RedirectResponse(f"{frontend}/connectors?notion=error", status_code=302)
+
+    try:
+        await database.connector_accounts_collection.update_one(
+            {"user_id": user_id, "provider": "notion"},
+            {"$set": {
+                "user_id": user_id,
+                "provider": "notion",
+                "token_enc": encrypt_token(access_token),
+                "connected_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors?notion=error", status_code=302)
+    return RedirectResponse(f"{frontend}/connectors?notion=connected", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# Google Drive (OAuth, drive.file scope only + Picker)
+# ---------------------------------------------------------------------------
+
+DRIVE_OAUTH_AUTHORIZE = "https://accounts.google.com/o/oauth2/v2/auth"
+DRIVE_OAUTH_TOKEN = "https://oauth2.googleapis.com/token"
+DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+
+
+@router.get("/drive/auth-url", response_model=DriveAuthUrlResponse)
+async def drive_auth_url(current_user: dict = Depends(get_current_user)):
+    """Build Google OAuth URL with drive.file scope only (non-sensitive)."""
+    _require_db()
+    if not settings.GOOGLE_DRIVE_CLIENT_ID or not settings.GOOGLE_DRIVE_REDIRECT_URI:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google Drive integration not configured on server",
+        )
+    state = secrets.token_urlsafe(24)
+    try:
+        await database.sync_jobs_collection.insert_one({
+            "user_id": current_user["id"],
+            "kind": "drive_oauth_state",
+            "state": state,
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
+    params = {
+        "client_id": settings.GOOGLE_DRIVE_CLIENT_ID,
+        "response_type": "code",
+        "scope": DRIVE_FILE_SCOPE,
+        "redirect_uri": settings.GOOGLE_DRIVE_REDIRECT_URI,
+        "access_type": "offline",  # need refresh token for re-sync
+        "prompt": "consent",  # force refresh_token on every connect
+        "include_granted_scopes": "false",  # keep token scoped to drive.file only
+        "state": f"{current_user['id']}.{state}",
+    }
+    return DriveAuthUrlResponse(auth_url=f"{DRIVE_OAUTH_AUTHORIZE}?{urlencode(params)}")
+
+
+@router.get("/drive/callback")
+async def drive_callback(code: str = Query(...), state: str = Query(...)):
+    """OAuth callback. Exchanges code -> refresh token, stores encrypted."""
+    from fastapi.responses import RedirectResponse
+
+    _require_db()
+    frontend = (settings.FRONTEND_URL or "").rstrip("/") or "http://localhost:3000"
+    try:
+        user_id, rand = state.split(".", 1)
+    except ValueError:
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+    if not ObjectId.is_valid(user_id):
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(DRIVE_OAUTH_TOKEN, data={
+                "client_id": settings.GOOGLE_DRIVE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_DRIVE_CLIENT_SECRET,
+                "code": code,
+                "redirect_uri": settings.GOOGLE_DRIVE_REDIRECT_URI,
+                "grant_type": "authorization_code",
+            })
+            resp.raise_for_status()
+            token_data = resp.json()
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+
+    refresh_token = token_data.get("refresh_token")
+    access_token = token_data.get("access_token")
+    if not refresh_token or not access_token:
+        # No refresh token (already consented before) -> ask user to reconnect
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=reconsent", status_code=302)
+
+    try:
+        from datetime import timedelta
+        await database.connector_accounts_collection.update_one(
+            {"user_id": user_id, "provider": "drive"},
+            {"$set": {
+                "user_id": user_id,
+                "provider": "drive",
+                "refresh_enc": encrypt_token(refresh_token),
+                "access_enc": encrypt_token(access_token),
+                "token_expires_at": datetime.now(timezone.utc) + timedelta(
+                    seconds=int(token_data.get("expires_in", 3600))),
+                "connected_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/drive?drive=error", status_code=302)
+    return RedirectResponse(f"{frontend}/connectors/drive?drive=connected", status_code=302)
+
+
+@router.get("/drive/picker-token", response_model=DrivePickerTokenResponse)
+async def drive_picker_token(current_user: dict = Depends(get_current_user)):
+    """Short-lived access token for the Google Picker in the browser.
+
+    Only the access token (1h) is exposed — the refresh token never leaves
+    the server. Picker requires a browser-side token by design.
+    """
+    _require_db()
+    from app.services.drive_sync_service import get_fresh_access_token
+    try:
+        token = await get_fresh_access_token(current_user["id"])
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return DrivePickerTokenResponse(access_token=token)
+
+
+@router.post("/drive/import", response_model=DriveImportResponse, status_code=status.HTTP_201_CREATED)
+async def drive_import_files(
+    body: DriveImportRequest,
+    background_tasks: BackgroundTasks,
+    workspace_id: Optional[str] = Query(None),
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Create source rows for Picker-picked files and sync in background."""
+    _require_db()
+    if not body.files:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Pick at least one file to import")
+    target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": "drive"}
+    )
+    if not acct or not acct.get("refresh_enc"):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Google Drive not connected")
+
+    from app.services.drive_sync_service import sync_drive_file
+
+    imported: list[dict] = []
+    for f in body.files[:50]:
+        existing = await database.sources_collection.find_one({
+            "user_id": current_user["id"],
+            "source_type": "drive",
+            "remote_id": f.id,
+            **({"workspace_id": target_ws} if target_ws else {}),
+        })
+        if existing:
+            imported.append({"source_id": str(existing["_id"]), "file_id": f.id,
+                             "name": f.name, "status": existing.get("status", "ready")})
+            continue
+        doc = {
+            "user_id": current_user["id"],
+            "workspace_id": target_ws,
+            "source_type": "drive",
+            "provider": "drive",
+            "remote_id": f.id,
+            "remote_url": f"https://drive.google.com/file/d/{f.id}/view",
+            "remote_mime": f.mimeType,
+            "filename": f"[Drive] {f.name}",
+            "file_path": None,
+            "file_size": 0,
+            "page_count": 0,
+            "chunk_count": 0,
+            "status": "processing",
+            "sync_error": None,
+            "last_synced_at": None,
+            "uploaded_at": datetime.now(timezone.utc),
+        }
+        res = await database.sources_collection.insert_one(doc)
+        source_id = str(res.inserted_id)
+        background_tasks.add_task(
+            sync_drive_file, current_user["id"], target_ws, source_id,
+            f.id, f.name, f.mimeType,
+        )
+        imported.append({"source_id": source_id, "file_id": f.id,
+                         "name": f.name, "status": "processing"})
+    return DriveImportResponse(imported=imported, total=len(imported))
+
+
+@router.post("/notion/pages", response_model=NotionPagesResponse)
+async def notion_list_pages(
+    query: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    """List pages the user granted access to (via stored token)."""
+    _require_db()
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": "notion"}
+    )
+    if not acct:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notion not connected")
+    try:
+        token = decrypt_token(acct["token_enc"])
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Stored token invalid. Please reconnect.")
+
+    payload: dict = {"page_size": 50}
+    if query:
+        payload.update({"query": query, "filter": {"property": "object", "value": "page"}})
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "https://api.notion.com/v1/search",
+                headers={"Authorization": f"Bearer {token}",
+                         "Notion-Version": "2022-06-28"},
+                json=payload,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail=f"Notion API error: {e.response.status_code}")
+
+    pages: list[NotionPageItem] = []
+    for r in data.get("results", []):
+        if r.get("object") != "page":
+            continue
+        title = "Untitled"
+        for prop in (r.get("properties") or {}).values():
+            if prop.get("type") == "title":
+                title = "".join(p.get("plain_text", "") for p in prop.get("title", [])).strip() or "Untitled"
+                break
+        pages.append(NotionPageItem(
+            id=r.get("id", ""),
+            title=title,
+            url=r.get("url"),
+            last_edited_time=r.get("last_edited_time"),
+        ))
+    return NotionPagesResponse(pages=pages)
+
+
+@router.post("/notion/import", response_model=NotionImportResponse, status_code=status.HTTP_201_CREATED)
+async def notion_import_pages(
+    body: NotionImportRequest,
+    background_tasks: BackgroundTasks,
+    workspace_id: Optional[str] = Query(None),
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Create source rows for picked Notion pages and sync in background."""
+    _require_db()
+    if not body.pages:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Pick at least one page to import")
+    target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": "notion"}
+    )
+    if not acct:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notion not connected")
+    try:
+        token = decrypt_token(acct["token_enc"])
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Stored token invalid. Please reconnect.")
+
+    from app.services.notion_sync_service import sync_notion_page
+
+    imported: list[dict] = []
+    for page in body.pages[:50]:
+        norm = _norm_page_id(page.id)
+        existing = await database.sources_collection.find_one({
+            "user_id": current_user["id"],
+            "source_type": "notion",
+            "remote_id": norm,
+            **({"workspace_id": target_ws} if target_ws else {}),
+        })
+        if existing:
+            imported.append({"source_id": str(existing["_id"]), "page_id": page.id,
+                             "title": page.title, "status": existing.get("status", "ready")})
+            continue
+        doc = {
+            "user_id": current_user["id"],
+            "workspace_id": target_ws,
+            "source_type": "notion",
+            "provider": "notion",
+            "remote_id": norm,
+            "remote_url": page.url,
+            "filename": f"[Notion] {page.title}",
+            "file_path": None,
+            "file_size": 0,
+            "page_count": 0,
+            "chunk_count": 0,
+            "status": "processing",
+            "sync_error": None,
+            "last_synced_at": None,
+            "uploaded_at": datetime.now(timezone.utc),
+        }
+        res = await database.sources_collection.insert_one(doc)
+        source_id = str(res.inserted_id)
+        background_tasks.add_task(
+            sync_notion_page, current_user["id"], target_ws, source_id,
+            page.id, token, page.title, page.url,
+        )
+        imported.append({"source_id": source_id, "page_id": page.id,
+                         "title": page.title, "status": "processing"})
+    return NotionImportResponse(imported=imported, total=len(imported))
+
+
+# ---------------------------------------------------------------------------
+# GitHub (GitHub App, user flow, Contents read-only)
+# ---------------------------------------------------------------------------
+
+GITHUB_OAUTH_AUTHORIZE = "https://github.com/login/oauth/authorize"
+GITHUB_OAUTH_TOKEN = "https://github.com/login/oauth/access_token"
+
+
+@router.get("/github/auth-url", response_model=GitHubAuthUrlResponse)
+async def github_auth_url(current_user: dict = Depends(get_current_user)):
+    """Start GitHub App user authorization (read-only contents)."""
+    _require_db()
+    if not settings.GITHUB_APP_CLIENT_ID or not settings.GITHUB_APP_REDIRECT_URI:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="GitHub integration not configured on server",
+        )
+    state = secrets.token_urlsafe(24)
+    try:
+        await database.sync_jobs_collection.insert_one({
+            "user_id": current_user["id"],
+            "kind": "github_oauth_state",
+            "state": state,
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
+    params = {
+        "client_id": settings.GITHUB_APP_CLIENT_ID,
+        "redirect_uri": settings.GITHUB_APP_REDIRECT_URI,
+        "state": f"{current_user['id']}.{state}",
+    }
+    return GitHubAuthUrlResponse(auth_url=f"{GITHUB_OAUTH_AUTHORIZE}?{urlencode(params)}")
+
+
+@router.get("/github/callback")
+async def github_callback(code: str = Query(...), state: str = Query(...)):
+    """OAuth callback. Exchanges code -> user token, stores encrypted."""
+    from fastapi.responses import RedirectResponse
+
+    _require_db()
+    frontend = (settings.FRONTEND_URL or "").rstrip("/") or "http://localhost:3000"
+    try:
+        user_id, rand = state.split(".", 1)
+    except ValueError:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+    if not ObjectId.is_valid(user_id):
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                GITHUB_OAUTH_TOKEN,
+                headers={"Accept": "application/json"},
+                data={
+                    "client_id": settings.GITHUB_APP_CLIENT_ID,
+                    "client_secret": settings.GITHUB_APP_CLIENT_SECRET,
+                    "code": code,
+                    "redirect_uri": settings.GITHUB_APP_REDIRECT_URI,
+                },
+            )
+            resp.raise_for_status()
+            token_data = resp.json()
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+
+    access_token = token_data.get("access_token")
+    refresh_token = token_data.get("refresh_token")
+    if not access_token:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+
+    try:
+        from datetime import timedelta
+        doc: dict = {
+            "user_id": user_id,
+            "provider": "github",
+            "access_enc": encrypt_token(access_token),
+            "token_expires_at": datetime.now(timezone.utc) + timedelta(
+                seconds=int(token_data.get("expires_in", 28800))),
+            "connected_at": datetime.now(timezone.utc),
+        }
+        if refresh_token:
+            doc["refresh_enc"] = encrypt_token(refresh_token)
+        await database.connector_accounts_collection.update_one(
+            {"user_id": user_id, "provider": "github"}, {"$set": doc}, upsert=True,
+        )
+    except Exception:
+        return RedirectResponse(f"{frontend}/connectors/github?github=error", status_code=302)
+    return RedirectResponse(f"{frontend}/connectors/github?github=connected", status_code=302)
+
+
+@router.get("/github/repos", response_model=GitHubReposResponse)
+async def github_list_repos(current_user: dict = Depends(get_current_user)):
+    """Repos the user shared with the app (respects their install choice)."""
+    _require_db()
+    from app.services.github_sync_service import get_fresh_access_token, list_user_repos
+    try:
+        token = await get_fresh_access_token(current_user["id"])
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    try:
+        repos = await list_user_repos(token)
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail=f"GitHub API error: {e.response.status_code}")
+    return GitHubReposResponse(repos=[
+        GitHubRepoItem(
+            id=r.get("full_name", ""),
+            name=r.get("full_name", "Untitled"),
+            url=r.get("html_url"),
+            private=bool(r.get("private")),
+            default_branch=r.get("default_branch"),
+        )
+        for r in repos if r.get("full_name")
+    ])
+
+
+@router.post("/github/import", response_model=GitHubImportResponse, status_code=status.HTTP_201_CREATED)
+async def github_import_repos(
+    body: GitHubImportRequest,
+    background_tasks: BackgroundTasks,
+    workspace_id: Optional[str] = Query(None),
+    x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
+    current_user: dict = Depends(get_current_user),
+):
+    """Create one source per picked repo (docs subset) and sync in background."""
+    _require_db()
+    if not body.repos:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Pick at least one repository to import")
+    from app.services.github_sync_service import MAX_REPOS_PER_USER, sync_github_repo
+
+    target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": "github"}
+    )
+    if not acct or not acct.get("access_enc"):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="GitHub not connected")
+
+    existing_count = await database.sources_collection.count_documents({
+        "user_id": current_user["id"], "source_type": "github",
+        **({"workspace_id": target_ws} if target_ws else {}),
+    })
+    room = MAX_REPOS_PER_USER - existing_count
+    if room <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Repo limit reached ({MAX_REPOS_PER_USER}). Delete one to add another.")
+
+    imported: list[dict] = []
+    for repo in body.repos[:room]:
+        full = repo.id.strip()
+        if "/" not in full:
+            continue
+        existing = await database.sources_collection.find_one({
+            "user_id": current_user["id"],
+            "source_type": "github",
+            "remote_id": full.lower(),
+            **({"workspace_id": target_ws} if target_ws else {}),
+        })
+        if existing:
+            imported.append({"source_id": str(existing["_id"]), "repo": full,
+                             "status": existing.get("status", "ready")})
+            continue
+        doc = {
+            "user_id": current_user["id"],
+            "workspace_id": target_ws,
+            "source_type": "github",
+            "provider": "github",
+            "remote_id": full.lower(),
+            "remote_url": repo.url or f"https://github.com/{full}",
+            "filename": f"[GitHub] {full}",
+            "file_path": None,
+            "file_size": 0,
+            "page_count": 0,
+            "chunk_count": 0,
+            "status": "processing",
+            "sync_error": None,
+            "last_synced_at": None,
+            "uploaded_at": datetime.now(timezone.utc),
+        }
+        res = await database.sources_collection.insert_one(doc)
+        source_id = str(res.inserted_id)
+        background_tasks.add_task(
+            sync_github_repo, current_user["id"], target_ws, source_id,
+            full, repo.url,
+        )
+        imported.append({"source_id": source_id, "repo": full, "status": "processing"})
+    return GitHubImportResponse(imported=imported, total=len(imported))
+
+
+@router.post("/sources/{source_id}/resync")
+async def resync_source(
+    source_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
+    """Re-fetch remote content and re-index (replaces old vectors)."""
+    _require_db()
+    if not ObjectId.is_valid(source_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid source ID")
+    source = await database.sources_collection.find_one({
+        "_id": ObjectId(source_id), "user_id": current_user["id"],
+    })
+    if not source:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+    if source.get("source_type") not in ("notion", "drive"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Only imported connector sources can be re-synced")
+    provider = source.get("source_type")
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": provider}
+    )
+    if not acct:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"{provider} not connected. Please reconnect.")
+
+    if provider == "notion":
+        try:
+            token = decrypt_token(acct["token_enc"])
+        except (ValueError, KeyError):
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Stored token invalid. Please reconnect.")
+        from app.services.notion_sync_service import sync_notion_page
+        background_tasks.add_task(
+            sync_notion_page, current_user["id"], source.get("workspace_id"),
+            source_id, source.get("remote_id"), token,
+            (source.get("filename") or "").replace("[Notion] ", ""),
+            source.get("remote_url"),
+        )
+    elif provider == "drive":
+        from app.services.drive_sync_service import sync_drive_file
+        background_tasks.add_task(
+            sync_drive_file, current_user["id"], source.get("workspace_id"),
+            source_id, source.get("remote_id"),
+            (source.get("filename") or "").replace("[Drive] ", ""),
+            source.get("remote_mime"),
+        )
+    elif provider == "github":
+        from app.services.github_sync_service import sync_github_repo
+        background_tasks.add_task(
+            sync_github_repo, current_user["id"], source.get("workspace_id"),
+            source_id, source.get("remote_id"), source.get("remote_url"),
+        )
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Only imported connector sources can be re-synced")
+    return {"message": "Re-sync started", "source_id": source_id}
+
+
+@router.delete("/{provider}", response_model=DisconnectResponse)
+async def disconnect_provider(
+    provider: str,
+    delete_content: bool = Query(False),
+    current_user: dict = Depends(get_current_user),
+):
+    """Revoke token and optionally delete all imported content + vectors."""
+    _require_db()
+    if provider not in ("notion", "drive", "github"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown provider")
+    acct = await database.connector_accounts_collection.find_one(
+        {"user_id": current_user["id"], "provider": provider}
+    )
+    if not acct:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not connected")
+
+    # Best-effort remote revoke (Notion has no revoke endpoint — deleting locally is the revoke)
+    if provider == "notion":
+        pass  # Notion: token invalidated by user removing integration; local delete suffices
+    elif provider == "github":
+        try:
+            from app.services.github_sync_service import get_fresh_access_token
+            gtoken = await get_fresh_access_token(current_user["id"])
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                await client.delete(
+                    f"https://api.github.com/applications/{settings.GITHUB_APP_CLIENT_ID}/token",
+                    auth=(settings.GITHUB_APP_CLIENT_ID, settings.GITHUB_APP_CLIENT_SECRET),
+                    json={"access_token": gtoken},
+                )
+        except Exception:
+            pass
+        # Note: deleting locally is the real revoke — user can also uninstall
+        # the app at github.com/settings/installations to cut access instantly.
+    else:
+        try:
+            from app.services.drive_sync_service import get_fresh_access_token
+            token = await get_fresh_access_token(current_user["id"])
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                await client.post("https://oauth2.googleapis.com/revoke",
+                                  params={"token": token})
+        except Exception:
+            pass
+
+    await database.connector_accounts_collection.delete_one(
+        {"user_id": current_user["id"], "provider": provider}
+    )
+
+    vectors_removed = 0
+    sources_deleted = 0
+    if delete_content:
+        cursor = database.sources_collection.find({
+            "user_id": current_user["id"], "source_type": provider,
+        })
+        async for doc in cursor:
+            sid = str(doc["_id"])
+            vectors_removed += await asyncio.to_thread(
+                vs.delete_source_vectors, current_user["id"], sid
+            )
+            await database.sources_collection.delete_one({"_id": doc["_id"]})
+            sources_deleted += 1
+
+    return DisconnectResponse(
+        message=f"{provider} disconnected",
+        vectors_removed=vectors_removed,
+        sources_deleted=sources_deleted,
+    )

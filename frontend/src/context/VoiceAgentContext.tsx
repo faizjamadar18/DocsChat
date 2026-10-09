@@ -480,7 +480,7 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
       setBothStatus('error');
       setTimeout(() => setBothStatus('idle'), 6000);
     }
-  }, [attachListeners, currentWorkspace?.id, setBothStatus]);
+  }, [attachListeners, currentWorkspace?.id, freshBundleFor, setBothStatus]);
 
   const toggleMute = useCallback(() => {
     const vapi = vapiRef.current;

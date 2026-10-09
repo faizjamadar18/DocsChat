@@ -8,6 +8,8 @@ import {
   Sparkles,
   FileEdit,
   Folder,
+  Plug2,
+  Server,
   Settings,
   ChevronDown,
   ChevronsUpDown,
@@ -87,6 +89,8 @@ export default function Sidebar({
     { label: 'Ora', href: '/playground', icon: Sparkles },
     { label: 'Studio', href: '/studio', icon: FileEdit },
     { label: 'Assets', href: '/assets', icon: Folder },
+    { label: 'Connectors', href: '/connectors', icon: Plug2 },
+    { label: 'MCP Server', href: '/mcp', icon: Server },
     { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -412,8 +416,9 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Full voice conversation viewer */}
+      {/* Full voice conversation viewer (key-remount resets copy state per log) */}
       <VoiceLogModal
+        key={selectedVoiceLog?.id ?? 'closed'}
         log={selectedVoiceLog}
         onClose={() => setSelectedVoiceLog(null)}
         onDelete={(id) => {

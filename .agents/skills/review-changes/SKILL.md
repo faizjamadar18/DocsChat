@@ -5,18 +5,22 @@ description: Checklist for auditing code before committing.
 
 # Review Changes & Pre-Commit Verification Checklist
 
-Before making ANY commit, you MUST review and execute this checklist:
+User-confirmation gate: do NOT run any check or commit on your own.
+First ask: "Code is ready. Shall I run lint/tests and commit?" Only if the user says YES, review and execute this checklist:
+
+## 1. Pre-Commit Quality & Verification Gate (only after explicit user YES)
 
 ## 1. Pre-Commit Quality & Verification Gate
 Run ONLY the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):
 - [ ] Backend: All `pytest` tests pass with a 100% pass rate (`pytest` executed in virtual environment with `requirements-dev.txt` installed).
 - [ ] Backend: Code passes `flake8 app/` with no syntax or unhandled import errors.
-- [ ] Frontend: `npm run lint` passes with 0 errors.
-- [ ] Frontend: `npx tsc --noEmit` passes with 0 errors (all imports and path aliases resolve).
+- [ ] Frontend: `npm run lint` passes with 0 errors and 0 warnings.
+- [ ] Frontend: `npx tsc --noEmit` passes with 0 errors and 0 warnings (all imports and path aliases resolve).
 - [ ] Terminal: Running dev servers (Next.js, FastAPI) show zero 500 runtime or module resolution errors.
 - [ ] **Reported Diagnostics**: All errors and warnings surfaced by the IDE or `current_problems` tooling are resolved before committing.
 - [ ] **Edge Case Walkthrough**: Briefly review subtle edge cases (null/empty states, boundary inputs, layout clipping/overflow, modal/overlay behavior) before committing.
-- [ ] Under NO circumstance should code be committed before all checks above are green.
+- [ ] Under NO circumstance should code be committed before the user said YES and all checks above are green.
+- [ ] Never run `pytest`, `flake8`, `npm run lint`, or `npx tsc --noEmit` without explicit user YES.
 
 ## 2. Security Audit
 - [ ] No API keys, passwords, or secrets are hardcoded in the source code.
@@ -31,4 +35,4 @@ Run ONLY the gates for the stack you touched (backend-only changes skip frontend
 - [ ] No leftover `TODO` or `FIXME` comments unless explicitly deferred by the user.
 - [ ] No unused imports, broken paths, or dead code.
 
-If any of these fail, STOP, fix the code, and autonomously verify before committing.
+If any of these fail, STOP, fix the code, and wait for the next user YES before re-verifying or committing. Never auto-verify or auto-commit.

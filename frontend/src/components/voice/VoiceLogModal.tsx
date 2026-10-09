@@ -40,7 +40,6 @@ export default function VoiceLogModal({
 
   useEffect(() => {
     if (!log) return;
-    setCopied(false);
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };

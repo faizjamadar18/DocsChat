@@ -29,6 +29,28 @@ class Settings(BaseSettings):
     QDRANT_URL: str
     QDRANT_API_KEY: str
 
+    # Notion Connector (OAuth public integration)
+    NOTION_CLIENT_ID: str = ""
+    NOTION_CLIENT_SECRET: str = ""
+    NOTION_REDIRECT_URI: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    # Google Drive Connector (OAuth, drive.file scope only — non-sensitive)
+    GOOGLE_DRIVE_CLIENT_ID: str = ""
+    GOOGLE_DRIVE_CLIENT_SECRET: str = ""
+    GOOGLE_DRIVE_REDIRECT_URI: str = ""
+
+    # GitHub Connector (GitHub App, user flow, Contents read-only)
+    GITHUB_APP_CLIENT_ID: str = ""
+    GITHUB_APP_CLIENT_SECRET: str = ""
+    GITHUB_APP_REDIRECT_URI: str = ""
+
+    # MCP Server (remote, Streamable HTTP — free, official MCP SDK)
+    # Public URL of this backend, e.g. https://docschat-api.onrender.com
+    # Used for OAuth discovery metadata. Empty = derived from the request.
+    MCP_SERVER_URL: str = ""
+    MCP_ISSUER_URL: str = ""
+
     # Deployment
     CORS_ORIGINS: str = "https://docschats.vercel.app"
 

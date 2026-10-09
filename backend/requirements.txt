@@ -17,3 +17,11 @@ qdrant-client>=1.12.0
 pydantic>=2.13.0,<3
 pydantic-settings>=2.7.0,<3
 google-auth>=2.35.0
+httpx>=0.27.0
+tenacity>=8.3.0
+cryptography>=42.0.0
+# Official MCP SDK (CVE-2026-52869 patched floor). Pinned exact: newer 1.3x
+# pulls sse-starlette 3.x which needs starlette>=0.49, breaking fastapi 0.115.
+mcp==1.27.2
+# Transitive MCP dep pinned: 2.4.1 works with starlette 0.38.6 (3.x does not).
+sse-starlette==2.4.1

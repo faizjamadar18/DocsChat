@@ -27,8 +27,23 @@ export function useVapiKey() {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.get('/voice/key-status');
+        if (cancelled) return;
+        setStatus(data);
+        setError(null);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load key status');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const saveKey = useCallback(async (publicKey: string) => {
     const trimmed = publicKey.trim();

@@ -26,8 +26,8 @@ export default function UploadArea({ onUploadComplete }: { onUploadComplete: () 
 
       await api.post('/sources/upload', formData);
       onUploadComplete();
-    } catch (err: any) {
-      setError(err.message || "Failed to upload file");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to upload file");
     } finally {
       setIsUploading(false);
     }
