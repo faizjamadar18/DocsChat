@@ -1,24 +1,10 @@
 'use client';
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
-import {
-  NotionIcon,
-  PdfIcon,
-  StudioDocIcon,
-} from '@/components/connectors/ConnectorIcons';
+import { FilenameIcon } from '@/components/connectors/ConnectorIcons';
 import type { Citation } from '@/hooks/useChat';
 
-/**
- * Pick an icon from the filename alone (UI-only, no backend help):
- * Notion syncs save as "[Notion] Title", uploads end with .pdf,
- * anything else (Studio docs, Drive files) gets the doc glyph.
- */
-export function FilenameIcon({ filename }: { filename: string }) {
-  const cls = 'w-4 h-4 shrink-0';
-  if (filename.startsWith('[Notion]')) return <NotionIcon className={cls} />;
-  if (filename.toLowerCase().endsWith('.pdf')) return <PdfIcon className={cls} />;
-  return <StudioDocIcon className={cls} />;
-}
+export { FilenameIcon };
 
 /**
  * "N sources used" footer with official icons + trailing arrow.
@@ -52,29 +38,29 @@ export default function SourceFooter({
       onClick={onToggle}
       aria-expanded={expanded}
       title={unique.map((s) => s.filename).join(', ')}
-      className="mt-3 pt-2.5 border-t border-border/40 flex items-center gap-2 text-xs text-text-secondary hover:text-text-primary transition-colors cursor-pointer w-full text-left"
+      className="mt-4 flex items-center gap-2.5 text-xs sm:text-[13px] text-text-secondary hover:text-text-primary transition-colors cursor-pointer w-fit text-left group select-none"
     >
-      <span className="shrink-0">
+      <span className="shrink-0 font-normal">
         {count} {count === 1 ? 'source' : 'sources'} used
       </span>
-      <span className="flex items-center">
-        {visible.map((s, i) => (
+      <span className="flex items-center gap-1.5">
+        {visible.map((s) => (
           <span
             key={s.source_id}
             title={s.filename}
-            className={`inline-flex rounded-full bg-white ring-2 ring-[#F4F4F6] ${i > 0 ? '-ml-1.5' : ''}`}
+            className="inline-flex items-center justify-center shrink-0"
           >
             <FilenameIcon filename={s.filename} />
           </span>
         ))}
         {overflow > 0 && (
-          <span className="-ml-1.5 px-1.5 h-4 rounded-full bg-sidebar border border-border text-[9px] font-semibold text-text-secondary inline-flex items-center">
+          <span className="px-1.5 h-4 rounded-full bg-zinc-100 border border-border text-[9px] font-medium text-text-secondary inline-flex items-center">
             +{overflow}
           </span>
         )}
       </span>
       <ChevronDown
-        className={`w-3.5 h-3.5 ml-auto shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+        className={`w-3.5 h-3.5 text-text-muted group-hover:text-text-primary shrink-0 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
       />
     </button>
   );

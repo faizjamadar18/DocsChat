@@ -87,7 +87,7 @@ export default function VoiceLogModal({
                 <CalendarDays className="w-3 h-3" />
                 {formatFullDate(log.created_at)}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#ECE8F4] text-[#765D96]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-sidebar text-text-secondary border border-border">
                 <Clock className="w-3 h-3" />
                 {formatDuration(log.duration_seconds)}
               </span>
@@ -112,7 +112,7 @@ export default function VoiceLogModal({
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">
               You said
             </div>
-            <div className="rounded-2xl px-4 py-3 bg-[#83699e] text-white text-[13px] leading-relaxed whitespace-pre-wrap">
+            <div className="rounded-2xl px-4 py-3 bg-[#F4F4F6] border border-border/40 text-text-primary text-[13px] leading-relaxed whitespace-pre-wrap">
               {log.user_text || '(no speech was recorded for this call)'}
             </div>
           </div>
@@ -120,7 +120,7 @@ export default function VoiceLogModal({
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">
               Ora replied
             </div>
-            <div className="rounded-2xl px-4 py-3 bg-[#F4F4F6] text-text-primary text-[13px] leading-relaxed whitespace-pre-wrap">
+            <div className="rounded-2xl px-4 py-3 border border-border/40 bg-transparent text-text-primary text-[13px] leading-relaxed whitespace-pre-wrap">
               {log.ora_text || '(Ora didn’t get to reply before the call ended)'}
             </div>
           </div>

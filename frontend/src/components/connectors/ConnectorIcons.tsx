@@ -397,3 +397,91 @@ export function ManusIcon({ className = 'w-5 h-5' }: { className?: string }) {
   );
 }
 
+/**
+ * Universal Filename & Source Icon Resolver.
+ * Intelligently maps filename prefixes, connector sync tags, repository paths,
+ * and file extensions to authentic brand SVGs (GitHub, Google Drive, Notion, Slack, PDF, Google Doc).
+ */
+export function FilenameIcon({
+  filename = '',
+  sourceType,
+  className = 'w-4 h-4 shrink-0',
+}: {
+  filename?: string;
+  sourceType?: string;
+  className?: string;
+}) {
+  const raw = (filename || '').trim();
+  const lower = raw.toLowerCase();
+  const type = (sourceType || '').toLowerCase();
+
+  // 1. Explicit source_type checks
+  if (type === 'github') return <GitHubIcon className={className} />;
+  if (type === 'notion') return <NotionIcon className={className} />;
+  if (type === 'drive' || type === 'googledrive') return <GoogleDriveIcon className={className} />;
+  if (type === 'slack') return <SlackIcon className={className} />;
+  if (type === 'pdf') return <PdfIcon className={className} />;
+  if (type === 'document' || type === 'studio') return <StudioDocIcon className={className} />;
+
+  // 2. Connector prefix tags in filename (e.g. "[GitHub] repo", "[Drive] file.pdf", "[Notion] page")
+  // NOTE: check connector tags BEFORE file extensions, because a Drive sync might be "[Drive] resume.pdf"!
+  if (lower.startsWith('[github]') || lower.includes('github.com') || lower.startsWith('gh:')) {
+    return <GitHubIcon className={className} />;
+  }
+  if (
+    lower.startsWith('[drive]') ||
+    lower.startsWith('[google drive]') ||
+    lower.startsWith('[googledrive]') ||
+    lower.includes('drive.google.com')
+  ) {
+    return <GoogleDriveIcon className={className} />;
+  }
+  if (lower.startsWith('[notion]') || lower.includes('notion.so') || lower.startsWith('[notion doc]')) {
+    return <NotionIcon className={className} />;
+  }
+  if (lower.startsWith('[slack]')) {
+    return <SlackIcon className={className} />;
+  }
+
+  // 3. File extension checks
+  if (lower.endsWith('.pdf')) {
+    return <PdfIcon className={className} />;
+  }
+
+  // 4. Code / Repo patterns (e.g. "faizjamadar18/DocsChat", or code file extensions)
+  if (
+    lower.endsWith('.ts') ||
+    lower.endsWith('.tsx') ||
+    lower.endsWith('.js') ||
+    lower.endsWith('.jsx') ||
+    lower.endsWith('.py') ||
+    lower.endsWith('.json') ||
+    lower.endsWith('.yaml') ||
+    lower.endsWith('.yml') ||
+    lower.endsWith('.sh') ||
+    lower.endsWith('.go') ||
+    lower.endsWith('.rs') ||
+    /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(raw)
+  ) {
+    return <GitHubIcon className={className} />;
+  }
+
+  // 5. Google Docs / Word / text documents
+  if (
+    lower.endsWith('.doc') ||
+    lower.endsWith('.docx') ||
+    lower.endsWith('.gdoc') ||
+    lower.endsWith('.txt') ||
+    lower.endsWith('.rtf') ||
+    lower.endsWith('.md') ||
+    lower.endsWith('.markdown') ||
+    lower.endsWith('.odt')
+  ) {
+    return <StudioDocIcon className={className} />;
+  }
+
+  // 6. Fallback
+  return <StudioDocIcon className={className} />;
+}
+
+

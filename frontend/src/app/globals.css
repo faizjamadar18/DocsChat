@@ -169,10 +169,10 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  /* Workspace canonical tokens (DESIGN.md): never repoint these at Plura vars. */
+  /* Workspace canonical tokens (DESIGN.md): monochrome black and white */
   --color-border: #ECECEE;
-  --color-accent: #6E56CF;
-  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: #111827;
+  --color-accent-foreground: #FFFFFF;
 
   /* Workspace app backward compatibility */
   --color-surface-base: #FBFBFD;
@@ -182,8 +182,8 @@
   --color-text-primary: #111827;
   --color-text-secondary: #6B7280;
   --color-text-muted: #9CA3AF;
-  --color-accent-subtle: #EFEAFC;
-  --color-accent-hover: #5B45B2;
+  --color-accent-subtle: #EFEFF2;
+  --color-accent-hover: #000000;
 }
 
 .bg-base {
@@ -377,7 +377,7 @@ body {
 }
 
 .tiptap blockquote {
-  border-left: 3px solid #6E56CF;
+  border-left: 3px solid #111827;
   padding-left: 1rem;
   margin: 0.75rem 0;
   font-style: italic;
@@ -403,7 +403,7 @@ body {
 }
 
 .tiptap a {
-  color: #6E56CF;
+  color: #111827;
   text-decoration: underline;
   text-underline-offset: 2px;
 }

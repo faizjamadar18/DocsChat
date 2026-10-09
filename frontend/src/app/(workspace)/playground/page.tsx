@@ -333,13 +333,13 @@ function PlaygroundContent() {
             <div className="w-full mt-8 bg-white border border-border rounded-3xl p-4 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary scheme-light">
               {/* Attached Scoped Document Tag */}
               {attachedScope && (
-                <div className="mb-2.5 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-3 py-1 rounded-full text-xs font-medium animate-fade-in">
-                  <StudioDocIcon className="w-3.5 h-3.5" />
+                <div className="mb-2.5 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-3 py-1 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
+                  <StudioDocIcon className="w-3.5 h-3.5 text-text-secondary" />
                   <span className="truncate max-w-xs">{attachedScope.title}</span>
                   <button
                     type="button"
                     onClick={() => setAttachedScope(null)}
-                    className="hover:text-black cursor-pointer ml-0.5"
+                    className="cursor-pointer ml-0.5 text-text-muted hover:text-text-primary"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -503,7 +503,7 @@ function PlaygroundContent() {
                   type="button"
                   onClick={() => handlePreset(s.prompt)}
                   disabled={streaming}
-                  className="px-3.5 py-1.5 rounded-full border border-border bg-white text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 hover:shadow-2xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3.5 py-1.5 rounded-full border border-border bg-white text-xs text-text-secondary hover:text-text-primary hover:border-border-subtle hover:shadow-2xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {s.label}
                 </button>
@@ -548,17 +548,17 @@ function PlaygroundContent() {
                     className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
                   >
                     {isUser ? (
-                      /* User Message Bubble */
-                      <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-[#83699e] text-white shadow-xs">
+                      /* User Message Bubble (Claude / ChatGPT style: subtle neutral #F4F4F6) */
+                      <div className="max-w-[85%] rounded-2xl px-4.5 py-3 bg-[#F4F4F6] border border-border/40 text-text-primary shadow-2xs">
                         {(msg.attached_name || (msg.scope_ids && msg.scope_ids.length > 0)) && (
-                          <div className="bg-white/20 text-white text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit">
-                            <StudioDocIcon className="w-3 h-3" />
+                          <div className="bg-white border border-border/80 text-text-secondary text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit shadow-2xs">
+                            <StudioDocIcon className="w-3 h-3 text-text-secondary" />
                             <span className="truncate max-w-xs">
                               {msg.attached_name || 'Referenced Document'}
                             </span>
                           </div>
                         )}
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap font-normal">
+                        <p className="text-[14.5px] leading-relaxed whitespace-pre-wrap font-normal text-text-primary">
                           {msg.content}
                         </p>
                       </div>
@@ -570,9 +570,9 @@ function PlaygroundContent() {
                         </span>
                       </div>
                     ) : (
-                      /* Assistant Message Card */
-                      <div className="max-w-[92%] w-full flex flex-col group">
-                        <div className="rounded-2xl p-5 bg-[#F4F4F6] text-text-primary text-sm leading-relaxed border border-border/40">
+                      /* Assistant Message Flow (ChatGPT / Claude style: unboxed, transparent canvas) */
+                      <div className="w-full flex flex-col group py-1">
+                        <div className="w-full text-text-primary">
                           {/* Formatted Assistant Output */}
                           <Markdown content={msg.content} />
 
@@ -589,35 +589,39 @@ function PlaygroundContent() {
                             />
                           )}
 
-                          {/* Expandable Sources Drawer — names only, opens below the footer button */}
+                          {/* Expandable Sources Drawer — transparent, names only */}
                           {showSourcesForMsg === msg.id &&
                             msg.sources &&
                             msg.sources.length > 0 && (
-                              <div className="mt-2 p-3 bg-white rounded-xl border border-border/80 space-y-1.5 animate-fade-in text-xs">
-                                <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
-                                  Referenced sources
+                              <div className="mt-2.5 space-y-1 animate-fade-in text-xs">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Array.from(
+                                    new Map(
+                                      msg.sources.map((s) => [s.source_id || s.filename, s])
+                                    ).values()
+                                  ).map((cit, cIdx) => (
+                                    <div
+                                      key={`${cit.source_id}-${cIdx}`}
+                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/4 transition-colors cursor-default"
+                                      title={cit.filename}
+                                    >
+                                      <FilenameIcon filename={cit.filename} />
+                                      <span className="truncate font-normal max-w-xs">
+                                        {cit.filename}
+                                      </span>
+                                    </div>
+                                  ))}
                                 </div>
-                                {msg.sources.map((cit, cIdx) => (
-                                  <div
-                                    key={`${cit.source_id}-${cIdx}`}
-                                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-surface border border-border/60"
-                                  >
-                                    <FilenameIcon filename={cit.filename} />
-                                    <span className="truncate font-medium text-text-primary">
-                                      {cit.filename}
-                                    </span>
-                                  </div>
-                                ))}
                               </div>
                             )}
                         </div>
 
                         {/* Actions row: Copy */}
-                        <div className="flex items-center gap-1 mt-1.5 ml-1">
+                        <div className="flex items-center gap-1 mt-2 -ml-1">
                           <button
                             type="button"
                             onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
                             title="Copy response"
                           >
                             {copiedMessageId === msg.id ? (
@@ -642,13 +646,13 @@ function PlaygroundContent() {
               <div className="max-w-3xl w-full mx-auto">
               <div className="bg-white border border-border rounded-2xl p-3 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary scheme-light">
                 {attachedScope && (
-                  <div className="mb-2 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-2.5 py-0.5 rounded-full text-xs font-medium animate-fade-in">
-                    <StudioDocIcon className="w-3 h-3" />
+                  <div className="mb-2 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-2.5 py-0.5 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
+                    <StudioDocIcon className="w-3 h-3 text-text-secondary" />
                     <span className="truncate max-w-xs">{attachedScope.title}</span>
                     <button
                       type="button"
                       onClick={() => setAttachedScope(null)}
-                      className="hover:text-black cursor-pointer"
+                      className="text-text-muted hover:text-black cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -772,7 +776,7 @@ export default function PlaygroundPage() {
     <Suspense
       fallback={
         <div className="flex h-full w-full items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-text-primary" />
         </div>
       }
     >

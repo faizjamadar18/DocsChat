@@ -111,7 +111,7 @@ export default function Navbar() {
         href="https://savvycal.com/David-Wind-b585dcf7/agentwork"
         target="_blank"
         rel="noreferrer"
-        className={`inline-flex items-center justify-center font-medium rounded-lg bg-[#21201c] text-[#ffffff] hover:bg-[#000000] transition-colors ${
+        className={`inline-flex items-center justify-center font-medium rounded-lg bg-[#21201c] text-[#ffffff] hover:bg-accent-hover transition-colors ${
           size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
         }`}
       >
@@ -180,7 +180,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-[#000000]/30 backdrop-blur-sm md:hidden flex flex-col justify-end">
+        <div className="fixed inset-0 z-50 bg-accent-hover/30 backdrop-blur-sm md:hidden flex flex-col justify-end">
           <div className="bg-[#ffffff] rounded-t-2xl p-6 flex flex-col gap-6 max-h-[85vh] overflow-y-auto border-t border-[#e2e1de]">
             <div className="flex items-center justify-between">
               <AgentworkLogo />

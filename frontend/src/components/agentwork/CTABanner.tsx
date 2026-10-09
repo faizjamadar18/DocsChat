@@ -26,7 +26,7 @@ export default function CTABanner() {
               href="https://savvycal.com/David-Wind-b585dcf7/agentwork"
               target="_blank"
               rel="noreferrer"
-              className="w-full sm:w-44 py-3 px-6 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-[#000000] transition-colors shadow-xs"
+              className="w-full sm:w-44 py-3 px-6 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-accent-hover transition-colors shadow-xs"
             >
               Book a demo
             </a>

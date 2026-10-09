@@ -440,7 +440,7 @@ export default function AssetsPage() {
                   <button
                     type="button"
                     onClick={() => setSearch('')}
-                    className="mt-2.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] transition-colors cursor-pointer"
+                    className="mt-2.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer"
                   >
                     Clear search
                   </button>

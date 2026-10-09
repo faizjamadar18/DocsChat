@@ -121,7 +121,7 @@ export default function Sidebar({
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                   isActive
                     ? 'bg-accent-subtle text-accent-hover'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2]'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-accent-subtle'
                 }`}
               >
                 <Icon
@@ -144,7 +144,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={handleNewChat}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-primary hover:bg-[#EFEFF2] transition-colors cursor-pointer w-full text-left"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer w-full text-left"
           >
             <SquarePen className="w-4 h-4 text-text-secondary shrink-0" />
             <span>New Chat</span>
@@ -167,8 +167,8 @@ export default function Sidebar({
                     }}
                     className={`group px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between cursor-pointer ${
                       isActive
-                        ? 'bg-[#EFEFF2] text-text-primary font-medium'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2]'
+                        ? 'bg-accent-subtle text-text-primary font-medium'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-accent-subtle'
                     }`}
                   >
                     <span className="truncate flex-1 mr-2 leading-tight">
@@ -207,7 +207,7 @@ export default function Sidebar({
       <div className="p-3 border-t border-border/80 relative">
         <div
           onClick={() => setUserMenuOpen(!userMenuOpen)}
-          className="flex items-center justify-between p-2 rounded-lg hover:bg-[#EFEFF2] cursor-pointer transition-colors"
+          className="flex items-center justify-between p-2 rounded-lg hover:bg-accent-subtle cursor-pointer transition-colors"
         >
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Avatar */}

@@ -28,7 +28,7 @@ export default function Hero() {
             href="https://savvycal.com/David-Wind-b585dcf7/agentwork"
             target="_blank"
             rel="noreferrer"
-            className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-[#000000] transition-colors shadow-xs"
+            className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-accent-hover transition-colors shadow-xs"
           >
             Book a demo
           </a>

@@ -96,7 +96,7 @@ export function StudioDocumentsSidebar({
             type="button"
             onClick={onCreateDoc}
             disabled={isCreating}
-            className="w-6 h-6 rounded-md hover:bg-[#EFEFF2] text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+            className="w-6 h-6 rounded-md hover:bg-accent-subtle text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
             title="New document"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -140,7 +140,7 @@ export function StudioDocumentsSidebar({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="mt-2.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] transition-colors cursor-pointer"
+                  className="mt-2.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer"
                 >
                   Clear search
                 </button>
@@ -179,7 +179,7 @@ export function StudioDocumentsSidebar({
                   className={`group relative flex items-center gap-2 pl-2 pr-1 h-8 rounded-lg text-[13px] cursor-pointer transition-colors ${
                     isActive
                       ? 'bg-accent-subtle text-accent-hover font-medium'
-                      : 'text-text-secondary hover:bg-[#EFEFF2] hover:text-text-primary'
+                      : 'text-text-secondary hover:bg-accent-subtle hover:text-text-primary'
                   }`}
                 >
                   <StudioDocIcon className="w-4 h-4 shrink-0" />

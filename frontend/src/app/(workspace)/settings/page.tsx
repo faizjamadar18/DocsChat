@@ -624,7 +624,7 @@ export default function SettingsPage() {
                 type="button"
                 className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer shadow-xs shrink-0 inline-flex items-center gap-1.5"
               >
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <Sparkles className="w-3.5 h-3.5 text-white" />
                 Upgrade Plan
               </button>
             </div>
@@ -681,7 +681,7 @@ export default function SettingsPage() {
           <div className="w-full bg-surface border border-border rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xs">
             <div>
               <h2 className="text-base sm:text-lg font-semibold font-heading text-text-primary flex items-center gap-2">
-                <Mic className="w-4 h-4 text-primary" />
+                <Mic className="w-4 h-4 text-text-primary" />
                 Voice Assistant
               </h2>
               <p className="text-xs sm:text-sm text-text-secondary mt-1">
@@ -701,7 +701,7 @@ export default function SettingsPage() {
                       href="https://dashboard.vapi.ai"
                       target="_blank"
                       rel="noreferrer"
-                      className="text-primary hover:underline font-medium"
+                      className="text-text-primary hover:underline font-medium"
                     >
                       dashboard.vapi.ai
                     </a>
@@ -779,7 +779,7 @@ export default function SettingsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-border/50">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold font-heading text-text-primary flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-primary" />
+                  <MessageSquare className="w-4 h-4 text-text-primary" />
                   Voice Conversations
                 </h2>
                 <p className="text-xs sm:text-sm text-text-secondary mt-1">
@@ -814,7 +814,7 @@ export default function SettingsPage() {
                   >
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-text-primary shrink-0" />
                         <h4 className="text-xs sm:text-sm font-semibold text-text-primary truncate">
                           {log.title || 'Voice conversation'}
                         </h4>

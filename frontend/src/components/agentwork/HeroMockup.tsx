@@ -186,7 +186,7 @@ export default function HeroMockup() {
             </button>
             <button
               type="button"
-              className="size-7 rounded-lg bg-[#21201c] text-[#ffffff] flex items-center justify-center hover:bg-[#000000] transition-colors cursor-pointer shrink-0"
+              className="size-7 rounded-lg bg-[#21201c] text-[#ffffff] flex items-center justify-center hover:bg-accent-hover transition-colors cursor-pointer shrink-0"
               aria-label="Send query"
             >
               <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

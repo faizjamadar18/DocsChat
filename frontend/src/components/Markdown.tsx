@@ -16,62 +16,62 @@ type MDProps = {
 
 const components = {
   p: ({ children }: MDProps) => (
-    <p className="leading-relaxed mb-2 last:mb-0">{children}</p>
+    <p className="leading-[1.7] mb-3 last:mb-0 text-text-primary">{children}</p>
   ),
   strong: ({ children }: MDProps) => (
     <strong className="font-semibold text-text-primary">{children}</strong>
   ),
   ul: ({ children }: MDProps) => (
-    <ul className="list-disc pl-5 space-y-1 my-2 marker:text-text-secondary">{children}</ul>
+    <ul className="list-disc pl-5 space-y-1.5 my-3 marker:text-text-muted">{children}</ul>
   ),
   ol: ({ children }: MDProps) => (
-    <ol className="list-decimal pl-5 space-y-1 my-2 marker:text-text-secondary">{children}</ol>
+    <ol className="list-decimal pl-5 space-y-1.5 my-3 marker:text-text-muted">{children}</ol>
   ),
   li: ({ children }: MDProps) => (
-    <li className="leading-relaxed">{children}</li>
+    <li className="leading-[1.7] text-text-primary">{children}</li>
   ),
   h1: ({ children }: MDProps) => (
-    <h1 className="text-[15px] font-semibold text-text-primary mt-3 mb-1">{children}</h1>
+    <h1 className="text-lg font-semibold text-text-primary mt-4 mb-2 tracking-tight">{children}</h1>
   ),
   h2: ({ children }: MDProps) => (
-    <h2 className="text-sm font-semibold text-text-primary mt-3 mb-1">{children}</h2>
+    <h2 className="text-base font-semibold text-text-primary mt-3.5 mb-1.5 tracking-tight">{children}</h2>
   ),
   h3: ({ children }: MDProps) => (
-    <h3 className="text-[13px] font-semibold text-text-primary mt-2 mb-1">{children}</h3>
+    <h3 className="text-[14px] font-semibold text-text-primary mt-3 mb-1 tracking-tight">{children}</h3>
   ),
   a: ({ href, children }: MDProps) => (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-accent hover:underline underline-offset-2"
+      className="text-text-primary underline underline-offset-4 decoration-border hover:decoration-text-primary transition-colors font-medium"
     >
       {children}
     </a>
   ),
   blockquote: ({ children }: MDProps) => (
-    <blockquote className="border-l-2 border-accent/50 pl-3 my-2 text-text-secondary">
+    <blockquote className="border-l-2 border-border-subtle pl-3.5 my-2.5 text-text-secondary italic">
       {children}
     </blockquote>
   ),
   code: ({ className, children }: MDProps) => (
     <code
-      className={`px-1 py-0.5 rounded bg-sidebar border border-border font-mono text-xs text-text-primary ${className ?? ''}`}
+      className={`px-1.5 py-0.5 rounded-md bg-[#F4F4F6] border border-border/80 font-mono text-[12px] text-text-primary ${className ?? ''}`}
     >
       {children}
     </code>
   ),
   pre: ({ children }: MDProps) => (
-    <pre className="bg-[#18181B] text-zinc-100 rounded-xl p-3 my-2 overflow-x-auto text-xs font-mono leading-relaxed [&>code]:bg-transparent [&>code]:border-0 [&>code]:p-0 [&>code]:text-inherit">
+    <pre className="bg-[#18181B] text-zinc-100 rounded-xl p-3.5 my-3 overflow-x-auto text-xs font-mono leading-relaxed [&>code]:bg-transparent [&>code]:border-0 [&>code]:p-0 [&>code]:text-inherit">
       {children}
     </pre>
   ),
-  hr: () => <hr className="border-border my-3" />,
+  hr: () => <hr className="border-border my-4" />,
 };
 
 export default function Markdown({ content }: { content: string }) {
   return (
-    <div className="text-[13px] leading-relaxed text-text-primary break-words">
+    <div className="text-[14.5px] sm:text-[15px] leading-[1.7] text-text-primary wrap-break-word">
       <ReactMarkdown components={components}>{content}</ReactMarkdown>
     </div>
   );

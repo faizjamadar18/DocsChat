@@ -445,7 +445,7 @@ export default function ConnectorDetailPage() {
                   type="checkbox"
                   checked={deleteOnDisconnect}
                   onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
-                  className="accent-[#6E56CF]"
+                  className="accent-zinc-900"
                 />
                 Also delete copied content when disconnecting
               </label>
@@ -593,7 +593,7 @@ export default function ConnectorDetailPage() {
                   type="checkbox"
                   checked={deleteOnDisconnect}
                   onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
-                  className="accent-[#6E56CF]"
+                  className="accent-zinc-900"
                 />
                 Also delete copied content when disconnecting
               </label>
@@ -741,7 +741,7 @@ export default function ConnectorDetailPage() {
                   type="checkbox"
                   checked={deleteOnDisconnect}
                   onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
-                  className="accent-[#6E56CF]"
+                  className="accent-zinc-900"
                 />
                 Also delete copied content when disconnecting
               </label>
@@ -814,7 +814,7 @@ export default function ConnectorDetailPage() {
                               else next[p.id] = p;
                               return next;
                             })}
-                            className="accent-[#6E56CF]"
+                            className="accent-zinc-900"
                           />
                           <span className="flex-1 min-w-0">
                             <span className="flex items-center gap-2">
@@ -912,14 +912,14 @@ export default function ConnectorDetailPage() {
                               else next[r.id] = r;
                               return next;
                             })}
-                            className="accent-[#6E56CF]"
+                            className="accent-zinc-900"
                           />
                           <GitHubIcon className="w-4 h-4 shrink-0" />
                           <span className="flex-1 min-w-0">
                             <span className="flex items-center gap-2">
                               <span className="block text-xs font-medium text-text-primary truncate">{r.name}</span>
                               {r.private ? (
-                                <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">
+                                <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent-subtle text-text-secondary">
                                   Private
                                 </span>
                               ) : null}

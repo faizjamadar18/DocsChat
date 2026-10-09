@@ -130,7 +130,7 @@ export default function HomePage() {
       {/* Start Writing Action Card */}
       <Link
         href="/studio"
-        className="flex items-center justify-between p-4 rounded-xl bg-sidebar hover:bg-[#EFEFF2] border border-border transition-colors cursor-pointer group"
+        className="flex items-center justify-between p-4 rounded-xl bg-sidebar hover:bg-accent-subtle border border-border transition-colors cursor-pointer group"
       >
         <div className="flex items-center gap-3.5">
           <div className="w-9 h-9 rounded-lg bg-[#111113] flex items-center justify-center text-white shrink-0 shadow-xs">
