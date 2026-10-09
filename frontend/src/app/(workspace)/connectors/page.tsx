@@ -29,7 +29,7 @@ export default function ConnectorsPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 space-y-6 animate-fade-in">
+    <div className="w-full px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-semibold text-text-primary flex items-center gap-2">
           <Plug2 className="w-5 h-5" />

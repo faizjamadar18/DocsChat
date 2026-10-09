@@ -19,7 +19,7 @@ export default function SettingsPage() {
   const [description, setDescription] = useState(currentWorkspace?.description || '');
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 space-y-6 animate-fade-in">
+    <div className="w-full px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
       {/* Tabs */}
       <div className="flex items-center gap-6 border-b border-border">
         <button
