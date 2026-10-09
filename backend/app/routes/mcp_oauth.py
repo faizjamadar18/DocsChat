@@ -40,6 +40,7 @@ from app.models.mcp import (
     McpInfoResponse,
 )
 from app.services.auth_service import create_access_token
+from app.services.mcp_providers import get_providers
 from app.services.mcp_oauth import (
     auth_code_expiry,
     hash_token,
@@ -499,3 +500,13 @@ async def mcp_info(
         issuer=_issuer_url(request),
         workspace_id=current_user.get("active_workspace_id"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Provider catalog for the tab (public: display copy only, no secrets)
+# ---------------------------------------------------------------------------
+
+@router.get("/api/mcp/providers")
+async def mcp_providers():
+    """Full provider catalog: copy, steps and status per AI app."""
+    return {"providers": get_providers()}
