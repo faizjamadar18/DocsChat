@@ -8,6 +8,8 @@ import {
   PerplexityIcon,
   MistralIcon,
   GeminiIcon,
+  CopilotIcon,
+  ManusIcon,
 } from '@/components/connectors/ConnectorIcons';
 
 export type McpProviderStatus = 'ready' | 'soon';
@@ -152,4 +154,39 @@ export const MCP_PROVIDERS: McpProvider[] = [
     requiresKey: false,
     icon: GeminiIcon,
   },
+  {
+    id: 'copilot',
+    name: 'Microsoft Copilot',
+    tagline: 'Bring your workspace into Copilot',
+    about:
+      'Microsoft Copilot will be able to search and query your DocsChat workspace — retrieving information from your uploaded PDFs, Studio documents, and connected sources to answer questions with verifiable citations inside Microsoft 365. Read-only, as always.',
+    needs: [
+      'A Microsoft Copilot license (Copilot for Microsoft 365 or Copilot Pro)',
+      'At least one document or PDF in your workspace',
+    ],
+    steps: [],
+    status: 'soon',
+    paidNote:
+      'Custom MCP connectors in Microsoft Copilot may require an active Microsoft 365 Copilot license on your side.',
+    authNote: '',
+    requiresKey: false,
+    icon: CopilotIcon,
+  },
+  {
+    id: 'manus',
+    name: 'Manus',
+    tagline: 'Let your AI agent work from your docs',
+    about:
+      'Manus AI will be able to autonomously read and analyze your DocsChat workspace — executing multi-step research and workflows grounded in your uploaded documents and notes. Read-only, as always.',
+    needs: [
+      'A Manus account with agent connector support',
+      'At least one document or PDF in your workspace',
+    ],
+    steps: [],
+    status: 'soon',
+    authNote: '',
+    requiresKey: false,
+    icon: ManusIcon,
+  },
 ];
+

@@ -14,8 +14,8 @@ First ask: "Code is ready. Shall I run lint/tests and commit?" Only if the user 
 Run ONLY the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):
 - [ ] Backend: All `pytest` tests pass with a 100% pass rate (`pytest` executed in virtual environment with `requirements-dev.txt` installed).
 - [ ] Backend: Code passes `flake8 app/` with no syntax or unhandled import errors.
-- [ ] Frontend: `npm run lint` passes with 0 errors.
-- [ ] Frontend: `npx tsc --noEmit` passes with 0 errors (all imports and path aliases resolve).
+- [ ] Frontend: `npm run lint` passes with 0 errors and 0 warnings.
+- [ ] Frontend: `npx tsc --noEmit` passes with 0 errors and 0 warnings (all imports and path aliases resolve).
 - [ ] Terminal: Running dev servers (Next.js, FastAPI) show zero 500 runtime or module resolution errors.
 - [ ] **Reported Diagnostics**: All errors and warnings surfaced by the IDE or `current_problems` tooling are resolved before committing.
 - [ ] **Edge Case Walkthrough**: Briefly review subtle edge cases (null/empty states, boundary inputs, layout clipping/overflow, modal/overlay behavior) before committing.

@@ -110,7 +110,7 @@ export default function McpConnectModal({
                     {/* Continuous vertical line spanning from this circle's center to the next circle's center */}
                     {!isLast && (
                       <div
-                        className="absolute left-[10px] top-[10px] bottom-[-10px] w-[1px] -translate-x-1/2 bg-neutral-200 dark:bg-neutral-300"
+                        className="absolute left-2.5 top-2.5 -bottom-2.5 w-px -translate-x-1/2 bg-neutral-200 dark:bg-neutral-300"
                         aria-hidden="true"
                       />
                     )}
