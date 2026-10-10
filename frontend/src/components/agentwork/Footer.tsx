@@ -8,34 +8,34 @@ import { AgentworkLogo } from './Icons';
 export default function Footer() {
   const columns = [
     {
+      title: 'Product',
+      links: [
+        { label: 'Ora Playground', href: '/playground', external: false },
+        { label: 'Studio Canvas', href: '/studio', external: false },
+        { label: 'Connectors', href: '/connectors', external: false },
+        { label: 'MCP Server', href: '/mcp', external: false },
+      ],
+    },
+    {
+      title: 'Account',
+      links: [
+        { label: 'Log in', href: '/login', external: false },
+        { label: 'Create Account', href: '/register', external: false },
+        { label: 'Workspace Settings', href: '/settings', external: false },
+      ],
+    },
+    {
       title: 'Legal',
       links: [
-        { label: 'Trust Center', href: 'https://trust.agentwork.com', external: true },
         { label: 'Terms & conditions', href: '/terms', external: false },
         { label: 'Privacy policy', href: '/privacy', external: false },
       ],
     },
     {
-      title: 'Product',
+      title: 'Community',
       links: [
-        { label: 'Log in', href: '/login', external: false },
-        { label: 'Sign up', href: '/register', external: false },
-        { label: 'Pricing', href: '/pricing', external: false },
-      ],
-    },
-    {
-      title: 'Content',
-      links: [
-        { label: 'Templates', href: '#', external: false },
-        { label: 'Blog', href: '/blog', external: false },
-        { label: 'Changelog', href: '#', external: false },
-      ],
-    },
-    {
-      title: 'Social',
-      links: [
-        { label: 'LinkedIn', href: 'https://www.linkedin.com/company/agentwork', external: true },
-        { label: 'X (formerly Twitter)', href: 'https://x.com/getagentwork', external: true },
+        { label: 'GitHub Repository', href: 'https://github.com/faizjamadar18/DocsChat', external: true },
+        { label: 'Features Overview', href: '#features', external: false },
       ],
     },
   ];
@@ -49,9 +49,9 @@ export default function Footer() {
             <div className="flex flex-col gap-4 max-w-sm">
               <AgentworkLogo className="text-[#21201c]" />
               <div className="flex flex-col gap-1 text-xs text-[#8d8d86] leading-relaxed">
-                <p className="font-medium text-[#21201c]">FermAI ApS</p>
-                <p>Copenhagen, Denmark</p>
-                <p>© {new Date().getFullYear()} Agentwork. All rights reserved.</p>
+                <p className="font-medium text-[#21201c]">DocsChat</p>
+                <p>RAG-powered AI workspace for documents, repositories, and notes.</p>
+                <p>© {new Date().getFullYear()} DocsChat. All rights reserved.</p>
               </div>
             </div>
 
@@ -96,7 +96,7 @@ export default function Footer() {
           <div className="relative w-full aspect-1201/177 max-h-44">
             <Image
               src="/images/footer-wordmark.svg"
-              alt="Agentwork"
+              alt="DocsChat"
               fill
               className="object-contain object-bottom opacity-90 select-none pointer-events-none"
             />

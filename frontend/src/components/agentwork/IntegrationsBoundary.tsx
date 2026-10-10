@@ -42,12 +42,12 @@ export default function IntegrationsBoundary() {
         {/* Headline & Description */}
         <div className="flex max-w-xl flex-col gap-3">
           <h2 className="text-2xl md:text-3xl font-medium leading-[1.3] tracking-[-0.03em] text-[#21201c]">
-            Shared knowledge for the team.
+            Workspace tenancy for teams.
             <br />
-            <span className="text-[#63635e]">Private knowledge that stays yours.</span>
+            <span className="text-[#63635e]">Granular scope control that stays yours.</span>
           </h2>
           <p className="text-sm md:text-base leading-relaxed tracking-[-0.005em] text-[#63635e]">
-            Agentwork connects in two layers: shared sources everyone can see, and private ones each employee connects through their own account — private data never surfaces in someone else&apos;s answer. The boundary is enforced in code, not the model&apos;s judgment.
+            DocsChat enforces strict tenant isolation at the database layer: each workspace has its own isolated collection namespace in Qdrant Cloud and MongoDB. Use @ document mentions to restrict queries to individual files whenever you need zero cross-document bleed.
           </p>
         </div>
 

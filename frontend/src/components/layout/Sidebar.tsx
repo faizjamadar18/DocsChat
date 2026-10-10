@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -38,6 +38,26 @@ export default function Sidebar({
   const { threads, deleteThread } = useChatThreads(currentWorkspace?.id, 'universal');
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the profile menu on outside click or Escape.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [userMenuOpen]);
 
   const handleNewChat = () => {
     router.push('/playground');
@@ -51,7 +71,6 @@ export default function Sidebar({
     { label: 'Assets', href: '/assets', icon: Folder },
     { label: 'Connectors', href: '/connectors', icon: Plug2 },
     { label: 'MCP Server', href: '/mcp', icon: Server },
-    { label: 'Settings', href: '/settings', icon: Settings },
   ];
 
   const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'DocsChat HQ');
@@ -62,10 +81,10 @@ export default function Sidebar({
         sidebarCollapsed ? 'lg:-ml-64' : 'lg:ml-0'
       }`}
     >
-      {/* Top section: Workspace header & Navigation */}
+      {/* Top section: fixed header + New Chat, scrollable nav & history */}
       <div className="flex flex-col flex-1 min-h-0">
         {/* Workspace Brand / Header */}
-        <div className="h-14 px-4 flex items-center justify-between">
+        <div className="h-14 px-4 flex items-center justify-between shrink-0">
           <button
             type="button"
             className="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition-opacity text-left w-full cursor-pointer"
@@ -105,8 +124,22 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Navigation list */}
-        <nav className="p-3 space-y-1">
+        {/* New Chat — fixed at top, always visible */}
+        <div className="px-3 pt-1 pb-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleNewChat}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer w-full text-left"
+          >
+            <SquarePen className="w-4 h-4 text-text-secondary shrink-0" />
+            <span>New Chat</span>
+          </button>
+        </div>
+
+        {/* Scrollable middle: navigation + history */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {/* Navigation list */}
+          <nav className="px-3 pb-1 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -136,21 +169,12 @@ export default function Sidebar({
         </nav>
 
         {/* Chats section */}
-        <div className="px-3 pt-3 flex-1 flex flex-col min-h-0">
+        <div className="px-3 pt-3">
           <div className="px-3 py-1 text-xs font-semibold text-text-muted">
             Chats
           </div>
 
-          <button
-            type="button"
-            onClick={handleNewChat}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer w-full text-left"
-          >
-            <SquarePen className="w-4 h-4 text-text-secondary shrink-0" />
-            <span>New Chat</span>
-          </button>
-
-          <div className="mt-1 space-y-0.5 overflow-y-auto flex-1 pr-1">
+          <div className="mt-1 space-y-0.5 pr-1">
             {threads.length === 0 ? (
               <div className="px-3 py-2 text-xs text-text-muted italic">
                 No conversations yet
@@ -201,10 +225,11 @@ export default function Sidebar({
             )}
           </div>
         </div>
+        </div>
       </div>
 
       {/* User profile footer */}
-      <div className="p-3 border-t border-border/80 relative">
+      <div className="p-3 border-t border-border/80 relative" ref={userMenuRef}>
         <div
           onClick={() => setUserMenuOpen(!userMenuOpen)}
           className="flex items-center justify-between p-2 rounded-lg hover:bg-accent-subtle cursor-pointer transition-colors"

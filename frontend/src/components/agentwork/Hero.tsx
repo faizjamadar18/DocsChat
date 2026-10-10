@@ -13,30 +13,28 @@ export default function Hero() {
         {/* Left Column: Heading and Subtitle */}
         <div className="md:col-span-8 flex flex-col gap-4">
           <h1 className="text-[34px] md:text-[50px] font-[550] tracking-[-0.03em] leading-[1.12] text-[#21201c] text-balance">
-            One place to ask,
+            One place to ask, write,
             <br />
-            across every tool
+            and ground your knowledge
           </h1>
           <p className="text-base md:text-[19px] leading-relaxed tracking-[-0.01em] text-[#63635e] max-w-2xl text-pretty">
-            Agentwork connects to the tools your team already uses and answers questions across all of them in plain language with sources you can check. When the answer isn&apos;t written down, it asks the person who knows.
+            DocsChat connects your Google Drive, Notion, GitHub, and PDFs into an intelligent RAG workspace. Ask Ora AI questions grounded in your sources, draft insights in our Studio block editor, or expose your private knowledge base to Claude Desktop via MCP.
           </p>
         </div>
 
         {/* Right Column: Stacked Action Buttons */}
         <div className="flex flex-col gap-2.5 md:col-span-4 md:col-start-9 lg:col-span-3 lg:col-start-10 justify-end">
-          <a
-            href="https://savvycal.com/David-Wind-b585dcf7/agentwork"
-            target="_blank"
-            rel="noreferrer"
-            className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-accent-hover transition-colors shadow-xs"
-          >
-            Book a demo
-          </a>
           <Link
             href="/register"
+            className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-accent-hover transition-colors shadow-xs"
+          >
+            Start for free
+          </Link>
+          <Link
+            href="/playground"
             className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] transition-colors"
           >
-            Create account
+            Try Ora AI
           </Link>
         </div>
       </div>

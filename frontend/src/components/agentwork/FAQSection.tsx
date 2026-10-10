@@ -4,34 +4,34 @@ import React, { useState } from 'react';
 
 const FAQS = [
   {
-    question: 'Which tools does Agentwork connect to?',
+    question: 'Which tools and file formats does DocsChat connect to?',
     answer:
-      'Agentwork connects to Slack, Notion, Google Workspace (Drive, Docs, Sheets, Slides, Gmail, and Calendar), Microsoft 365 (Outlook mail and calendar), Fireflies, GitHub, GitLab, Linear, Atlassian (Jira and Confluence), HubSpot, Attio, Stripe, Shopify, PostHog, Mixpanel, Google Ads, LinkedIn Ads, Granola, Pleo, Numina, Oneleet, n8n, and Semrush. You can also connect AI tools to Agentwork through the Model Context Protocol (MCP). We work on adding new integrations every day.',
+      'DocsChat connects directly to Google Drive, Notion, and GitHub repositories, and supports direct uploads for PDFs, Markdown, and plain text files. You can selectively sync entire folders, specific Notion databases, or individual code repositories.',
   },
   {
-    question: 'What happens when the answer isn’t written down anywhere?',
+    question: 'How does DocsChat ensure accurate, hallucination-free answers?',
     answer:
-      'It doesn’t guess. Agentwork works out who is most likely to know and sends them one short, specific question. Their answer is saved to its memory, so the next person who asks gets it instantly and nobody has to chase it down again.',
+      'DocsChat uses Retrieval-Augmented Generation (RAG) powered by Google’s gemini-embedding-2 and Qdrant Cloud. Ora AI grounds every answer strictly in retrieved context chunks and provides transparent footnote citations ([1], [2]) linking to the exact source passages in an expandable drawer.',
   },
   {
-    question: 'How do I know an answer is correct?',
+    question: 'Can I ask questions about a single file instead of the whole workspace?',
     answer:
-      'Every answer comes with its sources, so you can click through and verify in one step. When two sources contradict each other, Agentwork flags the conflict and resolves it with the right person instead of silently picking one.',
+      'Yes. Simply type @ in the chat input to mention and scope your question to any specific document, repository, or connector. Ora will limit its retrieval context exclusively to that file.',
   },
   {
-    question: 'Will people see answers they’re not supposed to?',
+    question: 'What is DocsChat Studio?',
     answer:
-      'No. Agentwork respects the same access rules your tools already enforce. People only ever get answers drawn from sources they already have permission to see, so nothing leaks across teams.',
+      'Studio is our Notion-style block editor featuring slash commands (/), task lists, tables, and formatted callouts. An integrated Ora Co-Writer sits alongside your document to help synthesize research, outline ideas, and draft sections in real time.',
   },
   {
-    question: 'Does our company’s data live on your servers?',
+    question: 'How does the Model Context Protocol (MCP) integration work?',
     answer:
-      'Your data is encrypted in transit and is only ever processed to answer your team’s questions, never to train shared models. Integration credentials are never stored in plaintext. We’re working toward end-to-end encryption for data at rest. No Agentwork employee can browse or read your content, and you can disconnect any source or delete everything at any time.',
+      'DocsChat includes a native MCP server endpoint. You can copy your workspace MCP URL and connect external desktop AI assistants like Anthropic Claude Desktop or Cursor IDE to query your indexed knowledge base directly from your favorite tools.',
   },
   {
-    question: 'Who are your sub-processors?',
+    question: 'Is my organization’s data kept private and secure?',
     answer:
-      'We deliberately keep our supply chain small and exclusively EU-based. Every sub-processor we rely on operates within the EU, so your data never leaves European infrastructure. A current list is available in our DPA on request.',
+      'Yes. Your data is isolated per workspace with multi-tenant MongoDB separation and dedicated Qdrant vector namespaces. Authentication is protected by Google OAuth and session guards. Your documents are never used to train external foundation models.',
   },
 ];
 

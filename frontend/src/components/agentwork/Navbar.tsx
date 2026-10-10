@@ -5,16 +5,16 @@ import Link from 'next/link';
 import { AgentworkLogo } from './Icons';
 
 const SOLUTIONS = [
-  { label: 'Consulting', description: 'Client context, past work, and expertise on every engagement', href: '#' },
-  { label: 'Agencies', description: 'Briefs, past campaigns, and client context on every account', href: '#' },
-  { label: 'Accounting', description: 'Client files, past year-ends, and the firm’s approach in one place', href: '#' },
-  { label: 'Software', description: 'Answers about your product, customers, and decisions for every team', href: '#' },
+  { label: 'Research & Playground', description: 'Ask Ora complex questions across connected documents with transparent citations', href: '/playground' },
+  { label: 'Studio Canvas', description: 'Draft, summarize, and edit in a Notion-style block canvas with AI co-writing', href: '/studio' },
+  { label: 'Cloud Connectors', description: 'Sync Google Drive, Notion, GitHub repositories, and uploaded PDFs', href: '/connectors' },
+  { label: 'MCP for Agents', description: 'Connect Claude Desktop, Cursor, and custom tools to your private knowledge base', href: '/mcp' },
 ];
 
 const NAV_LINKS = [
-  { label: 'Pricing', href: '/pricing', external: false },
-  { label: 'Blog', href: '/blog', external: false },
-  { label: 'Trust', href: 'https://trust.agentwork.com', external: true },
+  { label: 'Playground', href: '/playground', external: false },
+  { label: 'Studio', href: '/studio', external: false },
+  { label: 'Connectors', href: '/connectors', external: false },
   { label: 'Log in', href: '/login', external: false },
 ];
 
@@ -100,23 +100,21 @@ export default function Navbar() {
   const renderActionButtons = (size: 'default' | 'sm' = 'default') => (
     <div className="flex items-center gap-2">
       <Link
-        href="/register"
+        href="/login"
         className={`inline-flex items-center justify-center font-medium rounded-lg border border-[#e2e1de] bg-[#ffffff] text-[#21201c] hover:bg-[#f9f9f8] transition-colors ${
           size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
         }`}
       >
-        Create account
+        Log in
       </Link>
-      <a
-        href="https://savvycal.com/David-Wind-b585dcf7/agentwork"
-        target="_blank"
-        rel="noreferrer"
+      <Link
+        href="/register"
         className={`inline-flex items-center justify-center font-medium rounded-lg bg-[#21201c] text-[#ffffff] hover:bg-accent-hover transition-colors ${
           size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
         }`}
       >
-        Book a demo
-      </a>
+        Get Started Free
+      </Link>
     </div>
   );
 
@@ -125,7 +123,7 @@ export default function Navbar() {
       {/* Top Main Navigation */}
       <nav aria-label="Main navigation" className="w-full py-10 px-6">
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
-          <Link href="/" aria-label="Agentwork home" className="text-[#21201c] hover:opacity-90">
+          <Link href="/" aria-label="DocsChat home" className="text-[#21201c] hover:opacity-90">
             <AgentworkLogo />
           </Link>
 
@@ -157,7 +155,7 @@ export default function Navbar() {
         }`}
       >
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
-          <Link href="/" aria-label="Agentwork home" className="text-[#21201c]">
+          <Link href="/" aria-label="DocsChat home" className="text-[#21201c]">
             <AgentworkLogo />
           </Link>
           <div className="hidden md:flex items-center gap-8">

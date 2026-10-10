@@ -25,195 +25,185 @@ const EXAMPLES: Example[] = [
   {
     id: 'resolve-contradictions',
     number: '01',
-    title: 'Resolve contradictions',
-    userMessage: 'What is our SLA response time for Enterprise customers?',
-    actionsCount: 5,
+    title: 'Cross-source synthesis',
+    userMessage: 'What are our vector indexing specs and database migration requirements across Notion and GitHub?',
+    actionsCount: 3,
     reasoningSteps: [
-      'Searching connected sources for Enterprise SLA response time…',
-      'Found Support Handbook (Notion): 4-hour first response for Enterprise tier',
-      'Found MSA templates (Google Drive): 2-hour first response clause',
-      'Read the Linear SLA implementation issue: currently specifies a 4-hour first response',
-      'Sources conflict — drafting message to Martin Olsen for clarification',
+      'Querying connected workspace sources for Qdrant indexing and migration specs…',
+      'Retrieved Qdrant Migration RFC from Notion: 768-dim embeddings with gemini-embedding-2',
+      'Retrieved backend/app/vector_store.py from GitHub: payload indexing on workspace_id',
+      'Synthesizing verified specifications with citation anchors',
     ],
-    assistantText: 'I found conflicting information across our systems. The Support Handbook in Notion states 4 hours [1], but the recently updated MSA templates in Google Drive say 2 hours [2]. The SLA implementation issue in Linear still specifies a 4-hour first response [3].\n\nI\'ll reach out to Martin Olsen (Head of Support) to clarify which is correct.',
+    assistantText: 'According to the Qdrant Migration RFC in Notion [1], all vector embeddings are standardized to 768 dimensions using Google\'s gemini-embedding-2 model.\n\nIn the GitHub backend repository [2], payload schema indexes are configured on workspace_id to guarantee tenant isolation, and daily snapshot policies are documented in the Architecture Spec [3].',
     sources: [
-      { index: 1, title: 'Support Handbook', provider: 'notion' },
-      { index: 2, title: 'MSA templates', provider: 'google-drive' },
-      { index: 3, title: 'SLA implementation issue', provider: 'linear' },
-      { index: 4, title: 'Support email thread', provider: 'gmail' },
+      { index: 1, title: 'Qdrant Migration RFC', provider: 'notion' },
+      { index: 2, title: 'backend/app/vector_store.py', provider: 'github' },
+      { index: 3, title: 'Architecture_Spec.pdf', provider: 'google-drive' },
     ],
   },
   {
-    id: 'understand-company-policies',
+    id: 'scoped-mention',
     number: '02',
-    title: 'Understand company policies',
-    userMessage: 'How many days of parental leave do we offer?',
-    actionsCount: 4,
-    reasoningSteps: [
-      'Searching Google Drive for parental leave policy…',
-      'Found 16 weeks primary caregiver / 8 weeks secondary caregiver',
-      'Cross-referencing employee handbook family leave section',
-      'Verified policy applies to US full-time employees',
-    ],
-    assistantText: 'Primary caregivers receive 16 weeks of paid parental leave [1]. Secondary caregivers receive 8 weeks [1].\n\nThis matches what is listed in the parental leave policy in Google Drive for US employees and the employee handbook section on family leave [2].',
-    sources: [
-      { index: 1, title: 'Parental leave policy', provider: 'google-drive' },
-      { index: 2, title: 'Employee Handbook', provider: 'notion' },
-    ],
-  },
-  {
-    id: 'find-the-owner',
-    number: '03',
-    title: 'Find the owner',
-    userMessage: 'Who owns the billing integration?',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Checking code ownership for /billing in GitHub…',
-      'Cross-referencing with Notion team directory',
-      'Confirmed last PR merged by Elena Rostov',
-    ],
-    assistantText: 'Elena Rostov (Staff Engineer, Core Platform) owns the billing integration [1].\n\nShe merged the latest Stripe webhook update and is listed as the CODEOWNER for `/services/billing` in GitHub [2]. For urgent billing issues, the team monitors #platform-eng [3].',
-    sources: [
-      { index: 1, title: 'GitHub CODEOWNERS', provider: 'github' },
-      { index: 2, title: 'Team Directory', provider: 'notion' },
-      { index: 3, title: '#platform-eng', provider: 'slack' },
-    ],
-  },
-  {
-    id: 'catch-up-on-decisions',
-    number: '04',
-    title: 'Catch up on decisions',
-    userMessage: 'Summarize the latest QBR',
-    actionsCount: 4,
-    reasoningSteps: [
-      'Finding Q3 QBR slide deck in Google Drive…',
-      'Extracting key metrics and executive summaries',
-      'Reviewing QBR action items in Notion',
-    ],
-    assistantText: 'Here is the executive summary from the Q3 QBR [1]:\n\n• ARR reached $14.2M (+28% YoY), driven by Enterprise expansion.\n• Net Revenue Retention stood at 118%.\n• Key priorities for Q4: launch SOC 2 certification and roll out the EU cloud deployment [2].',
-    sources: [
-      { index: 1, title: 'Q3 Executive Deck', provider: 'google-slides' },
-      { index: 2, title: 'Q4 Strategic Goals', provider: 'notion' },
-    ],
-  },
-  {
-    id: 'semantic-search',
-    number: '05',
-    title: 'Semantic search',
-    userMessage: 'Find everything we have on SSO for enterprise customers',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Querying Notion knowledge base for SAML and SSO guides…',
-      'Searching Google Drive for customer-facing documentation',
-      'Reading auth-service repository documentation',
-    ],
-    assistantText: 'I found three relevant documents ranked by freshness:\n\n1. Enterprise SSO setup guide (Notion) — step-by-step SAML configuration [1]\n2. SSO FAQ for sales (Google Drive) — customer answers [2]\n3. auth-service README (GitHub) — technical details [3]\n\nThe Notion guide is the most up to date.',
-    sources: [
-      { index: 1, title: 'Enterprise SSO Guide', provider: 'notion' },
-      { index: 2, title: 'SSO FAQ for Sales', provider: 'google-drive' },
-      { index: 3, title: 'auth-service README', provider: 'github' },
-    ],
-  },
-  {
-    id: 'onboard-faster',
-    number: '06',
-    title: 'Onboard faster',
-    userMessage: 'What should I do in my first week as a new engineer?',
-    actionsCount: 4,
-    reasoningSteps: [
-      'Opening engineering onboarding hub in Notion…',
-      'Building first-week checklist from onboarding tasks',
-      'Pulling dev environment setup doc from Google Docs',
-    ],
-    assistantText: 'Here is your first-week checklist from our onboarding hub [1]:\n\n• Complete dev environment setup (Day 1–2) [2]\n• Schedule intro 1:1s with your manager and onboarding buddy\n• Read the architecture overview and deploy a test change to staging\n• Join #eng-onboarding and introduce yourself',
-    sources: [
-      { index: 1, title: 'Engineering Onboarding', provider: 'notion' },
-      { index: 2, title: 'Dev Setup Guide', provider: 'google-docs' },
-    ],
-  },
-  {
-    id: 'reconcile-definitions',
-    number: '07',
-    title: 'Reconcile definitions',
-    userMessage: "What's the difference between ARR and MRR in our board deck?",
-    actionsCount: 3,
-    reasoningSteps: [
-      'Looking up ARR and MRR definitions in Finance glossary…',
-      'Cross-checking usage in latest board deck slides',
-    ],
-    assistantText: 'Per our Finance glossary [1] and the latest board deck [2]:\n\n• MRR — monthly recurring revenue; annual contracts are divided by 12\n• ARR — annualized run rate; MRR × 12, excluding one-time fees\n\nThe board deck uses ARR for growth targets and MRR for operational dashboards.',
-    sources: [
-      { index: 1, title: 'Finance glossary', provider: 'notion' },
-      { index: 2, title: 'Q3 board deck', provider: 'google-slides' },
-    ],
-  },
-  {
-    id: 'surface-tacit-knowledge',
-    number: '08',
-    title: 'Surface tacit knowledge',
-    userMessage: 'Why did we deprecate the legacy auth flow?',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Searching for legacy auth deprecation context…',
-      'Reading decision log entry in Notion',
-      'Reviewing ADR-042 on GitHub',
-    ],
-    assistantText: 'The legacy auth flow was deprecated in March for three reasons [1][2]:\n\n• Security audit flagged session handling gaps\n• Maintenance cost exceeded 20% of platform eng capacity\n• OAuth 2.1 migration was already planned for H2\n\nThe decision was recorded in #platform-architecture and documented in ADR-042 [2].',
-    sources: [
-      { index: 1, title: 'Decision Log', provider: 'notion' },
-      { index: 2, title: 'ADR-042', provider: 'github' },
-    ],
-  },
-  {
-    id: 'track-work-across-tools',
-    number: '09',
-    title: 'Track work across tools',
-    userMessage: "What's the status of the mobile redesign?",
-    actionsCount: 3,
-    reasoningSteps: [
-      'Checking mobile redesign epic progress in Linear…',
-      'Epic is 62% complete with 14 of 23 issues done',
-      'Found updated design spec in Google Drive from yesterday',
-    ],
-    assistantText: 'The mobile redesign epic is 62% complete in Linear [1]. The latest design spec was updated yesterday [2].\n\nDesign flagged a blocker in #mobile-redesign: navigation patterns need sign-off from Accessibility before engineering can proceed [3].',
-    sources: [
-      { index: 1, title: 'Linear Epic', provider: 'linear' },
-      { index: 2, title: 'Design Spec', provider: 'google-drive' },
-      { index: 3, title: '#mobile-redesign', provider: 'slack' },
-    ],
-  },
-  {
-    id: 'prep-for-customer-call',
-    number: '10',
-    title: 'Prep for a customer call',
-    userMessage: 'Brief me on Acme Corp before tomorrow\'s call',
-    actionsCount: 4,
-    reasoningSteps: [
-      'Pulling Acme Corp account record from HubSpot…',
-      'Reviewing open customer issues in Linear',
-      'Scanning recent email thread for key updates',
-    ],
-    assistantText: 'Acme Corp — Enterprise account, $240k ARR [1]\n\n• Last contact: QBR three weeks ago; champion is Dana Reeves (VP Ops)\n• Open issues: 2 issues in Linear — SSO provisioning delay (P2), export timeout (P3) [2]\n• Feature requests: Bulk user import, custom reporting dashboard',
-    sources: [
-      { index: 1, title: 'HubSpot Account', provider: 'hubspot' },
-      { index: 2, title: 'Linear Issues', provider: 'linear' },
-      { index: 3, title: 'QBR Thread', provider: 'gmail' },
-    ],
-  },
-  {
-    id: 'find-the-latest-version',
-    number: '11',
-    title: 'Find the latest version',
-    userMessage: 'Which brand guidelines doc is current?',
+    title: 'Scoped @ document queries',
+    userMessage: '@Q3_Financial_Audit.pdf What was our cloud infrastructure expenditure in Q3?',
     actionsCount: 2,
     reasoningSteps: [
-      'Searching Google Drive for brand guidelines documents…',
-      'Identified Brand Guidelines v3.2 as latest (updated Oct 12)',
+      'Scoping retrieval strictly to attached scope: Q3_Financial_Audit.pdf',
+      'Extracting financial breakdown table from page 14',
+      'Verifying line items for Qdrant Cloud, Render, and Vercel hosting',
     ],
-    assistantText: 'Brand Guidelines v3.2 in Google Drive is the current canonical version [1]. It was last updated October 12 and linked from the design system Notion page [2].\n\nOlder v2 copies in the shared Brand folder are archived and deprecated.',
+    assistantText: 'Based strictly on Q3_Financial_Audit.pdf [1]:\n\n• Total cloud infrastructure expenditure was $48,250 in Q3.\n• Primary line items: Vector search infrastructure on Qdrant Cloud ($18,400) and GPU inference workloads ($22,600).\n• Overall infrastructure costs decreased 12% quarter-over-quarter following index payload optimizations.',
     sources: [
-      { index: 1, title: 'Brand Guidelines v3.2', provider: 'google-drive' },
-      { index: 2, title: 'Design System Hub', provider: 'notion' },
+      { index: 1, title: 'Q3_Financial_Audit.pdf (p. 14)', provider: 'google-docs' },
+    ],
+  },
+  {
+    id: 'codebase-exploration',
+    number: '03',
+    title: 'GitHub codebase exploration',
+    userMessage: 'How are authentication tokens handled and refreshed in our FastAPI backend?',
+    actionsCount: 3,
+    reasoningSteps: [
+      'Searching GitHub repository for auth middleware and JWT lifecycle…',
+      'Inspected backend/app/auth/jwt.py and auth router endpoints',
+      'Cross-referenced OAuth token exchange for Google, Notion, and GitHub',
+    ],
+    assistantText: 'In our GitHub repository [1]:\n\n• JWT access tokens expire after 60 minutes and are signed with HS256 [1].\n• Connector tokens (Google, Notion, GitHub) are encrypted at rest with AES-256 and stored in the workspaces collection [2].\n• The refresh endpoint verifies session status before issuing renewed bearer tokens [1].',
+    sources: [
+      { index: 1, title: 'backend/app/auth/jwt.py', provider: 'github' },
+      { index: 2, title: 'backend/app/models/connectors.py', provider: 'github' },
+    ],
+  },
+  {
+    id: 'notion-knowledge',
+    number: '04',
+    title: 'Notion knowledge retrieval',
+    userMessage: 'What is our team policy on production database migrations?',
+    actionsCount: 3,
+    reasoningSteps: [
+      'Accessing synced Notion workspace database…',
+      'Found Engineering Playbook > Database Migrations guideline',
+      'Confirmed staging dry-run requirements and rollback plans',
+    ],
+    assistantText: 'Per the Engineering Playbook in Notion [1]:\n\n• All database migrations require an automated dry-run on staging before production execution.\n• Migrations must include an idempotent rollback script tested in CI [1].\n• Zero-downtime dual-writes are mandatory for collection renames or vector re-indexing [2].',
+    sources: [
+      { index: 1, title: 'Engineering Playbook', provider: 'notion' },
+      { index: 2, title: 'RFC: Zero-Downtime Schema Updates', provider: 'notion' },
+    ],
+  },
+  {
+    id: 'drive-deep-search',
+    number: '05',
+    title: 'Google Drive deep search',
+    userMessage: 'Find the latest enterprise security review deck in Google Drive',
+    actionsCount: 3,
+    reasoningSteps: [
+      'Scanning connected Google Drive folders…',
+      'Identified Enterprise Security Review 2026.gslides updated last week',
+      'Verified SOC 2 and vector tenancy compliance slides',
+    ],
+    assistantText: 'The latest presentation is Enterprise Security Review 2026 in Google Drive [1].\n\nKey highlights:\n• Multi-tenant collection isolation in Qdrant Cloud [1]\n• Google OAuth 2.0 authentication architecture [2]\n• Enterprise zero-retention compliance policies for Google GenAI and Groq LLM queries',
+    sources: [
+      { index: 1, title: 'Enterprise Security Review 2026', provider: 'google-slides' },
+      { index: 2, title: 'Security Architecture Diagram', provider: 'google-drive' },
+    ],
+  },
+  {
+    id: 'studio-co-writer',
+    number: '06',
+    title: 'Studio AI co-writing',
+    userMessage: 'Draft a technical proposal for our new MCP connector based on our design docs',
+    actionsCount: 4,
+    reasoningSteps: [
+      'Reading MCP protocol specifications from Notion…',
+      'Extracting SSE endpoint requirements and tool schemas',
+      'Drafting structured proposal formatted for Studio block editor',
+    ],
+    assistantText: 'Here is an outline drafted directly for Studio Canvas [1]:\n\n# Model Context Protocol (MCP) Integration\n## 1. Overview\nEnable desktop AI clients (Claude Desktop, Cursor) to discover and query DocsChat workspace knowledge.\n\n## 2. Protocol Details\n• SSE transport running on `/api/mcp/sse`\n• Workspace tool `search_knowledge_base` with hybrid semantic scoring [2].',
+    sources: [
+      { index: 1, title: 'Studio Canvas: MCP RFC', provider: 'google-docs' },
+      { index: 2, title: 'MCP Specification Spec', provider: 'notion' },
+    ],
+  },
+  {
+    id: 'pdf-analysis',
+    number: '07',
+    title: 'PDF & research paper analysis',
+    userMessage: 'Summarize the chunking methodology and similarity metrics used in the benchmark paper',
+    actionsCount: 3,
+    reasoningSteps: [
+      'Analyzing uploaded document benchmark_eval_2026.pdf…',
+      'Extracted Section 3.2: Chunking strategy and cosine similarity evaluation',
+      'Cross-checked benchmark results against baseline RAG pipelines',
+    ],
+    assistantText: 'From benchmark_eval_2026.pdf [1]:\n\n• The benchmark employs a recursive character chunker with 800-token chunks and 150-token overlap [1].\n• Cosine similarity over 768-dimensional embeddings yielded 94.2% Mean Reciprocal Rank (MRR).\n• Dynamic query expansion improved multi-document recall by 18.5% [2].',
+    sources: [
+      { index: 1, title: 'benchmark_eval_2026.pdf (p. 6)', provider: 'google-docs' },
+      { index: 2, title: 'Benchmark Appendix B', provider: 'google-docs' },
+    ],
+  },
+  {
+    id: 'voice-agent',
+    number: '08',
+    title: 'Real-time voice agent',
+    userMessage: 'Can you give me a 30-second audio briefing on today\'s deployment plan?',
+    actionsCount: 2,
+    reasoningSteps: [
+      'Pulling daily deployment manifest from GitHub and Notion…',
+      'Synthesizing concise, voice-optimized verbal briefing',
+      'Streaming synthesized audio via Vapi AI integration',
+    ],
+    assistantText: 'Today\'s deployment is scheduled for 4:00 PM UTC [1]. It includes the Qdrant Cloud collection payload index migration and the new selective repository picker for GitHub connectors [2]. Staging smoke tests passed with zero errors.',
+    sources: [
+      { index: 1, title: 'Deployment Manifest', provider: 'github' },
+      { index: 2, title: 'Release Notes v2.4', provider: 'notion' },
+    ],
+  },
+  {
+    id: 'mcp-integration',
+    number: '09',
+    title: 'Model Context Protocol (MCP)',
+    userMessage: 'How do I connect Claude Desktop to my DocsChat workspace?',
+    actionsCount: 3,
+    reasoningSteps: [
+      'Loading MCP server settings and workspace endpoint configuration…',
+      'Generating claude_desktop_config.json configuration snippet',
+    ],
+    assistantText: 'To connect Claude Desktop [1]:\n\n1. Open your DocsChat workspace settings and copy your unique MCP Server URL [1].\n2. In `claude_desktop_config.json`, add your DocsChat MCP server under `mcpServers`.\n3. Restart Claude Desktop. Claude can now search and cite your DocsChat documents in real time [2].',
+    sources: [
+      { index: 1, title: 'MCP Setup Guide', provider: 'notion' },
+      { index: 2, title: 'McpConnectModal.tsx', provider: 'github' },
+    ],
+  },
+  {
+    id: 'transparent-citations',
+    number: '10',
+    title: 'Transparent citation audit',
+    userMessage: 'Where did the claim about SOC 2 certification come from?',
+    actionsCount: 2,
+    reasoningSteps: [
+      'Locating cited passage in workspace vector index…',
+      'Extracted exact chunk text, page offset, and similarity score (0.91)',
+    ],
+    assistantText: 'That statement is directly cited from Enterprise Security Review 2026 (Slide 12) [1]:\n\n"DocsChat guarantees data isolation per workspace in Qdrant Cloud and utilizes SOC 2 Type II certified cloud infrastructure."\n\nYou can click citation [1] to view the raw chunk excerpt in the Source Drawer.',
+    sources: [
+      { index: 1, title: 'Enterprise Security Review (Slide 12)', provider: 'google-slides' },
+      { index: 2, title: 'Source Drawer: Chunk #1042', provider: 'google-drive' },
+    ],
+  },
+  {
+    id: 'multi-model-reasoning',
+    number: '11',
+    title: 'Multi-model intelligence',
+    userMessage: 'Compare Gemini 2.5 Flash and Groq Llama 3.3 for workspace queries',
+    actionsCount: 2,
+    reasoningSteps: [
+      'Retrieving model capability specifications and response latency metrics…',
+    ],
+    assistantText: 'In DocsChat, you can switch models anytime from the top bar [1]:\n\n• Google Gemini 2.5 Flash: Optimized for deep document grounding, complex multimodal synthesis, and large context windows.\n• Groq Llama 3.3 70B: Delivers ultra-low latency inference (sub-200ms TTFT) for lightning-fast iterative conversations [2].',
+    sources: [
+      { index: 1, title: 'Model Configuration Spec', provider: 'notion' },
+      { index: 2, title: 'backend/app/llm_router.py', provider: 'github' },
     ],
   },
 ];
@@ -264,9 +254,9 @@ export default function UseCases() {
         <div className="flex flex-col md:col-span-4 gap-6">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c]">
-              Reliable results.
+              Verifiable answers.
               <br />
-              <span className="text-[#63635e]">For everything.</span>
+              <span className="text-[#63635e]">Grounded in your content.</span>
             </h2>
           </div>
 
@@ -333,9 +323,9 @@ export default function UseCases() {
               </div>
               <div className="flex flex-col gap-3 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#63635e]">Assistant</span>
+                  <span className="text-xs font-semibold text-[#63635e]">Ora AI</span>
                   <span className="text-xs text-[#8d8d86] font-medium bg-[#f9f9f8] px-2 py-0.5 rounded border border-[#e2e1de]">
-                    Completed {activeExample.actionsCount} actions
+                    Synthesized from {activeExample.sources.length} sources
                   </span>
                 </div>
 

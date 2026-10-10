@@ -16,7 +16,7 @@ export function AgentworkLogo({ className = 'h-5 w-auto', showName = true }: { c
       </svg>
       {showName && (
         <span className="font-semibold text-[17px] tracking-[-0.03em] leading-none text-current">
-          agentwork
+          DocsChat
         </span>
       )}
     </div>

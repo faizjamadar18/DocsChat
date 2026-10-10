@@ -32,13 +32,13 @@ export default function AgentworkForAgents() {
   return (
     <section className="flex flex-col items-center px-6 py-16 md:py-24">
       <div className="flex w-full max-w-300 flex-col gap-10">
-        {/* Header (Badge removed as requested) */}
+        {/* Header */}
         <div className="flex flex-col items-start gap-3">
           <h2 className="text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c]">
-            Agentwork for agents
+            DocsChat for AI Agents &amp; MCP
           </h2>
           <p className="text-sm md:text-base leading-normal text-[#63635e] max-w-xl">
-            Leverage Agentwork&apos;s MCP and skills to gain human-level verification on your work. Hosted Memory MCP with API-key auth.
+            Connect Claude Desktop, Cursor IDE, ChatGPT, and custom AI agents directly to your DocsChat workspace using our built-in Model Context Protocol (MCP) server. Your favorite tools can now query your company documents with zero extra setup.
           </p>
         </div>
 

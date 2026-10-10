@@ -18,23 +18,21 @@ export default function CTABanner() {
 
         <div className="relative z-10 flex flex-col items-center gap-6 max-w-xl">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] leading-tight text-[#21201c] text-balance">
-            Get company-wide clarity
+            Turn your documents into living intelligence
           </h2>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-            <a
-              href="https://savvycal.com/David-Wind-b585dcf7/agentwork"
-              target="_blank"
-              rel="noreferrer"
-              className="w-full sm:w-44 py-3 px-6 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-accent-hover transition-colors shadow-xs"
+            <Link
+              href="/playground"
+              className="w-full sm:w-44 py-3 px-6 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-accent-hover transition-colors shadow-xs inline-flex items-center justify-center"
             >
-              Book a demo
-            </a>
+              Try Ora AI
+            </Link>
             <Link
               href="/register"
-              className="w-full sm:w-44 py-3 px-6 rounded-lg bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] transition-colors"
+              className="w-full sm:w-44 py-3 px-6 rounded-lg bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] transition-colors inline-flex items-center justify-center"
             >
-              Create account
+              Create free account
             </Link>
           </div>
         </div>

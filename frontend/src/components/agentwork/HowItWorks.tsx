@@ -21,7 +21,7 @@ import {
 
 export default function HowItWorks() {
   const [typedText, setTypedText] = useState('');
-  const fullText = "When's the summer party?";
+  const fullText = "Compare our Notion architecture spec with the GitHub backend implementation";
 
   useEffect(() => {
     let index = 0;
@@ -78,15 +78,15 @@ export default function HowItWorks() {
         {/* Header Lines */}
         <div className="flex flex-col gap-1">
           <div className="text-xl md:text-2xl font-medium tracking-[-0.02em] text-[#63635e] flex items-baseline gap-2">
-            <span>Connect your tools</span>
+            <span>Connect your tools & documents</span>
             <sup className="text-xs font-mono text-[#8d8d86]">01</sup>
           </div>
           <div className="text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c] flex items-baseline gap-2">
-            <span>Ask questions in plain language</span>
+            <span>Ask Ora AI with source citations</span>
             <sup className="text-xs font-mono text-[#ff6a00]">02</sup>
           </div>
           <div className="text-xl md:text-2xl font-medium tracking-[-0.02em] text-[#63635e] flex items-baseline gap-2">
-            <span>Let Agentwork fill in the gaps</span>
+            <span>Synthesize, co-write, and draft in Studio</span>
             <sup className="text-xs font-mono text-[#8d8d86]">03</sup>
           </div>
         </div>
@@ -112,9 +112,9 @@ export default function HowItWorks() {
 
             <div className="flex flex-col gap-2">
               <span className="text-xs font-mono font-semibold text-[#8d8d86]">01</span>
-              <h3 className="text-lg font-semibold text-[#21201c]">Integrate</h3>
+              <h3 className="text-lg font-semibold text-[#21201c]">Connect & Ingest</h3>
               <p className="text-sm leading-relaxed text-[#63635e]">
-                Plug Agentwork into the systems where your work lives. It connects every tool and turns scattered information into one place your company can draw from.
+                Sync Google Drive, Notion, and GitHub repositories, or drag &amp; drop PDFs and Markdown files. DocsChat automatically chunks and indexes your content into Qdrant Cloud using Google&apos;s text embeddings.
               </p>
             </div>
           </div>
@@ -139,9 +139,9 @@ export default function HowItWorks() {
 
             <div className="flex flex-col gap-2">
               <span className="text-xs font-mono font-semibold text-[#ff6a00]">02</span>
-              <h3 className="text-lg font-semibold text-[#21201c]">Ask</h3>
+              <h3 className="text-lg font-semibold text-[#21201c]">Query with Ora AI</h3>
               <p className="text-sm leading-relaxed text-[#63635e]">
-                Anyone can ask a question like they&apos;d ask a coworker and get a clear, trustworthy answer in seconds. No digging, no waiting on the person who knows.
+                Ask questions across your entire workspace or scope your queries using @ document mentions. Get instant, verifiable responses with exact citations powered by Gemini 2.5 Flash and Groq Llama 3.3.
               </p>
             </div>
           </div>
@@ -154,20 +154,20 @@ export default function HowItWorks() {
                 <svg className="size-4 text-[#ff6a00] animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                 </svg>
-                <span className="text-xs font-medium text-[#21201c]">Updating 3 sources</span>
+                <span className="text-xs font-medium text-[#21201c]">Indexed in Qdrant Cloud</span>
                 <div className="flex items-center gap-1.5 ml-1">
                   <NotionIcon className="size-3.5 text-[#21201c]" />
-                  <LinearIcon className="size-3.5 text-[#5E6AD2]" />
-                  <HubSpotIcon className="size-3.5 text-[#ff7a59]" />
+                  <GitHubIcon className="size-3.5 text-[#21201c]" />
+                  <GoogleDriveIcon className="size-3.5" />
                 </div>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
               <span className="text-xs font-mono font-semibold text-[#8d8d86]">03</span>
-              <h3 className="text-lg font-semibold text-[#21201c]">Improves</h3>
+              <h3 className="text-lg font-semibold text-[#21201c]">Draft in Studio &amp; MCP</h3>
               <p className="text-sm leading-relaxed text-[#63635e]">
-                When the answer isn&apos;t there yet, Agentwork spots the gap, asks whoever knows, and saves it for next time. Your knowledge gets sharper every time.
+                Turn synthesized insights into structured documentation inside our Notion-style block editor with Ora Co-Writer, or connect external desktop tools like Claude Desktop via our native MCP server.
               </p>
             </div>
           </div>
