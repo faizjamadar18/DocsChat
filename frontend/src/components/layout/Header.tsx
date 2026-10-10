@@ -32,6 +32,16 @@ export default function Header({
       parts.push({ label: 'Assets', href: '/assets' });
     } else if (pathname?.startsWith('/connectors')) {
       parts.push({ label: 'Connectors', href: '/connectors' });
+      const sub = pathname.split('/')[2];
+      if (sub) {
+        const names: Record<string, string> = {
+          notion: 'Notion',
+          drive: 'Google Drive',
+          github: 'GitHub',
+        };
+        const label = names[sub.toLowerCase()] || (sub.charAt(0).toUpperCase() + sub.slice(1));
+        parts.push({ label, href: pathname });
+      }
     } else if (pathname?.startsWith('/mcp')) {
       parts.push({ label: 'MCP Server', href: '/mcp' });
     } else if (pathname?.startsWith('/settings')) {

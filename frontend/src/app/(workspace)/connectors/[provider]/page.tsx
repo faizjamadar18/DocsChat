@@ -277,7 +277,7 @@ export default function ConnectorDetailPage() {
 
   if (!meta) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-4 animate-fade-in">
+      <div className="w-full px-4 sm:px-6 py-8 space-y-4 animate-fade-in">
         <BackLink />
         <p className="text-sm text-text-secondary">Unknown connector.</p>
       </div>
@@ -300,7 +300,7 @@ export default function ConnectorDetailPage() {
   const connected = provider === 'notion' ? !!status?.notion.connected : false;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8 space-y-8 animate-fade-in">
+    <div className="w-full px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
       <BackLink />
 
       {/* Header: big brand mark + name, like the reference */}
@@ -980,7 +980,7 @@ function BackLink() {
       className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
     >
       <ArrowLeft className="w-3.5 h-3.5" />
-      Connections
+      Connectors
     </Link>
   );
 }
