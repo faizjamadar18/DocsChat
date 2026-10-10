@@ -415,16 +415,8 @@ export function FilenameIcon({
   const lower = raw.toLowerCase();
   const type = (sourceType || '').toLowerCase();
 
-  // 1. Explicit source_type checks
-  if (type === 'github') return <GitHubIcon className={className} />;
-  if (type === 'notion') return <NotionIcon className={className} />;
-  if (type === 'drive' || type === 'googledrive') return <GoogleDriveIcon className={className} />;
-  if (type === 'slack') return <SlackIcon className={className} />;
-  if (type === 'pdf') return <PdfIcon className={className} />;
-  if (type === 'document' || type === 'studio') return <StudioDocIcon className={className} />;
-
-  // 2. Connector prefix tags in filename (e.g. "[GitHub] repo", "[Drive] file.pdf", "[Notion] page")
-  // NOTE: check connector tags BEFORE file extensions, because a Drive sync might be "[Drive] resume.pdf"!
+  // 1. Connector prefix tags in filename (e.g. "[GitHub] repo", "[Drive] file.pdf", "[Notion] page")
+  // NOTE: check connector tags BEFORE source_type or file extensions, because a Drive sync might be "[Drive] resume.pdf" or legacy source_type might default to "pdf"!
   if (lower.startsWith('[github]') || lower.includes('github.com') || lower.startsWith('gh:')) {
     return <GitHubIcon className={className} />;
   }
@@ -442,6 +434,14 @@ export function FilenameIcon({
   if (lower.startsWith('[slack]')) {
     return <SlackIcon className={className} />;
   }
+
+  // 2. Explicit source_type checks
+  if (type === 'github') return <GitHubIcon className={className} />;
+  if (type === 'notion') return <NotionIcon className={className} />;
+  if (type === 'drive' || type === 'googledrive') return <GoogleDriveIcon className={className} />;
+  if (type === 'slack') return <SlackIcon className={className} />;
+  if (type === 'pdf') return <PdfIcon className={className} />;
+  if (type === 'document' || type === 'studio') return <StudioDocIcon className={className} />;
 
   // 3. File extension checks
   if (lower.endsWith('.pdf')) {

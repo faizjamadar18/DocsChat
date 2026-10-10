@@ -82,6 +82,7 @@ export interface MentionItem {
   id: string;
   title: string;
   type: 'document' | 'asset';
+  source_type?: string;
 }
 
 export interface OraSidebarProps {
@@ -208,10 +209,11 @@ export default function OraSidebar({
           })
         );
         const assetItems: MentionItem[] = (assetsRes.sources || []).map(
-          (s: { id: string; filename: string }) => ({
+          (s: { id: string; filename: string; source_type?: string }) => ({
             id: s.id,
             title: s.filename || 'Untitled Asset',
             type: 'asset',
+            source_type: s.source_type,
           })
         );
 
@@ -653,10 +655,10 @@ export default function OraSidebar({
       {isDragOver && (
         <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-xs border-2 border-dashed border-zinc-900 rounded-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in pointer-events-none">
           <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3">
-            <PdfIcon className="w-7 h-7" />
+            <Layers className="w-6 h-6 text-text-primary" />
           </div>
-          <span className="text-sm font-semibold text-text-primary">Drop PDF to add it</span>
-          <span className="text-xs text-text-secondary mt-1">{mode === 'assets' ? 'Ora adds it to the queried assets' : 'Ora will focus on this document'}</span>
+          <span className="text-sm font-semibold text-text-primary">Drop to add to context</span>
+          <span className="text-xs text-text-secondary mt-1">{mode === 'assets' ? 'Ora adds it to the queried assets' : 'Ora will focus on this source'}</span>
         </div>
       )}
 
@@ -1110,7 +1112,7 @@ export default function OraSidebar({
                   onClick={() => handleSelectMention(a)}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#F3F4F6] text-text-primary text-left cursor-pointer transition-colors"
                 >
-                  <FilenameIcon filename={a.title} className="w-3.5 h-3.5 shrink-0" />
+                  <FilenameIcon filename={a.title} sourceType={a.source_type} className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{a.title}</span>
                 </button>
               ))}
@@ -1153,7 +1155,7 @@ export default function OraSidebar({
         {/* Legacy single-attachment chip (studio / universal / uncontrolled) */}
         {mode !== 'assets' && attachedScope ? (
           <div className="mb-2 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-2.5 py-1 rounded-full text-xs font-medium">
-            <FilenameIcon filename={attachedScope.title} className="w-3 h-3 text-text-secondary shrink-0" />
+            <FilenameIcon filename={attachedScope.title} sourceType={attachedScope.source_type} className="w-3 h-3 text-text-secondary shrink-0" />
             <span className="truncate max-w-55">{attachedScope.title}</span>
             <button
               type="button"
@@ -1200,7 +1202,7 @@ export default function OraSidebar({
                   <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${checked ? 'bg-accent border-accent text-white' : 'border-border text-transparent'}`}>
                     <Check className="w-3 h-3" />
                   </span>
-                  <FilenameIcon filename={s.title} className="w-3.5 h-3.5 shrink-0" />
+                  <FilenameIcon filename={s.title} sourceType={s.source_type} className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate flex-1">{s.title}</span>
                 </button>
               );
@@ -1220,7 +1222,7 @@ export default function OraSidebar({
                 ? (attachedScope ? `Ask about ${attachedScope.title}...` : 'Ask about this document...')
                 : mode === 'assets'
                 ? (scopeCatalog.length === 0
-                    ? 'Upload a PDF to get started...'
+                    ? 'Upload a document to get started...'
                     : (assetsScopeLabel ? `Ask across ${assetsScopeLabel}... or type @` : 'Ask across your assets... or type @'))
                 : 'Ask Ora... or type @'
             }

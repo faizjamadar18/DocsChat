@@ -43,6 +43,20 @@ async def list_sources(
         last_synced = doc.get("last_synced_at")
         if last_synced and getattr(last_synced, "tzinfo", None) is None:
             last_synced = last_synced.replace(tzinfo=timezone.utc)
+        source_type = doc.get("source_type")
+        if not source_type or source_type == "pdf":
+            fn = doc.get("filename", "").lower()
+            if fn.startswith("[github]") or "github.com" in fn:
+                source_type = "github"
+            elif fn.startswith("[drive]") or fn.startswith("[google drive]") or fn.startswith("[googledrive]"):
+                source_type = "drive"
+            elif fn.startswith("[notion]"):
+                source_type = "notion"
+            elif fn.startswith("[slack]"):
+                source_type = "slack"
+            else:
+                source_type = doc.get("source_type", "pdf")
+
         sources.append(SourceResponse(
             id=str(doc["_id"]),
             workspace_id=doc.get("workspace_id"),
@@ -52,7 +66,7 @@ async def list_sources(
             chunk_count=doc.get("chunk_count", 0),
             status=doc["status"],
             uploaded_at=uploaded_at,
-            source_type=doc.get("source_type", "pdf"),
+            source_type=source_type,
             remote_id=doc.get("remote_id"),
             remote_url=doc.get("remote_url"),
             last_synced_at=last_synced,

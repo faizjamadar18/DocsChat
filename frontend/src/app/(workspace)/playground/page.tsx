@@ -16,7 +16,7 @@ import {
 import { useWorkspace } from '@/context/WorkspaceContext';
 import Markdown from '@/components/Markdown';
 import SourceFooter, { FilenameIcon } from '@/components/chat/SourceFooter';
-import { StudioDocIcon, PdfIcon } from '@/components/connectors/ConnectorIcons';
+import { StudioDocIcon } from '@/components/connectors/ConnectorIcons';
 import { useChat } from '@/hooks/useChat';
 import { api } from '@/lib/api';
 
@@ -24,6 +24,7 @@ interface MentionItem {
   id: string;
   title: string;
   type: 'document' | 'asset';
+  source_type?: string;
 }
 
 function PlaygroundContent() {
@@ -107,10 +108,11 @@ function PlaygroundContent() {
           })
         );
         const assetItems: MentionItem[] = (assetsRes.sources || []).map(
-          (s: { id: string; filename: string }) => ({
+          (s: { id: string; filename: string; source_type?: string }) => ({
             id: s.id,
             title: s.filename || 'Untitled Asset',
             type: 'asset',
+            source_type: s.source_type,
           })
         );
 
@@ -334,7 +336,15 @@ function PlaygroundContent() {
               {/* Attached Scoped Document Tag */}
               {attachedScope && (
                 <div className="mb-2.5 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-3 py-1 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
-                  <StudioDocIcon className="w-3.5 h-3.5 text-text-secondary" />
+                  {attachedScope.type === 'document' ? (
+                    <StudioDocIcon className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                  ) : (
+                    <FilenameIcon
+                      filename={attachedScope.title}
+                      sourceType={attachedScope.source_type}
+                      className="w-3.5 h-3.5 text-text-secondary shrink-0"
+                    />
+                  )}
                   <span className="truncate max-w-xs">{attachedScope.title}</span>
                   <button
                     type="button"
@@ -371,7 +381,7 @@ function PlaygroundContent() {
                   <button
                     type="button"
                     onClick={() => setShowMentions((prev) => !prev)}
-                    title="Reference specific workspace document (@)"
+                    title="Reference document or asset (@)"
                     className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
                   >
                     <Paperclip className="w-4 h-4" />
@@ -485,7 +495,11 @@ function PlaygroundContent() {
                               : 'hover:bg-[#F3F4F6] text-text-primary'
                           }`}
                         >
-                          <PdfIcon className="w-3.5 h-3.5 shrink-0" />
+                          <FilenameIcon
+                            filename={a.title}
+                            sourceType={a.source_type}
+                            className="w-3.5 h-3.5 shrink-0"
+                          />
                           <span className="truncate">{a.title}</span>
                         </button>
                       ))}
@@ -552,7 +566,10 @@ function PlaygroundContent() {
                       <div className="max-w-[85%] rounded-2xl px-4.5 py-3 bg-[#F4F4F6] border border-border/40 text-text-primary shadow-2xs">
                         {(msg.attached_name || (msg.scope_ids && msg.scope_ids.length > 0)) && (
                           <div className="bg-white border border-border/80 text-text-secondary text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit shadow-2xs">
-                            <StudioDocIcon className="w-3 h-3 text-text-secondary" />
+                            <FilenameIcon
+                              filename={msg.attached_name || ''}
+                              className="w-3 h-3 text-text-secondary shrink-0"
+                            />
                             <span className="truncate max-w-xs">
                               {msg.attached_name || 'Referenced Document'}
                             </span>
@@ -647,7 +664,15 @@ function PlaygroundContent() {
               <div className="bg-white border border-border rounded-2xl p-3 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary scheme-light">
                 {attachedScope && (
                   <div className="mb-2 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-2.5 py-0.5 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
-                    <StudioDocIcon className="w-3 h-3 text-text-secondary" />
+                    {attachedScope.type === 'document' ? (
+                      <StudioDocIcon className="w-3 h-3 text-text-secondary shrink-0" />
+                    ) : (
+                      <FilenameIcon
+                        filename={attachedScope.title}
+                        sourceType={attachedScope.source_type}
+                        className="w-3 h-3 text-text-secondary shrink-0"
+                      />
+                    )}
                     <span className="truncate max-w-xs">{attachedScope.title}</span>
                     <button
                       type="button"
@@ -680,7 +705,7 @@ function PlaygroundContent() {
                     <button
                       type="button"
                       onClick={() => setShowMentions((prev) => !prev)}
-                      title="Reference specific workspace document (@)"
+                      title="Reference document or asset (@)"
                       className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
                     >
                       <Paperclip className="w-4 h-4" />
@@ -753,7 +778,11 @@ function PlaygroundContent() {
                                 : 'hover:bg-[#F3F4F6] text-text-primary'
                             }`}
                           >
-                            <PdfIcon className="w-3.5 h-3.5 shrink-0" />
+                            <FilenameIcon
+                              filename={a.title}
+                              sourceType={a.source_type}
+                              className="w-3.5 h-3.5 shrink-0"
+                            />
                             <span className="truncate">{a.title}</span>
                           </button>
                         ))}

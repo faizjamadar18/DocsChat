@@ -178,7 +178,7 @@ export default function SourcesSidebar({
               </div>
               <p className="text-sm text-white/40 mb-1">No documents yet</p>
               <p className="text-xs text-white/20 text-center leading-relaxed max-w-[180px]">
-                Upload a PDF and start asking questions
+                Upload a document and start asking questions
               </p>
             </div>
           ) : (

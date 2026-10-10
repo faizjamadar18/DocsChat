@@ -1,12 +1,9 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, MoreVertical, Download, Trash2, X, Eye } from 'lucide-react';
+import { Search, Plus, MoreVertical, Download, Trash2, X, Eye, Layers } from 'lucide-react';
 import { api } from '@/lib/api';
 import {
-  NotionIcon,
-  GoogleDriveIcon,
-  GitHubIcon,
-  PdfIcon,
+  FilenameIcon,
 } from '@/components/connectors/ConnectorIcons';
 import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
@@ -28,22 +25,13 @@ export interface Source {
  * connector syncs carry their provider in source_type.
  */
 function AssetTypeIcon({ source }: { source: Source }) {
-  const cls = 'w-4 h-4 shrink-0';
-  switch ((source.source_type || '').toLowerCase()) {
-    case 'notion':
-      return <NotionIcon className={cls} />;
-    case 'drive':
-      return <GoogleDriveIcon className={cls} />;
-    case 'github':
-      return <GitHubIcon className={cls} />;
-    case 'pdf':
-      return <PdfIcon className={cls} />;
-    default:
-      // Legacy rows without source_type: PDFs by extension, else generic.
-      if (source.filename.toLowerCase().endsWith('.pdf')) return <PdfIcon className={cls} />;
-      if (source.filename.startsWith('[Notion]')) return <NotionIcon className={cls} />;
-      return <PdfIcon className={cls} />;
-  }
+  return (
+    <FilenameIcon
+      filename={source.filename}
+      sourceType={source.source_type}
+      className="w-4 h-4 shrink-0"
+    />
+  );
 }
 
 function formatFileSize(bytes: number): string {
@@ -448,11 +436,11 @@ export default function AssetsPage() {
               ) : (
                 <div className="py-14 text-center bg-surface rounded-xl border border-border">
                   <div className="w-9 h-9 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2.5">
-                    <PdfIcon className="w-5 h-5" />
+                    <Layers className="w-5 h-5 text-text-secondary" />
                   </div>
                   <p className="text-[13px] font-medium text-text-primary">No assets yet</p>
                   <p className="text-xs text-text-muted mt-0.5 max-w-xs mx-auto">
-                    Upload your first PDF to query, summarize, and cite it with Ora.
+                    Upload a document or connect a source to query, summarize, and cite it with Ora.
                   </p>
                   <button
                     type="button"
@@ -460,7 +448,7 @@ export default function AssetsPage() {
                     className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-text-primary text-white hover:bg-black transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    Upload PDF
+                    Upload document
                   </button>
                 </div>
               )

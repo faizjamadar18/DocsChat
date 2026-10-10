@@ -11,13 +11,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { api } from '../../../lib/api';
-import { StudioDocIcon, PdfIcon } from '../../../components/connectors/ConnectorIcons';
+import { StudioDocIcon, FilenameIcon } from '../../../components/connectors/ConnectorIcons';
 
 interface RecentItem {
   id: string;
   title: string;
   subtitle: string;
   type: 'document' | 'asset';
+  sourceType?: string;
 }
 
 export default function HomePage() {
@@ -56,11 +57,12 @@ export default function HomePage() {
       try {
         const data = await api.get(`/workspaces/${user.active_workspace_id}/dashboard`);
         if (data) {
-          const assets: RecentItem[] = (data.recent_assets || []).map((a: { id: string; filename: string; file_size: number; uploaded_at: string }) => ({
+          const assets: RecentItem[] = (data.recent_assets || []).map((a: { id: string; filename: string; file_size: number; uploaded_at: string; source_type?: string }) => ({
             id: a.id,
             title: a.filename,
             subtitle: `${(a.file_size / 1024).toFixed(1)} KB • Added ${formatTimeAgo(a.uploaded_at)}`,
             type: 'asset',
+            sourceType: a.source_type,
           }));
           setRecentAssets(assets);
 
@@ -219,7 +221,7 @@ export default function HomePage() {
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
-                  <PdfIcon className="w-4 h-4" />
+                  <FilenameIcon filename={asset.title} sourceType={asset.sourceType} className="w-4 h-4" />
                 </div>
                 <div>
                   <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">

@@ -197,7 +197,7 @@ export default function ChatPanel({
           <div className="text-center mb-8">
             <h1 className="text-2xl font-medium text-white mb-2">What can I help with?</h1>
             <p className="text-sm text-white/30 max-w-md">
-              Upload PDFs to get started, then ask me anything about them.
+              Upload documents or connect sources to get started, then ask me anything about them.
             </p>
           </div>
           {inputForm}
