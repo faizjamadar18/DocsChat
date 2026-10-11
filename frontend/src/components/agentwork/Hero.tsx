@@ -18,7 +18,7 @@ export default function Hero() {
             ready to answer
           </h1>
           <p className="text-base md:text-[19px] leading-relaxed tracking-[-0.01em] text-[#63635e] max-w-2xl text-pretty">
-            DocsChat brings Google Drive, Notion, GitHub, and PDFs into one workspace. Ask questions in plain English, get answers with citations, and draft what&apos;s next in Studio.
+            Bring your documents and connected tools into one workspace. Ask questions in plain English, get answers with citations, and draft what&apos;s next in Studio.
           </p>
         </div>
 
@@ -36,25 +36,6 @@ export default function Hero() {
           >
             See how it works
           </Link>
-
-          <p className="mt-1 text-[13px] leading-relaxed text-[#8d8d86] md:text-right">
-            Free to start · No credit card required
-          </p>
-          {/* Trust row */}
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 md:justify-end text-[13px] text-[#63635e]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              Cited answers
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              Private by default
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
-              Works with Claude &amp; Cursor
-            </span>
-          </div>
         </div>
       </div>
 

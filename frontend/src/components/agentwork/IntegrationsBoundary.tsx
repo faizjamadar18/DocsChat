@@ -2,38 +2,19 @@
 
 import React from 'react';
 import {
-  SlackIcon,
-  Microsoft365Icon,
   NotionIcon,
   GoogleDriveIcon,
   GoogleDocsIcon,
-  GoogleSlidesIcon,
-  GoogleSheetsIcon,
-  FirefliesIcon,
-  GmailIcon,
   GitHubIcon,
-  LinearIcon,
-  HubSpotIcon,
-  AttioIcon,
-  GranolaIcon,
 } from './Icons';
 
 export default function IntegrationsBoundary() {
+  // Shipped connectors only — Soon items stay in the app, not on the landing page.
   const vendors = [
-    { name: 'Slack', Icon: SlackIcon },
-    { name: 'Microsoft 365', Icon: Microsoft365Icon },
     { name: 'Notion', Icon: NotionIcon },
-    { name: 'Google Workspace', Icon: GoogleDriveIcon },
-    { name: 'Docs', Icon: GoogleDocsIcon },
-    { name: 'Slides', Icon: GoogleSlidesIcon },
-    { name: 'Sheets', Icon: GoogleSheetsIcon },
-    { name: 'Fireflies', Icon: FirefliesIcon },
-    { name: 'Gmail', Icon: GmailIcon },
+    { name: 'Google Drive', Icon: GoogleDriveIcon },
+    { name: 'Google Docs', Icon: GoogleDocsIcon },
     { name: 'GitHub', Icon: GitHubIcon },
-    { name: 'Linear', Icon: LinearIcon },
-    { name: 'HubSpot', Icon: HubSpotIcon },
-    { name: 'Attio', Icon: AttioIcon },
-    { name: 'Granola', Icon: GranolaIcon },
   ];
 
   return (
@@ -47,7 +28,7 @@ export default function IntegrationsBoundary() {
             <span className="text-[#63635e]">your team already uses.</span>
           </h2>
           <p className="text-sm md:text-base leading-relaxed tracking-[-0.005em] text-[#63635e]">
-            Sync Drive, Notion, GitHub, and more. Permissions stay respected, and you can scope any question to a single file with @.
+            Sync your documents and connected tools. You can scope any question to a single file with @.
           </p>
         </div>
 

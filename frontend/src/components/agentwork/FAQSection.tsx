@@ -24,9 +24,9 @@ const FAQS = [
       'Studio is a clean editor for notes and drafts. You can outline, summarize, and rewrite side-by-side with your sources, without copying between tools.',
   },
   {
-    question: 'Can I use my workspace from Claude Desktop or Cursor?',
+    question: 'Can I use my workspace from another AI app?',
     answer:
-      'Yes. DocsChat gives each workspace a secure URL you can add to Claude Desktop or Cursor. Those tools can then search your workspace directly, with the same access controls. You can revoke access anytime.',
+      'Yes. DocsChat gives each workspace a secure URL you can add to a connected AI app. That app can then search your workspace directly, with the same access controls. You can revoke access anytime.',
   },
   {
     question: 'Is my team’s data kept private?',

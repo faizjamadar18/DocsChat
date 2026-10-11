@@ -15,16 +15,6 @@ import {
   NotionIcon,
   GoogleDriveIcon,
   GitHubIcon,
-  SlackIcon,
-  MicrosoftIcon,
-  LinearIcon,
-  AtlassianIcon,
-  HubSpotIcon,
-  ClaudeIcon,
-  GrokIcon,
-  ChatGptIcon,
-  PerplexityIcon,
-  MistralIcon,
 } from '../connectors/ConnectorIcons';
 
 interface StepData {
@@ -38,7 +28,7 @@ const steps: StepData[] = [
     number: '01',
     title: 'Connect your tools',
     description:
-      'Bring Google Drive, Notion, GitHub, and PDFs into one private workspace. Sync stays up to date automatically.',
+      'Bring your documents and connected tools into one private workspace. Sync stays up to date automatically.',
   },
   {
     number: '02',
@@ -55,27 +45,19 @@ const steps: StepData[] = [
 ];
 
 const headerLines = [
-  { text: 'Connect the tools your team already uses', number: '01' },
+  { text: 'Connect your documents and tools', number: '01' },
   { text: 'Ask naturally by voice or chat', number: '02' },
   { text: 'Verify every answer in one click', number: '03' },
 ];
 
+// Only shipped connectors — Soon items (Slack, M365, Linear, etc.)
+// and MCP apps are not shown here.
 const integrationIcons = [
   { name: 'PDF', Icon: PdfIcon },
   { name: 'Google Docs', Icon: GoogleDocIcon },
   { name: 'Notion', Icon: NotionIcon },
   { name: 'Google Drive', Icon: GoogleDriveIcon },
   { name: 'GitHub', Icon: GitHubIcon },
-  { name: 'Slack', Icon: SlackIcon },
-  { name: 'Microsoft 365', Icon: MicrosoftIcon },
-  { name: 'Linear', Icon: LinearIcon },
-  { name: 'Atlassian', Icon: AtlassianIcon },
-  { name: 'HubSpot', Icon: HubSpotIcon },
-  { name: 'Claude', Icon: ClaudeIcon },
-  { name: 'Grok', Icon: GrokIcon },
-  { name: 'ChatGPT', Icon: ChatGptIcon },
-  { name: 'Perplexity', Icon: PerplexityIcon },
-  { name: 'Mistral', Icon: MistralIcon },
 ];
 
 const cardSources: Citation[] = [

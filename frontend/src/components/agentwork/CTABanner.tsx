@@ -38,7 +38,6 @@ export default function CTABanner() {
               See how it works
             </Link>
           </div>
-          <p className="text-[13px] text-[#8d8d86]">Free to start · No credit card required</p>
         </div>
       </div>
     </section>

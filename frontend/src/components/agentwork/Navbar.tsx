@@ -7,8 +7,8 @@ import { AgentworkLogo } from './Icons';
 const SOLUTIONS = [
   { label: 'Ask Ora', description: 'Ask questions across your docs with citations you can open', href: '/playground' },
   { label: 'Write in Studio', description: 'Draft, summarize, and edit alongside your sources', href: '/studio' },
-  { label: 'Connect tools', description: 'Sync Google Drive, Notion, GitHub, and uploaded PDFs', href: '/connectors' },
-  { label: 'Use with other AI tools', description: 'Ask your workspace from Claude Desktop and Cursor', href: '/mcp' },
+  { label: 'Connect tools', description: 'Sync docs, notes, repos, and uploaded PDFs', href: '/connectors' },
+  { label: 'Use with AI apps', description: 'Ask your workspace from connected AI apps', href: '/mcp' },
 ];
 
 const NAV_LINKS = [
@@ -119,12 +119,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Launch announcement */}
-      <div className="w-full bg-[#21201c] text-[#ffffff] text-center text-[13px] font-medium px-6 py-2">
-        <Link href="/mcp" className="hover:underline">
-          New — Ask your DocsChat workspace from Claude Desktop and Cursor →
-        </Link>
-      </div>
       {/* Top Main Navigation */}
       <nav aria-label="Main navigation" className="w-full py-6 px-6">
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">

@@ -114,7 +114,7 @@ export default function Features() {
               <div className="flex flex-col gap-1.5">
                 <h3 className="text-base font-semibold text-[#21201c]">Always up to date</h3>
                 <p className="text-xs text-[#63635e] leading-relaxed">
-                  Changes in Drive, GitHub, and Notion sync automatically. No re-uploads, no stale answers.
+                  Changes in your connected tools sync automatically. No re-uploads, no stale answers.
                 </p>
               </div>
             </div>
