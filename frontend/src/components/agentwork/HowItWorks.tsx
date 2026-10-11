@@ -81,11 +81,11 @@ const integrationIcons = [
 const cardSources: Citation[] = [
   { source_id: 'notion', filename: '[Notion] Team Docs', snippet: '', similarity_score: 0.95 },
   { source_id: 'github', filename: '[GitHub] DocsChat', snippet: '', similarity_score: 0.92 },
-  { source_id: 'drive', filename: '[Drive] Summer Party 2026', snippet: '', similarity_score: 0.89 },
-  { source_id: 'docs', filename: 'Event Details & Menu.gdoc', snippet: '', similarity_score: 0.85 },
+  { source_id: 'drive', filename: '[Drive] QA Sign-Off', snippet: '', similarity_score: 0.89 },
+  { source_id: 'docs', filename: 'Release Notes.gdoc', snippet: '', similarity_score: 0.85 },
 ];
 
-const fullPrompt = "When's the summer party?";
+const fullPrompt = "What blocks our release?";
 
 export default function HowItWorks() {
   const [activeStep, setActiveStep] = useState<number>(0);
