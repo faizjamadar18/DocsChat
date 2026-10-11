@@ -117,7 +117,7 @@ async def _protected_resource_doc(request: Request) -> dict:
     resource = _mcp_resource_url(request)
     return {
         "resource": resource,
-        "resource_name": "DocsChat",
+        "resource_name": "Quello",
         "authorization_servers": [_issuer_url(request)],
         "scopes_supported": [MCP_SCOPE],
         "bearer_methods_supported": ["header"],

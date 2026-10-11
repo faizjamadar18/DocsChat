@@ -16,7 +16,7 @@ export default function Header({
   const { user } = useAuth();
   const { startVoice, status: voiceStatus } = useVoiceAgent();
 
-  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'DocsChat HQ');
+  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'Quello HQ');
 
   // Compute breadcrumb segments
   const getBreadcrumbs = () => {

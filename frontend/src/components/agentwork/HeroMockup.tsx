@@ -69,7 +69,7 @@ export default function HeroMockup() {
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-semibold text-[#21201c] truncate">Alex Chen</span>
-            <span className="text-[11px] text-[#8d8d86] truncate">alex@docschat.io</span>
+            <span className="text-[11px] text-[#8d8d86] truncate">alex@quello.dev</span>
           </div>
         </div>
       </aside>

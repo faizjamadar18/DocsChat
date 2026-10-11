@@ -73,7 +73,7 @@ export default function Hero() {
                           <div className="w-2 sm:w-3 h-2 sm:h-3 rounded-full bg-[#febc2e]"></div>
                           <div className="w-2 sm:w-3 h-2 sm:h-3 rounded-full bg-[#28c840]"></div>
                         </div>
-                        <span className="text-[9px] sm:text-xs text-white/40 font-medium">DocsChat</span>
+                        <span className="text-[9px] sm:text-xs text-white/40 font-medium">Quello</span>
                       </div>
                       {/* User message */}
                       <div className="flex justify-end mt-5 sm:mt-7">

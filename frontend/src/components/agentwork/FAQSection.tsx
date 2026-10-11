@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 
 const FAQS = [
   {
-    question: 'Which tools and file formats does DocsChat connect to?',
+    question: 'Which tools and file formats does Quello connect to?',
     answer:
-      'DocsChat connects to Google Drive, Notion, and GitHub, plus direct uploads for PDFs, Markdown, and text files. Sync entire folders, selected databases, or individual repositories — you control what stays connected.',
+      'Quello connects to Google Drive, Notion, and GitHub, plus direct uploads for PDFs, Markdown, and text files. Sync entire folders, selected databases, or individual repositories — you control what stays connected.',
   },
   {
     question: 'How do I know an answer is accurate?',
@@ -16,17 +16,17 @@ const FAQS = [
   {
     question: 'Can I ask questions about a single file instead of the whole workspace?',
     answer:
-      'Yes. Type @ in the chat input to scope your question to a specific document, repository, or connector. DocsChat will answer only from that file.',
+      'Yes. Type @ in the chat input to scope your question to a specific document, repository, or connector. Quello will answer only from that file.',
   },
   {
-    question: 'What is DocsChat Studio?',
+    question: 'What is Quello Studio?',
     answer:
       'Studio is a clean editor for notes and drafts. You can outline, summarize, and rewrite side-by-side with your sources, without copying between tools.',
   },
   {
     question: 'Can I use my workspace from another AI app?',
     answer:
-      'Yes. DocsChat gives each workspace a secure URL you can add to a connected AI app. That app can then search your workspace directly, with the same access controls. You can revoke access anytime.',
+      'Yes. Quello gives each workspace a secure URL you can add to a connected AI app. That app can then search your workspace directly, with the same access controls. You can revoke access anytime.',
   },
   {
     question: 'Is my team’s data kept private?',

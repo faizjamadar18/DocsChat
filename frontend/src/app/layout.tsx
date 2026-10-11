@@ -3,7 +3,7 @@ import "./globals.css";
 import AuthProvider from "../components/AuthProvider";
 
 export const metadata: Metadata = {
-  title: "Home | Plura",
+  title: "Home | Quello",
   description: "Your second brain for content creation. The unified workspace for modern creators.",
   icons: {
     icon: [

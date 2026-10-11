@@ -49,9 +49,9 @@ export default function Footer() {
             <div className="flex flex-col gap-4 max-w-sm">
               <AgentworkLogo className="text-[#21201c]" />
               <div className="flex flex-col gap-1 text-xs text-[#8d8d86] leading-relaxed">
-                <p className="font-medium text-[#21201c]">DocsChat</p>
+                <p className="font-medium text-[#21201c]">Quello</p>
                 <p>One workspace to ask questions, write docs, and verify every answer.</p>
-                <p>© {new Date().getFullYear()} DocsChat. All rights reserved.</p>
+                <p>© {new Date().getFullYear()} Quello. All rights reserved.</p>
               </div>
             </div>
 
@@ -96,7 +96,7 @@ export default function Footer() {
           <div className="relative w-full aspect-1201/177 max-h-44">
             <Image
               src="/images/footer-wordmark.svg"
-              alt="DocsChat"
+              alt="Quello"
               fill
               className="object-contain object-bottom opacity-90 select-none pointer-events-none"
             />

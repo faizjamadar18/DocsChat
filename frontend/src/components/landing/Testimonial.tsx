@@ -11,7 +11,7 @@ export default function Testimonial() {
             </svg>
           </div>
           <blockquote className="text-xl sm:text-2xl text-white/80 leading-relaxed font-medium mb-8">
-            &ldquo;DocsChat completely changed how I review academic papers. Instead of spending hours searching through PDFs, I just ask a question and get the answer with the exact source. It&rsquo;s like having a research assistant that never sleeps.&rdquo;
+            &ldquo;Quello completely changed how I review academic papers. Instead of spending hours searching through PDFs, I just ask a question and get the answer with the exact source. It&rsquo;s like having a research assistant that never sleeps.&rdquo;
           </blockquote>
           <div className="flex items-center justify-center gap-3">
             <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80" alt="Alex K." className="w-10 h-10 rounded-full object-cover" />

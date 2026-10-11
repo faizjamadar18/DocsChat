@@ -3,24 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AgentworkLogo } from './Icons';
-
-const SOLUTIONS = [
-  { label: 'Ask Ora', description: 'Ask questions across your docs with citations you can open', href: '/playground' },
-  { label: 'Write in Studio', description: 'Draft, summarize, and edit alongside your sources', href: '/studio' },
-  { label: 'Connect tools', description: 'Sync docs, notes, repos, and uploaded PDFs', href: '/connectors' },
-  { label: 'Use with AI apps', description: 'Ask your workspace from connected AI apps', href: '/mcp' },
-];
-
-const NAV_LINKS = [
-  { label: 'Ask', href: '/playground', external: false },
-  { label: 'Studio', href: '/studio', external: false },
-  { label: 'Connectors', href: '/connectors', external: false },
-];
+import { useAuth } from '../../hooks/useAuth';
+import { auth } from '../../lib/auth';
 
 export default function Navbar() {
   const [isSticky, setIsSticky] = useState(false);
-  const [solutionsOpen, setSolutionsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated, loading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,104 +20,49 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const renderNavItems = () => (
-    <div className="flex items-center gap-7 lg:gap-9 text-sm font-medium text-[#21201c]">
-      {/* Solutions dropdown */}
-      <div
-        className="relative"
-        onMouseEnter={() => setSolutionsOpen(true)}
-        onMouseLeave={() => setSolutionsOpen(false)}
+  const renderActionButton = (size: 'default' | 'sm' = 'default') => {
+    // Render on first paint: token read is sync. useAuth confirms async —
+    // if the token turns out invalid it clears it and we fall back to sign in.
+    const showDashboard = isAuthenticated || (loading && auth.isAuthenticated());
+    const label = showDashboard ? 'dashboard' : 'sign in';
+    const href = showDashboard ? '/home' : '/login';
+    return (
+      <Link
+        href={href}
+        className={`group inline-flex items-center gap-1.5 font-medium text-[#21201c] hover:text-[#ff6a00] transition-colors ${
+          size === 'sm' ? 'text-xs' : 'text-sm'
+        }`}
       >
-        <button
-          type="button"
-          onClick={() => setSolutionsOpen(!solutionsOpen)}
-          className="flex items-center gap-1 py-1 hover:text-[#ff6a00] transition-colors cursor-pointer"
+        <span>{label}</span>
+        <svg
+          className={`${size === 'sm' ? 'size-3.5' : 'size-4'} transition-transform group-hover:translate-x-0.5`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
         >
-          <span>Solutions</span>
-          <svg
-            className={`size-3 transition-transform duration-200 ${solutionsOpen ? 'rotate-180' : ''}`}
-            viewBox="0 0 12 12"
-            fill="none"
-          >
-            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-
-        {solutionsOpen && (
-          <div className="absolute top-full left-0 pt-2 z-50">
-            <div className="w-72 bg-[#ffffff] rounded-xl border border-[#e2e1de] p-2 shadow-popover">
-              {SOLUTIONS.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="flex flex-col gap-0.5 p-2.5 rounded-lg hover:bg-[#f9f9f8] transition-colors"
-                >
-                  <span className="text-sm font-medium text-[#21201c]">{item.label}</span>
-                  <span className="text-xs text-[#63635e] leading-snug">{item.description}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {NAV_LINKS.map((link) =>
-        link.external ? (
-          <a
-            key={link.label}
-            href={link.href}
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-[#ff6a00] transition-colors"
-          >
-            {link.label}
-          </a>
-        ) : (
-          <Link
-            key={link.label}
-            href={link.href}
-            className="hover:text-[#ff6a00] transition-colors"
-          >
-            {link.label}
-          </Link>
-        )
-      )}
-    </div>
-  );
-
-  const renderActionButtons = (size: 'default' | 'sm' = 'default') => (
-    <div className="flex items-center gap-2">
-      <Link
-        href="/login"
-        className={`inline-flex items-center justify-center font-medium rounded-lg border border-[#e2e1de] bg-[#ffffff] text-[#21201c] hover:bg-[#f9f9f8] transition-colors ${
-          size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
-        }`}
-      >
-        Log in
+          <path d="M5 12h14" />
+          <path d="m12 5 7 7-7 7" />
+        </svg>
       </Link>
-      <Link
-        href="/register"
-        className={`inline-flex items-center justify-center font-medium rounded-lg bg-[#21201c] text-[#ffffff] hover:bg-accent-hover transition-colors ${
-          size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm'
-        }`}
-      >
-        Get Started Free
-      </Link>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
       {/* Top Main Navigation */}
       <nav aria-label="Main navigation" className="w-full py-10 px-6">
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
-          <Link href="/" aria-label="DocsChat home" className="text-[#21201c] hover:opacity-90">
+          <Link href="/" aria-label="Quello home" className="text-[#21201c] hover:opacity-90">
             <AgentworkLogo />
           </Link>
 
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-8">
-            {renderNavItems()}
+          {/* Desktop Action */}
+          <div className="hidden md:flex items-center">
+            {renderActionButton()}
           </div>
 
           {/* Mobile Hamburger */}
@@ -154,12 +88,11 @@ export default function Navbar() {
         }`}
       >
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
-          <Link href="/" aria-label="DocsChat home" className="text-[#21201c]">
+          <Link href="/" aria-label="Quello home" className="text-[#21201c]">
             <AgentworkLogo />
           </Link>
-          <div className="hidden md:flex items-center gap-8">
-            {renderNavItems()}
-            {renderActionButtons('sm')}
+          <div className="hidden md:flex items-center">
+            {renderActionButton('sm')}
           </div>
           <div className="md:hidden">
             <button
@@ -189,32 +122,8 @@ export default function Navbar() {
                 ✕
               </button>
             </div>
-            <div className="flex flex-col gap-4 text-base font-medium text-[#21201c]">
-              <div className="text-xs font-semibold text-[#8d8d86] uppercase tracking-wider">Solutions</div>
-              {SOLUTIONS.map((s) => (
-                <Link
-                  key={s.label}
-                  href={s.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="pl-2 py-1 text-sm text-[#63635e] hover:text-[#21201c]"
-                >
-                  {s.label}
-                </Link>
-              ))}
-              <hr className="border-[#e2e1de]" />
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="py-1"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-            <div className="flex flex-col gap-2 pt-2">
-              {renderActionButtons('default')}
+            <div className="flex flex-col gap-2 pt-2" onClick={() => setMobileMenuOpen(false)}>
+              {renderActionButton('default')}
             </div>
           </div>
         </div>

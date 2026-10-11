@@ -34,14 +34,14 @@ export default function Features() {
       <div className="flex flex-col items-center text-center gap-2">
         <div>
           <div className="px-4 py-1 rounded-full bg-primary/20 select-none inline-block">
-            <div className="text-primary font-medium text-sm">The plura way</div>
+            <div className="text-primary font-medium text-sm">The quello way</div>
           </div>
         </div>
         <div>
           <h2 className="heading">Everything you need to create smarter, faster</h2>
         </div>
         <div>
-          <p className="paragraph">Plura brings all your creative tools into one place</p>
+          <p className="paragraph">Quello brings all your creative tools into one place</p>
         </div>
       </div>
 

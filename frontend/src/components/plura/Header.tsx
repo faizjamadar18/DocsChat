@@ -116,7 +116,7 @@ export default function Header() {
                     fill="currentColor"
                   />
                 </svg>
-                <span className="sr-only text-lg font-semibold font-heading">plura</span>
+                <span className="sr-only text-lg font-semibold font-heading">quello</span>
               </Link>
             </div>
 

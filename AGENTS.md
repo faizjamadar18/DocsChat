@@ -1,4 +1,4 @@
-# DocsChat — Agent Instructions
+# Quello — Agent Instructions
 
 > **Read this file completely before writing any code.**
 > This is the single source of truth for all AI agents (Antigravity, Claude Code, Cursor, etc.) working on this project.
@@ -7,7 +7,7 @@
 
 ## Project Overview
 
-DocsChat is a RAG-powered AI workspace that lets users upload PDFs, write documents, and ask an AI assistant questions grounded in their content. It uses a FastAPI backend (Python) and a Next.js frontend (TypeScript).
+Quello is a RAG-powered AI workspace that lets users upload PDFs, write documents, and ask an AI assistant questions grounded in their content. It uses a FastAPI backend (Python) and a Next.js frontend (TypeScript).
 
 ### Tech Stack
 

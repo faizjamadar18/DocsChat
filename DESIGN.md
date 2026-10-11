@@ -1,6 +1,6 @@
 ---
 version: "alpha"
-name: "DocsChat Ora Workspace"
+name: "Quello Ora Workspace"
 description: "Light-first RAG workspace design system. Single source of truth for all AI agents (Claude Code, Cursor, Codex, Copilot, Antigravity) and human contributors. Workspace app is LIGHT-ONLY. Marketing landing is DARK-ONLY. Never mix."
 colors:
   base: "#FBFBFD"
@@ -104,7 +104,7 @@ components:
     textColor: "{colors.accent}"
 ---
 
-# DocsChat Design System
+# Quello Design System
 
 > **Status:** canonical · **Version:** 1.0.0 · **Owner:** frontend / design-system
 > **Scope:** `frontend/src/**` · **Stack:** Next.js 16 App Router + Tailwind CSS v4 (`@theme` in `src/app/globals.css`) + React 19 + lucide-react
@@ -113,7 +113,7 @@ components:
 
 ## Overview
 
-DocsChat is a light-first, Notion-linear style RAG workspace. Two visually isolated surfaces exist:
+Quello is a light-first, Notion-linear style RAG workspace. Two visually isolated surfaces exist:
 
 1. **Workspace app (light-only, default):** `/home`, `/playground` (Ora), `/studio`, `/assets`, `/settings`, plus `OraSidebar`, `Sidebar`, all dropdowns, modals, inputs, and chat bubbles. Background `base #FBFBFD`, surfaces white, text near-black.
 2. **Marketing landing (dark-only, exception):** `src/app/page.tsx` + `src/components/landing/*`. Background black, white/translucent text. This is intentional brand contrast, not a pattern to copy into the app.

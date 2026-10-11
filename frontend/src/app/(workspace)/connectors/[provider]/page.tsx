@@ -71,7 +71,7 @@ function timeAgo(iso?: string | null): string {
 const PROVIDERS: Record<string, { name: string; desc: string; icon: React.ReactNode }> = {
   notion: {
     name: 'Notion',
-    desc: 'Import pages you shared with DocsChat as sources for Q&A and voice.',
+    desc: 'Import pages you shared with Quello as sources for Q&A and voice.',
     icon: <NotionIcon className="w-8 h-8" />,
   },
   drive: {
@@ -626,7 +626,7 @@ export default function ConnectorDetailPage() {
             <div className="flex items-center gap-3 p-4">
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-text-primary">Connection</p>
-                <p className="text-[11px] text-text-secondary">Pages you shared with DocsChat</p>
+                <p className="text-[11px] text-text-secondary">Pages you shared with Quello</p>
               </div>
               {loading ? (
                 <span className="text-[11px] text-text-muted">Loading...</span>

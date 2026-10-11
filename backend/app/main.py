@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
     # Startup
     try:
         await init_db()
-        print("DocsChat API is ready")
+        print("Quello API is ready")
     except Exception as e:
         print(f"FATAL: Database initialization failed: {e}")
     yield
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
 
 
 fastapi_app = FastAPI(
-    title="DocsChat API",
+    title="Quello API",
     description="A multi-workspace RAG workspace API powered by Groq Llama 3.3 70B",
     version="2.0.0",
     lifespan=lifespan,
@@ -81,13 +81,13 @@ async def db_health():
         return {"status": "disconnected", "error": str(e)}
 
 
-# Backwards-compatible alias: existing code/tests import `app`.
-app = fastapi_app
-
-app = CORSMiddleware(
-    fastapi_app,
+fastapi_app.add_middleware(
+    CORSMiddleware,
     allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app = fastapi_app
+

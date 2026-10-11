@@ -73,7 +73,7 @@ export default function Sidebar({
     { label: 'MCP Server', href: '/mcp', icon: Server },
   ];
 
-  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'DocsChat HQ');
+  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'Quello HQ');
 
   const content = (
     <aside

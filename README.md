@@ -8,7 +8,7 @@
 </p>
 
 <div align="center">
-  <h1 align="center">DocsChat</h1>
+  <h1 align="center">Quello</h1>
 <a id="readme-top"></a>
 
 <p align="center">
@@ -37,7 +37,7 @@
 
 <div align="center">
 
-[![Watch the DocsChat Demo](https://img.youtube.com/vi/AbhWGvJf2E8/maxresdefault.jpg?v=2)](https://www.youtube.com/watch?v=AbhWGvJf2E8&t=4s)
+[![Watch the Quello Demo](https://img.youtube.com/vi/AbhWGvJf2E8/maxresdefault.jpg?v=2)](https://www.youtube.com/watch?v=AbhWGvJf2E8&t=4s)
 
 </div>
 

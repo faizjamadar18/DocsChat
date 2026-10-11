@@ -89,7 +89,7 @@ export default function Problem() {
             </div>
           </div>
 
-          {/* With Plura Column */}
+          {/* With Quello Column */}
           <div className="flex flex-col items-center justify-center gap-4 w-full">
             <div className="w-full">
               <div className="bg-secondary rounded-lg lg:rounded-2xl h-80 lg:h-96 flex items-center justify-center w-full mt-2 relative overflow-hidden shadow-xs">
@@ -110,7 +110,7 @@ export default function Problem() {
                     />
                   </svg>
                   <Image
-                    alt="Plura Logo"
+                    alt="Quello Logo"
                     width={1024}
                     height={1024}
                     className="size-32 lg:size-44 object-contain"
@@ -123,7 +123,7 @@ export default function Problem() {
             <div className="flex items-center justify-center w-full pt-4">
               <div className="h-0.75 w-full bg-neutral-200" />
               <span className="text-base md:text-lg mx-2 bg-primary/10 text-primary py-1 rounded-full font-semibold px-3 whitespace-nowrap min-w-min">
-                With Plura
+                With Quello
               </span>
               <div className="h-0.75 w-full bg-neutral-200" />
             </div>

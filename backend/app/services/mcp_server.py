@@ -1,4 +1,4 @@
-"""DocsChat MCP tools: workspace search + document fetch.
+"""Quello MCP tools: workspace search + document fetch.
 
 Two layers:
 1. Pure functions (search/fetch below) — the real logic.
@@ -30,7 +30,7 @@ FETCH_CHARS = 9000
 FETCH_TOP_K = 20
 
 WORKSPACE_SEARCH_DESC = (
-    "Search the user's DocsChat workspace (uploaded PDFs, "
+    "Search the user's Quello workspace (uploaded PDFs, "
     "Studio documents, and connected sources like Notion, "
     "Google Drive, GitHub). "
     "Returns matching passages with source name, page, "

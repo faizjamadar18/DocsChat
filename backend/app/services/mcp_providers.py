@@ -15,7 +15,7 @@ PROVIDERS: list[dict] = [
         "name": "Claude",
         "tagline": "Answer from your docs inside Claude",
         "about": (
-            "Connect Claude to your DocsChat workspace so it can "
+            "Connect Claude to your Quello workspace so it can "
             "search your PDFs, Studio documents and connected "
             "sources, then answer with source names and page "
             "numbers. Read-only — Claude can never edit anything."
@@ -32,7 +32,7 @@ PROVIDERS: list[dict] = [
         ],
         "status": "ready",
         "auth_note": (
-            "Claude signs in with DocsChat once when added. If "
+            "Claude signs in with Quello once when added. If "
             "sign-in is not offered, create a personal key in "
             "this panel and add it as an Authorization header."
         ),
@@ -43,7 +43,7 @@ PROVIDERS: list[dict] = [
         "name": "Grok",
         "tagline": "Answer from your docs inside Grok",
         "about": (
-            "Connect Grok to your DocsChat workspace so it can "
+            "Connect Grok to your Quello workspace so it can "
             "search your PDFs, Studio documents and connected "
             "sources, then answer with source names and page "
             "numbers. Read-only — Grok can never edit anything."
@@ -74,7 +74,7 @@ PROVIDERS: list[dict] = [
         "name": "ChatGPT",
         "tagline": "Use your workspace as a ChatGPT tool",
         "about": (
-            "ChatGPT will use your DocsChat workspace as a tool "
+            "ChatGPT will use your Quello workspace as a tool "
             "— searching PDFs and Studio documents, answering "
             "with citations, like Claude does today. Read-only."
         ),
@@ -96,7 +96,7 @@ PROVIDERS: list[dict] = [
         "name": "Cursor",
         "tagline": "Pull workspace answers into your editor",
         "about": (
-            "Cursor will consult your DocsChat workspace inside "
+            "Cursor will consult your Quello workspace inside "
             "the editor — grounding code answers in your PDFs, "
             "specs and Studio documents. Read-only, as always."
         ),
@@ -114,7 +114,7 @@ PROVIDERS: list[dict] = [
         "name": "Perplexity",
         "tagline": "Research over your own documents",
         "about": (
-            "Perplexity will research across your DocsChat "
+            "Perplexity will research across your Quello "
             "workspace alongside web search — answering from "
             "your PDFs and Studio documents. Read-only."
         ),
@@ -136,7 +136,7 @@ PROVIDERS: list[dict] = [
         "name": "Mistral",
         "tagline": "Ask Le Chat about your workspace",
         "about": (
-            "Mistral Le Chat will answer from your DocsChat "
+            "Mistral Le Chat will answer from your Quello "
             "workspace — searching PDFs and Studio documents "
             "with citations. Read-only, as always."
         ),
@@ -151,7 +151,7 @@ PROVIDERS: list[dict] = [
         "name": "Gemini",
         "tagline": "Ground Gemini in your documents",
         "about": (
-            "Gemini will consult your DocsChat workspace before "
+            "Gemini will consult your Quello workspace before "
             "answering — grounding responses in your PDFs and "
             "Studio documents. Read-only, as always."
         ),
@@ -166,7 +166,7 @@ PROVIDERS: list[dict] = [
         "name": "Microsoft Copilot",
         "tagline": "Bring your workspace into Copilot",
         "about": (
-            "Microsoft Copilot will search your DocsChat "
+            "Microsoft Copilot will search your Quello "
             "workspace — retrieving PDFs, Studio documents and "
             "sources to answer with citations. Read-only."
         ),
@@ -188,7 +188,7 @@ PROVIDERS: list[dict] = [
         "name": "Manus",
         "tagline": "Let your AI agent work from your docs",
         "about": (
-            "Manus AI will read and analyze your DocsChat "
+            "Manus AI will read and analyze your Quello "
             "workspace — multi-step research grounded in your "
             "documents and notes. Read-only, as always."
         ),

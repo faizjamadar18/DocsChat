@@ -101,7 +101,7 @@ export default function SourcesSidebar({
             </div>
           </div>
           <Link href="/" className={`text-md font-semibold text-white/80 group-hover:text-white whitespace-nowrap transition-all duration-300 ${collapsed ? 'opacity-0 max-w-0 overflow-hidden pl-0' : 'opacity-100 max-w-50 pl-0'}`}>
-            DocsChat
+            Quello
           </Link>
         </button>
 
