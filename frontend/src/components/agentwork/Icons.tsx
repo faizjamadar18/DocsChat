@@ -1,42 +1,46 @@
 import React from 'react';
 
-// Agentwork Logo Mark (Duotone geometric shape)
-export function AgentworkLogo({ className = 'h-5 w-auto', showName = true }: { className?: string; showName?: boolean }) {
+// Quello Logo Mark (from uploaded logo.svg / favicon.svg)
+export function QuelloMark({ className = 'size-5' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 800 800"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      role="img"
+      aria-label="Quello"
+    >
+      <rect width="800" height="800" rx="168" fill="#000000" />
+      <g
+        transform="translate(400 400) scale(0.84) translate(-400 -400)"
+        fill="#FFFFFF"
+        stroke="#FFFFFF"
+        strokeWidth="6"
+        strokeLinejoin="round"
+      >
+        <path d="M502.6 681.9 A300 300 0 0 1 118.1 502.6 L242.1 457.5 A168 168 0 0 0 457.5 557.9 Z M106.6 462.4 A300 300 0 0 1 337.6 106.6 L365.1 235.7 A168 168 0 0 0 235.7 434.9 Z M379.1 100.7 A300 300 0 0 1 699.3 379.1 L567.6 388.3 A168 168 0 0 0 388.3 232.4 Z M409.9 475.0 L611.4 676.5 L676.5 611.4 L475.0 409.9 Z" />
+      </g>
+    </svg>
+  );
+}
+
+export function QuelloLogo({ className = 'h-6 w-auto', showName = true }: { className?: string; showName?: boolean }) {
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      <svg viewBox="0 0 70 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-5 w-auto shrink-0 text-current">
-        <path
-          d="M42 23C42 19.134 38.866 16 35 16C31.134 16 28 19.134 28 23L28 31L14 31V23C14 11.402 23.402 2 35 2C46.598 2 56 11.402 56 23V31L42 31V23Z"
-          fill="currentColor"
-        />
-        <path
-          d="M21 60C9.40203 60 0 50.598 0 39L0 31L14 31L14 39C14 42.866 17.134 46 21 46C24.866 46 28 42.866 28 39V31H42V39C42 42.866 45.134 46 49 46C52.866 46 56 42.866 56 39V31L70 31V39C70 50.598 60.598 60 49 60C43.6212 60 38.7154 57.977 35 54.6514C31.2846 57.977 26.3788 60 21 60Z"
-          fill="currentColor"
-        />
-      </svg>
+      <QuelloMark className="size-6 shrink-0" />
       {showName && (
-        <span className="font-semibold text-[17px] tracking-[-0.03em] leading-none text-current">
-          DocsChat
+        <span className="font-semibold text-[18px] tracking-[-0.03em] leading-none text-current">
+          quello
         </span>
       )}
     </div>
   );
 }
 
-export function AgentworkMark({ className = 'size-5' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 70 60" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <path
-        d="M42 23C42 19.134 38.866 16 35 16C31.134 16 28 19.134 28 23L28 31L14 31V23C14 11.402 23.402 2 35 2C46.598 2 56 11.402 56 23V31L42 31V23Z"
-        fill="currentColor"
-      />
-      <path
-        d="M21 60C9.40203 60 0 50.598 0 39L0 31L14 31L14 39C14 42.866 17.134 46 21 46C24.866 46 28 42.866 28 39V31H42V39C42 42.866 45.134 46 49 46C52.866 46 56 42.866 56 39V31L70 31V39C70 50.598 60.598 60 49 60C43.6212 60 38.7154 57.977 35 54.6514C31.2846 57.977 26.3788 60 21 60Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
+// Aliases for compatibility across landing page components
+export const AgentworkLogo = QuelloLogo;
+export const AgentworkMark = QuelloMark;
 
 // App Provider Logos (SVG)
 export function SlackIcon({ className = 'size-5' }: { className?: string }) {
