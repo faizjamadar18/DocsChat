@@ -1,6 +1,7 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowUp,
   PenLine,
@@ -8,8 +9,11 @@ import {
   Search,
   Feather,
   Clock,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useWorkspace } from '../../../context/WorkspaceContext';
+import { useMentionScope, type MentionItem } from '../../../hooks/useMentionScope';
 import { api } from '../../../lib/api';
 import { StudioDocIcon, FilenameIcon } from '../../../components/connectors/ConnectorIcons';
 
@@ -23,10 +27,17 @@ interface RecentItem {
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [askQuery, setAskQuery] = useState('');
   const [recentAssets, setRecentAssets] = useState<RecentItem[]>([]);
   const [recentDocs, setRecentDocs] = useState<RecentItem[]>([]);
+  const [mentionDocs, setMentionDocs] = useState<MentionItem[]>([]);
+  const [mentionAssets, setMentionAssets] = useState<MentionItem[]>([]);
+
+  const mention = useMentionScope(mentionDocs, mentionAssets);
 
   // Time-based greeting
   const getGreeting = () => {
@@ -81,6 +92,97 @@ export default function HomePage() {
     loadData();
   }, [user?.active_workspace_id]);
 
+  // Full workspace source lists for the @ mention dropdown.
+  useEffect(() => {
+    const wsId = currentWorkspace?.id || user?.active_workspace_id;
+    if (!wsId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [docsRes, assetsRes] = await Promise.all([
+          api.get(`/documents?workspace_id=${wsId}`).catch(() => ({ documents: [] })),
+          api.get(`/sources?workspace_id=${wsId}`).catch(() => ({ sources: [] })),
+        ]);
+        if (cancelled) return;
+        setMentionDocs(
+          ((docsRes.documents || []) as { id: string; title: string }[]).map((d) => ({
+            id: d.id,
+            title: d.title || 'Untitled Document',
+            type: 'document' as const,
+          }))
+        );
+        setMentionAssets(
+          ((assetsRes.sources || []) as { id: string; filename: string; source_type?: string }[]).map(
+            (s) => ({
+              id: s.id,
+              title: s.filename || 'Untitled Asset',
+              type: 'asset' as const,
+              source_type: s.source_type,
+            })
+          )
+        );
+      } catch {
+        // Mention lookup is best-effort; the send path works without it.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWorkspace?.id, user?.active_workspace_id]);
+
+  // Enter/send hands the query to a fresh Playground chat.
+  const submitToPlayground = () => {
+    const query = askQuery.trim();
+    if (!query) return;
+    const params = new URLSearchParams({ q: query });
+    if (mention.attachedScope) {
+      params.set('scope_id', mention.attachedScope.id);
+      params.set('scope_title', mention.attachedScope.title);
+      params.set('scope_type', mention.attachedScope.type);
+    }
+    router.push(`/playground?${params.toString()}`);
+  };
+
+  const handleAskChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setAskQuery(val);
+    mention.processTextChange(val);
+  };
+
+  const handleAskKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      mention.navigateMentions(e.key);
+      if (mention.showMentions && mention.allFilteredMentions.length > 0) {
+        e.preventDefault();
+      }
+      return;
+    }
+    if (e.key === 'Enter') {
+      const result = mention.navigateMentions('Enter');
+      if (result === 'dismiss') {
+        e.preventDefault();
+        return;
+      }
+      if (result) {
+        e.preventDefault();
+        setAskQuery(mention.attachMention(result, askQuery));
+        inputRef.current?.focus();
+        return;
+      }
+      e.preventDefault();
+      submitToPlayground();
+      return;
+    }
+    if (e.key === 'Escape') {
+      mention.navigateMentions('Escape');
+    }
+  };
+
+  const handleSelectMention = (item: MentionItem) => {
+    setAskQuery(mention.attachMention(item, askQuery));
+    inputRef.current?.focus();
+  };
+
   const quickChips = [
     { label: 'Improve a draft', icon: PenLine },
     { label: 'Research a topic', icon: Search },
@@ -101,6 +203,27 @@ export default function HomePage() {
       </div>
 
       {/* Ask Ora Input Bar */}
+      {mention.attachedScope && (
+        <div className="mb-2 flex items-center gap-1.5 w-fit bg-white border border-border text-text-primary px-3 py-1 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
+          {mention.attachedScope.type === 'document' ? (
+            <StudioDocIcon className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+          ) : (
+            <FilenameIcon
+              filename={mention.attachedScope.title}
+              sourceType={mention.attachedScope.source_type}
+              className="w-3.5 h-3.5 text-text-secondary shrink-0"
+            />
+          )}
+          <span className="truncate max-w-xs">{mention.attachedScope.title}</span>
+          <button
+            type="button"
+            onClick={() => mention.clearScope()}
+            className="cursor-pointer ml-0.5 text-text-muted hover:text-text-primary"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       <div className="relative rounded-2xl bg-sidebar border border-border p-2 flex items-center gap-3 shadow-2xs hover:border-[#D1D5DB] transition-all">
         <div className="pl-3 flex items-center text-text-muted">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-text-secondary">
@@ -114,19 +237,67 @@ export default function HomePage() {
           </svg>
         </div>
         <input
+          ref={inputRef}
           type="text"
           value={askQuery}
-          onChange={(e) => setAskQuery(e.target.value)}
+          onChange={handleAskChange}
+          onKeyDown={handleAskKeyDown}
           placeholder="Ask Ora anything... type @ to reference"
           className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-muted focus:outline-none"
         />
         <button
           type="button"
+          onClick={submitToPlayground}
           className="w-8 h-8 rounded-xl bg-accent-hover/20 hover:bg-accent-hover/30 text-accent-hover flex items-center justify-center transition-colors cursor-pointer shrink-0"
           title="Send query"
         >
           <ArrowUp className="w-4 h-4" />
         </button>
+        {/* Mention Autocomplete Dropdown */}
+        {mention.showMentions && mention.allFilteredMentions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-border p-2 max-h-56 overflow-y-auto z-40 animate-fade-in text-xs">
+            {mention.filteredDocs.length > 0 && (
+              <div className="mb-2">
+                <div className="px-2 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                  STUDIO DOCUMENTS
+                </div>
+                {mention.filteredDocs.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => handleSelectMention(d)}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer hover:bg-[#F3F4F6] text-text-primary"
+                  >
+                    <StudioDocIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{d.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {mention.filteredAssets.length > 0 && (
+              <div>
+                <div className="px-2 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                  UPLOADED ASSETS
+                </div>
+                {mention.filteredAssets.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => handleSelectMention(a)}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer hover:bg-[#F3F4F6] text-text-primary"
+                  >
+                    <FilenameIcon
+                      filename={a.title}
+                      sourceType={a.source_type}
+                      className="w-3.5 h-3.5 shrink-0"
+                    />
+                    <span className="truncate">{a.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Start Writing Action Card */}

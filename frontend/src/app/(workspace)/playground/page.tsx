@@ -18,13 +18,20 @@ import Markdown from '@/components/Markdown';
 import SourceFooter, { FilenameIcon } from '@/components/chat/SourceFooter';
 import { StudioDocIcon } from '@/components/connectors/ConnectorIcons';
 import { useChat } from '@/hooks/useChat';
+import { useMentionScope, type MentionItem } from '@/hooks/useMentionScope';
 import { api } from '@/lib/api';
 
-interface MentionItem {
-  id: string;
-  title: string;
-  type: 'document' | 'asset';
-  source_type?: string;
+function parseHandoffScope(
+  searchParams: { get(name: string): string | null } | null
+): MentionItem | null {
+  const id = searchParams?.get('scope_id');
+  const type = searchParams?.get('scope_type');
+  if (!id || (type !== 'document' && type !== 'asset')) return null;
+  return {
+    id,
+    title: searchParams?.get('scope_title') || 'Referenced file',
+    type,
+  };
 }
 
 function PlaygroundContent() {
@@ -43,14 +50,23 @@ function PlaygroundContent() {
     switchThread,
   } = useChat(currentWorkspace?.id, threadId, 'universal');
 
-  const [input, setInput] = useState('');
-  const [attachedScope, setAttachedScope] = useState<MentionItem | null>(null);
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
+  const [input, setInput] = useState(() => searchParams.get('q') ?? '');
   const [docs, setDocs] = useState<MentionItem[]>([]);
   const [assets, setAssets] = useState<MentionItem[]>([]);
+
+  const {
+    attachedScope,
+    setAttachedScope,
+    showMentions,
+    setShowMentions,
+    filteredDocs,
+    filteredAssets,
+    allFilteredMentions,
+    selectedIndex,
+    processTextChange,
+    attachMention,
+    navigateMentions,
+  } = useMentionScope(docs, assets, parseHandoffScope(searchParams));
 
   const STARTER_SUGGESTIONS = [
     {
@@ -166,6 +182,84 @@ function PlaygroundContent() {
     };
   }, [threadId, router]);
 
+  // Home hero-input handoff (?q= + scope_*). The input text and scope chip
+  // are prefilled via state initializers above so the handoff survives one
+  // render; the effect below captures the payload, strips the params and
+  // sends exactly once.
+  const handoffSentRef = useRef(false);
+  const handoffPayloadRef = useRef<{
+    q: string;
+    scope: MentionItem | null;
+  } | null>(null);
+
+  const handoffQ = searchParams.get('q');
+  const hasHandoff = Boolean(handoffQ);
+
+  // Capture + strip: nothing may linger in the field (refresh, failed send).
+  useEffect(() => {
+    if (!hasHandoff || !currentWorkspace?.id) return;
+    handoffPayloadRef.current = {
+      q: handoffQ as string,
+      scope: parseHandoffScope(searchParams),
+    };
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      router.replace('/playground', { scroll: false });
+      setInput('');
+      setAttachedScope(null);
+      setShowMentions(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    hasHandoff,
+    handoffQ,
+    searchParams,
+    currentWorkspace?.id,
+    router,
+    setAttachedScope,
+    setShowMentions,
+  ]);
+
+  // Auto-send once, waiting for any in-flight stream to finish, because
+  // askQuestion silently drops calls while streaming is true.
+  useEffect(() => {
+    const payload = handoffPayloadRef.current;
+    if (!payload || !currentWorkspace?.id || streaming) return;
+    if (handoffSentRef.current) return;
+    handoffSentRef.current = true;
+    let cancelled = false;
+    (async () => {
+      const scopeOptions = payload.scope
+        ? {
+            workspaceId: currentWorkspace?.id,
+            threadId: undefined,
+            mode: 'universal' as const,
+            scopeIds: [payload.scope.id],
+            attachedName: payload.scope.title,
+          }
+        : {
+            workspaceId: currentWorkspace?.id,
+            threadId: undefined,
+            mode: 'universal' as const,
+          };
+      await askQuestion(payload.q, scopeOptions);
+      if (cancelled) return;
+      setInput('');
+      setAttachedScope(null);
+      setShowMentions(false);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [askQuestion, streaming, currentWorkspace?.id, setAttachedScope, setShowMentions]);
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -182,73 +276,42 @@ function PlaygroundContent() {
     }
   };
 
-  const filteredDocs = docs.filter((d) =>
-    d.title.toLowerCase().includes(mentionQuery.toLowerCase())
-  );
-  const filteredAssets = assets.filter((a) =>
-    a.title.toLowerCase().includes(mentionQuery.toLowerCase())
-  );
-  const allFilteredMentions = [...filteredDocs, ...filteredAssets];
-
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setInput(val);
+    processTextChange(val);
     adjustTextareaHeight();
-
-    const lastAtIndex = val.lastIndexOf('@');
-    if (lastAtIndex !== -1 && (lastAtIndex === 0 || val[lastAtIndex - 1] === ' ')) {
-      const query = val.slice(lastAtIndex + 1);
-      if (!query.includes(' ')) {
-        setShowMentions(true);
-        setMentionQuery(query);
-        setSelectedIndex(0);
-        return;
-      }
-    }
-    setShowMentions(false);
   };
 
   const handleSelectMention = useCallback(
     (item: MentionItem) => {
-      setAttachedScope(item);
-      const lastAtIndex = input.lastIndexOf('@');
-      if (lastAtIndex !== -1) {
-        setInput(input.slice(0, lastAtIndex).trim());
-      }
+      setInput(attachMention(item, input));
       setShowMentions(false);
-      setMentionQuery('');
       if (textareaRef.current) {
         textareaRef.current.focus();
       }
     },
-    [input]
+    [input, attachMention, setShowMentions]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (showMentions && allFilteredMentions.length > 0) {
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % allFilteredMentions.length);
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev === 0 ? allFilteredMentions.length - 1 : prev - 1
-        );
+        navigateMentions(e.key);
         return;
       }
       if (e.key === 'Enter') {
         e.preventDefault();
-        const selected = allFilteredMentions[selectedIndex];
-        if (selected) {
+        const selected = navigateMentions('Enter');
+        if (selected && selected !== 'dismiss') {
           handleSelectMention(selected);
         }
         return;
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        setShowMentions(false);
+        navigateMentions('Escape');
         return;
       }
     }
@@ -659,7 +722,7 @@ function PlaygroundContent() {
           </div>
 
             {/* Fixed Bottom Input Footer in Conversation Mode (sibling of scroll region) */}
-            <div className="shrink-0 border-t border-border/60 bg-surface px-4 pt-2 pb-4">
+            <div className="shrink-0 bg-surface px-4 pt-2 pb-4">
               <div className="max-w-3xl w-full mx-auto">
               <div className="bg-white border border-border rounded-2xl p-3 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary scheme-light">
                 {attachedScope && (
