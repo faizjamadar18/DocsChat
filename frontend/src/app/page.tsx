@@ -19,12 +19,12 @@ export default function Home() {
         <Navbar />
         <main>
           <Hero />
-          <IntegrationsBoundary />
           <HowItWorks />
           <UseCases />
-          <Features />
+          {/* <Features /> */}
+          {/* <IntegrationsBoundary /> */}
           <AgentworkForAgents />
-          <SecurityCompliance />
+          {/* <SecurityCompliance /> */}
           <FAQSection />
           <CTABanner />
         </main>

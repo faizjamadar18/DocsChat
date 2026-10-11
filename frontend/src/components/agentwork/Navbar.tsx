@@ -120,7 +120,7 @@ export default function Navbar() {
   return (
     <>
       {/* Top Main Navigation */}
-      <nav aria-label="Main navigation" className="w-full py-6 px-6">
+      <nav aria-label="Main navigation" className="w-full py-10 px-6">
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
           <Link href="/" aria-label="DocsChat home" className="text-[#21201c] hover:opacity-90">
             <AgentworkLogo />

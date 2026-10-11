@@ -15,6 +15,16 @@ import {
   NotionIcon,
   GoogleDriveIcon,
   GitHubIcon,
+  SlackIcon,
+  MicrosoftIcon,
+  LinearIcon,
+  AtlassianIcon,
+  HubSpotIcon,
+  ClaudeIcon,
+  GrokIcon,
+  ChatGptIcon,
+  PerplexityIcon,
+  MistralIcon,
 } from '../connectors/ConnectorIcons';
 
 interface StepData {
@@ -50,14 +60,22 @@ const headerLines = [
   { text: 'Verify every answer in one click', number: '03' },
 ];
 
-// Only shipped connectors — Soon items (Slack, M365, Linear, etc.)
-// and MCP apps are not shown here.
 const integrationIcons = [
   { name: 'PDF', Icon: PdfIcon },
   { name: 'Google Docs', Icon: GoogleDocIcon },
   { name: 'Notion', Icon: NotionIcon },
   { name: 'Google Drive', Icon: GoogleDriveIcon },
   { name: 'GitHub', Icon: GitHubIcon },
+  { name: 'Slack', Icon: SlackIcon },
+  { name: 'Microsoft 365', Icon: MicrosoftIcon },
+  { name: 'Linear', Icon: LinearIcon },
+  { name: 'Atlassian', Icon: AtlassianIcon },
+  { name: 'HubSpot', Icon: HubSpotIcon },
+  { name: 'Claude', Icon: ClaudeIcon },
+  { name: 'Grok', Icon: GrokIcon },
+  { name: 'ChatGPT', Icon: ChatGptIcon },
+  { name: 'Perplexity', Icon: PerplexityIcon },
+  { name: 'Mistral', Icon: MistralIcon },
 ];
 
 const cardSources: Citation[] = [

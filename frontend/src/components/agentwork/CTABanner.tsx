@@ -20,9 +20,6 @@ export default function CTABanner() {
           <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.03em] leading-tight text-[#21201c] text-balance">
             Get answers your team can trust
           </h2>
-          <p className="text-base text-[#63635e] leading-relaxed">
-            Start free. Connect a source in minutes. Invite your team when you&apos;re ready.
-          </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
             <Link
