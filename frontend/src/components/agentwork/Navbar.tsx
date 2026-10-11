@@ -5,17 +5,16 @@ import Link from 'next/link';
 import { AgentworkLogo } from './Icons';
 
 const SOLUTIONS = [
-  { label: 'Research & Playground', description: 'Ask Ora complex questions across connected documents with transparent citations', href: '/playground' },
-  { label: 'Studio Canvas', description: 'Draft, summarize, and edit in a Notion-style block canvas with AI co-writing', href: '/studio' },
-  { label: 'Cloud Connectors', description: 'Sync Google Drive, Notion, GitHub repositories, and uploaded PDFs', href: '/connectors' },
-  { label: 'MCP for Agents', description: 'Connect Claude Desktop, Cursor, and custom tools to your private knowledge base', href: '/mcp' },
+  { label: 'Ask Ora', description: 'Ask questions across your docs with citations you can open', href: '/playground' },
+  { label: 'Write in Studio', description: 'Draft, summarize, and edit alongside your sources', href: '/studio' },
+  { label: 'Connect tools', description: 'Sync Google Drive, Notion, GitHub, and uploaded PDFs', href: '/connectors' },
+  { label: 'Use with other AI tools', description: 'Ask your workspace from Claude Desktop and Cursor', href: '/mcp' },
 ];
 
 const NAV_LINKS = [
-  { label: 'Playground', href: '/playground', external: false },
+  { label: 'Ask', href: '/playground', external: false },
   { label: 'Studio', href: '/studio', external: false },
   { label: 'Connectors', href: '/connectors', external: false },
-  { label: 'Log in', href: '/login', external: false },
 ];
 
 export default function Navbar() {
@@ -120,8 +119,14 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Launch announcement */}
+      <div className="w-full bg-[#21201c] text-[#ffffff] text-center text-[13px] font-medium px-6 py-2">
+        <Link href="/mcp" className="hover:underline">
+          New — Ask your DocsChat workspace from Claude Desktop and Cursor →
+        </Link>
+      </div>
       {/* Top Main Navigation */}
-      <nav aria-label="Main navigation" className="w-full py-10 px-6">
+      <nav aria-label="Main navigation" className="w-full py-6 px-6">
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
           <Link href="/" aria-label="DocsChat home" className="text-[#21201c] hover:opacity-90">
             <AgentworkLogo />

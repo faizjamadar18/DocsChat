@@ -79,7 +79,7 @@ export default function HeroMockup() {
         {/* Workspace Header Bar */}
         <header className="flex items-center justify-between border-b border-[#e2e1de] px-5 py-3 bg-[#fdfdfc]">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[#21201c]">Qdrant Migration & Architecture Specs</span>
+            <span className="text-sm font-semibold text-[#21201c]">v2 Launch Readiness</span>
           </div>
           <div className="flex items-center gap-2 text-[#8d8d86]">
             <button className="p-1 hover:text-[#21201c]" aria-label="Thread options">
@@ -111,7 +111,7 @@ export default function HeroMockup() {
             <div className="flex flex-col gap-1">
               <span className="text-xs font-semibold text-[#63635e]">You</span>
               <p className="text-[#21201c] font-normal leading-relaxed">
-                What are our vector indexing specs and database migration requirements across Notion and GitHub?
+                What is the status of our v2 release, and what is still blocking launch?
               </p>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function HeroMockup() {
 
               {/* Actions pill */}
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#f9f9f8] border border-[#e2e1de] text-xs font-medium text-[#63635e] w-fit">
-                <span>Grounded with Gemini 2.5 Flash • 3 sources analyzed</span>
+                <span>3 sources checked • Answer with citations</span>
                 <span className="text-[10px]">›</span>
               </div>
 
@@ -134,17 +134,17 @@ export default function HeroMockup() {
               <div className="text-[#21201c] leading-relaxed flex flex-col gap-2 text-sm">
                 <p>
                   According to the{' '}
-                  <span className="underline decoration-[#8d8d86] cursor-pointer">Qdrant Migration RFC in Notion</span>{' '}
+                  <span className="underline decoration-[#8d8d86] cursor-pointer">Q4 Release Plan in Notion</span>{' '}
                   <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">1</span>,
-                  all vector embeddings are standardized to 768 dimensions using Google&apos;s <strong className="font-semibold text-[#21201c]">gemini-embedding-2</strong> model.
+                  v2 is on track for November 18th pending QA sign-off.
                 </p>
                 <p>
-                  In the{' '}
-                  <span className="underline decoration-[#8d8d86] cursor-pointer">GitHub backend repository</span>{' '}
-                  <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">2</span>,
-                  payload schema indexes are configured on <code className="px-1 py-0.5 rounded bg-[#f1f0ef] text-[11px] font-mono text-[#ff6a00]">workspace_id</code> to guarantee tenant isolation. The{' '}
-                  <span className="underline decoration-[#8d8d86] cursor-pointer">Google Drive Architecture Spec</span>{' '}
-                  <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">3</span> confirms automated snapshot backups occur on daily schedules.
+                  One blocker remains in the{' '}
+                  <span className="underline decoration-[#8d8d86] cursor-pointer">backend repository on GitHub</span>{' '}
+                  <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">2</span>:
+                  session refresh handling in PR #142, assigned to Marcus. The{' '}
+                  <span className="underline decoration-[#8d8d86] cursor-pointer">QA sign-off in Drive</span>{' '}
+                  <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">3</span> confirms performance tests passed.
                 </p>
               </div>
 
@@ -157,7 +157,7 @@ export default function HeroMockup() {
                   <svg className="size-3.5 text-[#ff6a00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
-                  <span>Open in Studio Canvas</span>
+                  <span>Open in Studio</span>
                 </button>
               </div>
 

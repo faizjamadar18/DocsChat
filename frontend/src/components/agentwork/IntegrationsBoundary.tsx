@@ -42,12 +42,12 @@ export default function IntegrationsBoundary() {
         {/* Headline & Description */}
         <div className="flex max-w-xl flex-col gap-3">
           <h2 className="text-2xl md:text-3xl font-medium leading-[1.3] tracking-[-0.03em] text-[#21201c]">
-            Workspace tenancy for teams.
+            Connects to the tools
             <br />
-            <span className="text-[#63635e]">Granular scope control that stays yours.</span>
+            <span className="text-[#63635e]">your team already uses.</span>
           </h2>
           <p className="text-sm md:text-base leading-relaxed tracking-[-0.005em] text-[#63635e]">
-            DocsChat enforces strict tenant isolation at the database layer: each workspace has its own isolated collection namespace in Qdrant Cloud and MongoDB. Use @ document mentions to restrict queries to individual files whenever you need zero cross-document bleed.
+            Sync Drive, Notion, GitHub, and more. Permissions stay respected, and you can scope any question to a single file with @.
           </p>
         </div>
 

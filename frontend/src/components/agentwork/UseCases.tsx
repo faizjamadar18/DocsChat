@@ -1,352 +1,445 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { NotionIcon, GoogleDriveIcon, LinearIcon, GmailIcon, GitHubIcon, GoogleDocsIcon, GoogleSlidesIcon, HubSpotIcon, SlackIcon } from './Icons';
-
-interface Source {
-  index: number;
-  title: string;
-  provider: string;
-}
-
-interface Example {
-  id: string;
-  number: string;
-  title: string;
-  userMessage: string;
-  actionsCount: number;
-  reasoningSteps: string[];
-  assistantText: string;
-  sources: Source[];
-}
-
-const EXAMPLES: Example[] = [
-  {
-    id: 'resolve-contradictions',
-    number: '01',
-    title: 'Cross-source synthesis',
-    userMessage: 'What are our vector indexing specs and database migration requirements across Notion and GitHub?',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Querying connected workspace sources for Qdrant indexing and migration specs…',
-      'Retrieved Qdrant Migration RFC from Notion: 768-dim embeddings with gemini-embedding-2',
-      'Retrieved backend/app/vector_store.py from GitHub: payload indexing on workspace_id',
-      'Synthesizing verified specifications with citation anchors',
-    ],
-    assistantText: 'According to the Qdrant Migration RFC in Notion [1], all vector embeddings are standardized to 768 dimensions using Google\'s gemini-embedding-2 model.\n\nIn the GitHub backend repository [2], payload schema indexes are configured on workspace_id to guarantee tenant isolation, and daily snapshot policies are documented in the Architecture Spec [3].',
-    sources: [
-      { index: 1, title: 'Qdrant Migration RFC', provider: 'notion' },
-      { index: 2, title: 'backend/app/vector_store.py', provider: 'github' },
-      { index: 3, title: 'Architecture_Spec.pdf', provider: 'google-drive' },
-    ],
-  },
-  {
-    id: 'scoped-mention',
-    number: '02',
-    title: 'Scoped @ document queries',
-    userMessage: '@Q3_Financial_Audit.pdf What was our cloud infrastructure expenditure in Q3?',
-    actionsCount: 2,
-    reasoningSteps: [
-      'Scoping retrieval strictly to attached scope: Q3_Financial_Audit.pdf',
-      'Extracting financial breakdown table from page 14',
-      'Verifying line items for Qdrant Cloud, Render, and Vercel hosting',
-    ],
-    assistantText: 'Based strictly on Q3_Financial_Audit.pdf [1]:\n\n• Total cloud infrastructure expenditure was $48,250 in Q3.\n• Primary line items: Vector search infrastructure on Qdrant Cloud ($18,400) and GPU inference workloads ($22,600).\n• Overall infrastructure costs decreased 12% quarter-over-quarter following index payload optimizations.',
-    sources: [
-      { index: 1, title: 'Q3_Financial_Audit.pdf (p. 14)', provider: 'google-docs' },
-    ],
-  },
-  {
-    id: 'codebase-exploration',
-    number: '03',
-    title: 'GitHub codebase exploration',
-    userMessage: 'How are authentication tokens handled and refreshed in our FastAPI backend?',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Searching GitHub repository for auth middleware and JWT lifecycle…',
-      'Inspected backend/app/auth/jwt.py and auth router endpoints',
-      'Cross-referenced OAuth token exchange for Google, Notion, and GitHub',
-    ],
-    assistantText: 'In our GitHub repository [1]:\n\n• JWT access tokens expire after 60 minutes and are signed with HS256 [1].\n• Connector tokens (Google, Notion, GitHub) are encrypted at rest with AES-256 and stored in the workspaces collection [2].\n• The refresh endpoint verifies session status before issuing renewed bearer tokens [1].',
-    sources: [
-      { index: 1, title: 'backend/app/auth/jwt.py', provider: 'github' },
-      { index: 2, title: 'backend/app/models/connectors.py', provider: 'github' },
-    ],
-  },
-  {
-    id: 'notion-knowledge',
-    number: '04',
-    title: 'Notion knowledge retrieval',
-    userMessage: 'What is our team policy on production database migrations?',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Accessing synced Notion workspace database…',
-      'Found Engineering Playbook > Database Migrations guideline',
-      'Confirmed staging dry-run requirements and rollback plans',
-    ],
-    assistantText: 'Per the Engineering Playbook in Notion [1]:\n\n• All database migrations require an automated dry-run on staging before production execution.\n• Migrations must include an idempotent rollback script tested in CI [1].\n• Zero-downtime dual-writes are mandatory for collection renames or vector re-indexing [2].',
-    sources: [
-      { index: 1, title: 'Engineering Playbook', provider: 'notion' },
-      { index: 2, title: 'RFC: Zero-Downtime Schema Updates', provider: 'notion' },
-    ],
-  },
-  {
-    id: 'drive-deep-search',
-    number: '05',
-    title: 'Google Drive deep search',
-    userMessage: 'Find the latest enterprise security review deck in Google Drive',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Scanning connected Google Drive folders…',
-      'Identified Enterprise Security Review 2026.gslides updated last week',
-      'Verified SOC 2 and vector tenancy compliance slides',
-    ],
-    assistantText: 'The latest presentation is Enterprise Security Review 2026 in Google Drive [1].\n\nKey highlights:\n• Multi-tenant collection isolation in Qdrant Cloud [1]\n• Google OAuth 2.0 authentication architecture [2]\n• Enterprise zero-retention compliance policies for Google GenAI and Groq LLM queries',
-    sources: [
-      { index: 1, title: 'Enterprise Security Review 2026', provider: 'google-slides' },
-      { index: 2, title: 'Security Architecture Diagram', provider: 'google-drive' },
-    ],
-  },
-  {
-    id: 'studio-co-writer',
-    number: '06',
-    title: 'Studio AI co-writing',
-    userMessage: 'Draft a technical proposal for our new MCP connector based on our design docs',
-    actionsCount: 4,
-    reasoningSteps: [
-      'Reading MCP protocol specifications from Notion…',
-      'Extracting SSE endpoint requirements and tool schemas',
-      'Drafting structured proposal formatted for Studio block editor',
-    ],
-    assistantText: 'Here is an outline drafted directly for Studio Canvas [1]:\n\n# Model Context Protocol (MCP) Integration\n## 1. Overview\nEnable desktop AI clients (Claude Desktop, Cursor) to discover and query DocsChat workspace knowledge.\n\n## 2. Protocol Details\n• SSE transport running on `/api/mcp/sse`\n• Workspace tool `search_knowledge_base` with hybrid semantic scoring [2].',
-    sources: [
-      { index: 1, title: 'Studio Canvas: MCP RFC', provider: 'google-docs' },
-      { index: 2, title: 'MCP Specification Spec', provider: 'notion' },
-    ],
-  },
-  {
-    id: 'pdf-analysis',
-    number: '07',
-    title: 'PDF & research paper analysis',
-    userMessage: 'Summarize the chunking methodology and similarity metrics used in the benchmark paper',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Analyzing uploaded document benchmark_eval_2026.pdf…',
-      'Extracted Section 3.2: Chunking strategy and cosine similarity evaluation',
-      'Cross-checked benchmark results against baseline RAG pipelines',
-    ],
-    assistantText: 'From benchmark_eval_2026.pdf [1]:\n\n• The benchmark employs a recursive character chunker with 800-token chunks and 150-token overlap [1].\n• Cosine similarity over 768-dimensional embeddings yielded 94.2% Mean Reciprocal Rank (MRR).\n• Dynamic query expansion improved multi-document recall by 18.5% [2].',
-    sources: [
-      { index: 1, title: 'benchmark_eval_2026.pdf (p. 6)', provider: 'google-docs' },
-      { index: 2, title: 'Benchmark Appendix B', provider: 'google-docs' },
-    ],
-  },
-  {
-    id: 'voice-agent',
-    number: '08',
-    title: 'Real-time voice agent',
-    userMessage: 'Can you give me a 30-second audio briefing on today\'s deployment plan?',
-    actionsCount: 2,
-    reasoningSteps: [
-      'Pulling daily deployment manifest from GitHub and Notion…',
-      'Synthesizing concise, voice-optimized verbal briefing',
-      'Streaming synthesized audio via Vapi AI integration',
-    ],
-    assistantText: 'Today\'s deployment is scheduled for 4:00 PM UTC [1]. It includes the Qdrant Cloud collection payload index migration and the new selective repository picker for GitHub connectors [2]. Staging smoke tests passed with zero errors.',
-    sources: [
-      { index: 1, title: 'Deployment Manifest', provider: 'github' },
-      { index: 2, title: 'Release Notes v2.4', provider: 'notion' },
-    ],
-  },
-  {
-    id: 'mcp-integration',
-    number: '09',
-    title: 'Model Context Protocol (MCP)',
-    userMessage: 'How do I connect Claude Desktop to my DocsChat workspace?',
-    actionsCount: 3,
-    reasoningSteps: [
-      'Loading MCP server settings and workspace endpoint configuration…',
-      'Generating claude_desktop_config.json configuration snippet',
-    ],
-    assistantText: 'To connect Claude Desktop [1]:\n\n1. Open your DocsChat workspace settings and copy your unique MCP Server URL [1].\n2. In `claude_desktop_config.json`, add your DocsChat MCP server under `mcpServers`.\n3. Restart Claude Desktop. Claude can now search and cite your DocsChat documents in real time [2].',
-    sources: [
-      { index: 1, title: 'MCP Setup Guide', provider: 'notion' },
-      { index: 2, title: 'McpConnectModal.tsx', provider: 'github' },
-    ],
-  },
-  {
-    id: 'transparent-citations',
-    number: '10',
-    title: 'Transparent citation audit',
-    userMessage: 'Where did the claim about SOC 2 certification come from?',
-    actionsCount: 2,
-    reasoningSteps: [
-      'Locating cited passage in workspace vector index…',
-      'Extracted exact chunk text, page offset, and similarity score (0.91)',
-    ],
-    assistantText: 'That statement is directly cited from Enterprise Security Review 2026 (Slide 12) [1]:\n\n"DocsChat guarantees data isolation per workspace in Qdrant Cloud and utilizes SOC 2 Type II certified cloud infrastructure."\n\nYou can click citation [1] to view the raw chunk excerpt in the Source Drawer.',
-    sources: [
-      { index: 1, title: 'Enterprise Security Review (Slide 12)', provider: 'google-slides' },
-      { index: 2, title: 'Source Drawer: Chunk #1042', provider: 'google-drive' },
-    ],
-  },
-  {
-    id: 'multi-model-reasoning',
-    number: '11',
-    title: 'Multi-model intelligence',
-    userMessage: 'Compare Gemini 2.5 Flash and Groq Llama 3.3 for workspace queries',
-    actionsCount: 2,
-    reasoningSteps: [
-      'Retrieving model capability specifications and response latency metrics…',
-    ],
-    assistantText: 'In DocsChat, you can switch models anytime from the top bar [1]:\n\n• Google Gemini 2.5 Flash: Optimized for deep document grounding, complex multimodal synthesis, and large context windows.\n• Groq Llama 3.3 70B: Delivers ultra-low latency inference (sub-200ms TTFT) for lightning-fast iterative conversations [2].',
-    sources: [
-      { index: 1, title: 'Model Configuration Spec', provider: 'notion' },
-      { index: 2, title: 'backend/app/llm_router.py', provider: 'github' },
-    ],
-  },
-];
+import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { NotionIcon, GitHubIcon, GoogleDriveIcon } from './Icons';
 
 export default function UseCases() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % EXAMPLES.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [isPaused]);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsPlaying(true);
+        }
+      },
+      { threshold: 0.3 }
+    );
 
-  const activeExample = EXAMPLES[activeIndex];
-
-  const getProviderIcon = (provider: string) => {
-    switch (provider) {
-      case 'notion':
-        return <NotionIcon className="size-3 text-[#21201c]" />;
-      case 'google-drive':
-        return <GoogleDriveIcon className="size-3" />;
-      case 'google-docs':
-        return <GoogleDocsIcon className="size-3" />;
-      case 'google-slides':
-        return <GoogleSlidesIcon className="size-3" />;
-      case 'linear':
-        return <LinearIcon className="size-3 text-[#5E6AD2]" />;
-      case 'gmail':
-        return <GmailIcon className="size-3" />;
-      case 'github':
-        return <GitHubIcon className="size-3 text-[#21201c]" />;
-      case 'slack':
-        return <SlackIcon className="size-3" />;
-      case 'hubspot':
-        return <HubSpotIcon className="size-3 text-[#ff7a59]" />;
-      default:
-        return <NotionIcon className="size-3 text-[#21201c]" />;
+    if (rootRef.current) {
+      observer.observe(rootRef.current);
     }
-  };
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section className="flex flex-col items-center px-6 py-16 md:py-24">
-      <div className="grid w-full max-w-300 grid-cols-1 md:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Heading and 11 Interactive Tabs */}
-        <div className="flex flex-col md:col-span-4 gap-6">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c]">
-              Verifiable answers.
+    <section
+      id="traceability"
+      ref={rootRef}
+      className="relative z-2 overflow-hidden bg-[#fdfdfc] px-[5%] py-20 md:py-28 lg:py-36 text-[#21201c]"
+    >
+      {/* Background radial dot grid */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 hidden md:block [background-image:radial-gradient(rgba(26,25,22,0.06)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(90%_80%_at_72%_48%,#000_28%,transparent_82%)] [-webkit-mask-image:radial-gradient(90%_80%_at_72%_48%,#000_28%,transparent_82%)]"
+      />
+
+      <div className="container relative mx-auto max-w-[76rem]">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16">
+          {/* Left Column: Heading, description, bullets, CTA */}
+          <div className="max-w-xl">
+            <h2 className="text-balance text-4xl font-medium leading-[1.08] tracking-[-0.03em] text-[#1a1916] md:text-5xl lg:text-[56px]">
+              Every answer
               <br />
-              <span className="text-[#63635e]">Grounded in your content.</span>
+              shows its work
             </h2>
-          </div>
 
-          <div className="flex flex-col divide-y divide-[#e2e1de] border-y border-[#e2e1de]">
-            {EXAMPLES.map((example, idx) => {
-              const isActive = idx === activeIndex;
-              return (
-                <button
-                  key={example.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveIndex(idx);
-                    setIsPaused(true);
-                  }}
-                  className={`group relative flex items-center justify-between py-3.5 px-2 text-left transition-colors cursor-pointer ${
-                    isActive ? 'text-[#21201c] font-semibold' : 'text-[#63635e] hover:text-[#21201c]'
-                  }`}
-                >
-                  <span className="text-sm tracking-[-0.01em]">{example.title}</span>
-                  <span className={`text-xs font-mono ${isActive ? 'text-[#ff6a00]' : 'text-[#8d8d86]'}`}>
-                    {example.number}
-                  </span>
+            <div className="mt-5 space-y-3 text-pretty text-base leading-relaxed text-[#6b665e]">
+              <p>
+                Open any response and see the documents, pull requests, and passages behind it.
+              </p>
+              <p>
+                Whether you&apos;re preparing a release, resolving a decision, or onboarding a teammate, you can check the source instead of guessing.
+              </p>
+            </div>
 
-                  {/* Active highlight indicator bar */}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#ff6a00]" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Live Chat Preview Pane */}
-        <div className="w-full md:col-span-8">
-          <div
-            className="w-full rounded-2xl border border-[#e2e1de] bg-[#ffffff] p-6 md:p-8 shadow-sm flex flex-col gap-6"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-          >
-            {/* User Query */}
-            <div className="flex items-start gap-3">
-              <div className="relative size-8 rounded-full overflow-hidden shrink-0 bg-[#e9e8e6]">
-                <Image
-                  src="/images/jane-doe-avatar.webp"
-                  alt="You"
-                  width={32}
-                  height={32}
-                  className="object-cover size-full"
-                />
+            <div className="mt-7 space-y-3">
+              <div className="flex items-start gap-3 text-sm leading-relaxed text-[#2e2b26]">
+                <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-[#1a1916]/5 text-[#1a1916]">
+                  <svg
+                    className="size-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </span>
+                <span>Inspect citations, page references, and linked pull requests in one click.</span>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-[#63635e]">You</span>
-                <p className="text-sm md:text-base text-[#21201c] font-medium leading-relaxed">
-                  {activeExample.userMessage}
-                </p>
+
+              <div className="flex items-start gap-3 text-sm leading-relaxed text-[#2e2b26]">
+                <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-[#1a1916]/5 text-[#1a1916]">
+                  <svg
+                    className="size-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </span>
+                <span>Follow decisions across tools without digging through threads and folders.</span>
               </div>
             </div>
 
-            {/* Assistant Answer */}
-            <div className="flex items-start gap-3 border-t border-[#e2e1de] pt-5">
-              <div className="size-8 rounded-full bg-[#f97316] text-[#ffffff] flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold">A</span>
+            <div className="mt-8">
+              <Link
+                href="/register"
+                className="group inline-flex items-center gap-2 rounded-full border border-[#e4e4e4] bg-white px-5 py-2.5 text-sm font-medium text-[#2e2b26] shadow-xs hover:bg-[#edebe6] transition-colors"
+              >
+                <span>Explore answers with sources</span>
+                <svg
+                  className="size-4 transition-transform group-hover:translate-x-0.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Column: Interactive conversation + Reasoning Trace card */}
+          <div className="relative flex min-h-[420px] items-center sm:min-h-[460px] lg:min-h-[540px]">
+            {/* Ambient blurry shadow glow in the upper-right corner */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -top-12 -right-12 h-96 w-96 rounded-full bg-gradient-to-bl from-white via-[#faf9f5]/80 to-transparent blur-3xl opacity-90"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute top-2 right-2 h-72 w-72 rounded-full bg-gradient-to-bl from-black/[0.03] to-transparent blur-2xl"
+            />
+
+            <div
+              className="relative mx-auto w-full max-w-[540px] lg:ml-0 lg:[mask-image:radial-gradient(140%_135%_at_8%_12%,#000_52%,transparent_92%)] lg:[-webkit-mask-image:radial-gradient(140%_135%_at_8%_12%,#000_52%,transparent_92%)]"
+              style={{
+                WebkitMaskImage: 'radial-gradient(140% 135% at 8% 12%, #000 52%, transparent 92%)',
+                maskImage: 'radial-gradient(140% 135% at 8% 12%, #000 52%, transparent 92%)',
+              }}
+            >
+              {/* Top Chat Messages */}
+              <div className="mx-auto max-w-md space-y-2.5">
+                {/* User Message */}
+                <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-[#edebe6] px-4 py-2.5 text-sm leading-snug text-[#1a1916] shadow-2xs">
+                  What is the status of our v2 release, and what dependencies are still blocking the launch?
+                </div>
+
+                {/* AI Assistant Message */}
+                <div className="max-w-[94%] rounded-2xl rounded-bl-md border border-[#e4e4e4] bg-white px-4 py-2.5 text-sm leading-snug text-[#2e2b26] shadow-2xs">
+                  v2 is on track for November 18th following QA sign-off. One blocker remains: OAuth session refresh handling in PR #142, assigned to Marcus with final review pending.
+                </div>
               </div>
-              <div className="flex flex-col gap-3 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#63635e]">Ora AI</span>
-                  <span className="text-xs text-[#8d8d86] font-medium bg-[#f9f9f8] px-2 py-0.5 rounded border border-[#e2e1de]">
-                    Synthesized from {activeExample.sources.length} sources
-                  </span>
-                </div>
 
-                <div className="text-sm text-[#21201c] leading-relaxed whitespace-pre-line font-normal">
-                  {activeExample.assistantText}
-                </div>
-
-                {/* Sources Footnote Chips */}
-                <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[#e2e1de]/60 text-xs text-[#63635e]">
-                  <span className="text-[#8d8d86] font-medium">
-                    {activeExample.sources.length} sources used:
-                  </span>
-                  {activeExample.sources.map((src) => (
-                    <div
-                      key={src.index}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#f9f9f8] border border-[#e2e1de] text-xs font-medium text-[#21201c] hover:bg-[#f1f0ef] transition-colors cursor-pointer"
+              {/* Trace Audit Card */}
+              <div className="mt-5 rounded-2xl border border-[#e4e4e4] bg-white px-5 py-5 sm:px-6 shadow-[0_18px_44px_-34px_rgba(20,20,45,0.22),0_10px_28px_-16px_rgba(0,0,0,0.06)]">
+                {/* Top Divider & Grounded Trace badge */}
+                <div className="relative mb-6 mt-1 flex items-center justify-center">
+                  <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#e4e4e4]" />
+                  <span
+                    style={{
+                      transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                      transitionDelay: '0ms',
+                    }}
+                    className={`relative inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ${
+                      isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <svg
+                      className="size-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
                     >
-                      {getProviderIcon(src.provider)}
-                      <span>{src.title}</span>
+                      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z" />
+                    </svg>
+                    Grounded Source Trace
+                  </span>
+                </div>
+
+                {/* Timeline content with vertical spine line */}
+                <div className="relative mx-auto mt-6 max-w-lg pl-7">
+                  {/* Vertical Spine Line */}
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      transition: 'transform 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.15s',
+                      transformOrigin: 'top',
+                    }}
+                    className={`absolute left-[9px] top-1 bottom-1 w-px bg-[#e4e4e4] ${
+                      isPlaying ? 'scale-y-100' : 'scale-y-0'
+                    }`}
+                  />
+
+                  {/* Step 1: Reasoning */}
+                  <div
+                    style={{
+                      transition: 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
+                      transitionDelay: '180ms',
+                    }}
+                    className={`relative pb-5 ${
+                      isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <span className="absolute -left-7 top-0 grid size-[19px] place-items-center rounded-full border border-[#e4e4e4] bg-white text-[#6b665e]">
+                      <svg
+                        className="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                      </svg>
+                    </span>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#6b665e]">
+                      Reasoning
+                    </p>
+                    <p className="mt-1 text-sm text-[#2e2b26]">
+                      Cross-referenced Q4 Release Roadmap with latest QA audit and open pull requests
+                    </p>
+                  </div>
+
+                  {/* Step 2: Knowledge sources */}
+                  <div
+                    style={{
+                      transition: 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
+                      transitionDelay: '380ms',
+                    }}
+                    className={`relative pb-5 ${
+                      isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <span className="absolute -left-7 top-0 grid size-[19px] place-items-center rounded-full border border-[#e4e4e4] bg-white text-[#6b665e]">
+                      <svg
+                        className="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <path d="M14 2v6h6" />
+                      </svg>
+                    </span>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#6b665e]">
+                      Knowledge sources
+                    </p>
+
+                    <div className="mt-2 space-y-1.5">
+                      {/* Source Row 1: Notion */}
+                      <div
+                        style={{
+                          transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                          transitionDelay: '520ms',
+                        }}
+                        className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/[0.04] ${
+                          isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                        }`}
+                      >
+                        <NotionIcon className="size-3.5 shrink-0 text-[#21201c]" />
+                        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-[#2e2b26]">
+                          Q4 Product Roadmap &amp; Milestones · § Release 2.0
+                        </span>
+                        <span className="text-[11px] font-medium text-[#8d8d86] tabular-nums">98% match</span>
+                        <svg
+                          style={{
+                            transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                            transitionDelay: '740ms',
+                          }}
+                          className={`size-3.5 shrink-0 text-emerald-500 ${
+                            isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+                          }`}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </div>
+
+                      {/* Source Row 2: GitHub */}
+                      <div
+                        style={{
+                          transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                          transitionDelay: '720ms',
+                        }}
+                        className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/[0.04] ${
+                          isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                        }`}
+                      >
+                        <GitHubIcon className="size-3.5 shrink-0 text-[#21201c]" />
+                        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-[#2e2b26]">
+                          PR #142: Fix session refresh race condition
+                        </span>
+                        <span className="text-[11px] font-medium text-[#8d8d86] tabular-nums">96% match</span>
+                        <svg
+                          style={{
+                            transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                            transitionDelay: '940ms',
+                          }}
+                          className={`size-3.5 shrink-0 text-emerald-500 ${
+                            isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+                          }`}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </div>
+
+                      {/* Source Row 3: Google Drive */}
+                      <div
+                        style={{
+                          transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                          transitionDelay: '920ms',
+                        }}
+                        className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/[0.04] ${
+                          isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                        }`}
+                      >
+                        <GoogleDriveIcon className="size-3.5 shrink-0" />
+                        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-[#2e2b26]">
+                          QA Test Sign-Off &amp; Performance Report.pdf · pg 6
+                        </span>
+                        <span className="text-[11px] font-medium text-[#8d8d86] tabular-nums">93% match</span>
+                        <svg
+                          style={{
+                            transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                            transitionDelay: '1140ms',
+                          }}
+                          className={`size-3.5 shrink-0 text-emerald-500 ${
+                            isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+                          }`}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Step 3: Synthesis & Verification */}
+                  <div
+                    style={{
+                      transition: 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
+                      transitionDelay: '1160ms',
+                    }}
+                    className={`relative ${
+                      isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    }`}
+                  >
+                    <span className="absolute -left-7 top-0 grid size-[19px] place-items-center rounded-full border border-[#e4e4e4] bg-white text-[#6b665e]">
+                      <svg
+                        className="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </span>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-[#6b665e]">
+                      Verification &amp; Grounding
+                    </p>
+
+                    <div className="mt-2 flex items-center gap-2 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/[0.04]">
+                      <svg
+                        className="size-3.5 shrink-0 text-emerald-600"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <path d="m9 11 3 3L22 4" />
+                      </svg>
+                      <span className="min-w-0 flex-1 text-sm font-medium text-[#2e2b26]">
+                        Checked across 3 sources · Linked passages shown below
+                      </span>
+                      <svg
+                        style={{
+                          transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                          transitionDelay: '1380ms',
+                        }}
+                        className={`size-3.5 shrink-0 text-emerald-500 ${
+                          isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+                        }`}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Audit status line */}
+                <div
+                  style={{
+                    transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+                    transitionDelay: '1600ms',
+                  }}
+                  className={`mt-6 flex items-center justify-center gap-2 border-t border-[#e4e4e4] pt-5 text-sm ${
+                    isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                  }`}
+                >
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-medium text-[#2e2b26]">
+                    Every answer <span className="text-[#6b665e]">links back to its sources</span>
+                  </span>
                 </div>
               </div>
             </div>

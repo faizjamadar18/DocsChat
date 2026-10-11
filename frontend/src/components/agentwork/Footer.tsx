@@ -10,10 +10,10 @@ export default function Footer() {
     {
       title: 'Product',
       links: [
-        { label: 'Ora Playground', href: '/playground', external: false },
-        { label: 'Studio Canvas', href: '/studio', external: false },
+        { label: 'Ask Ora', href: '/playground', external: false },
+        { label: 'Studio', href: '/studio', external: false },
         { label: 'Connectors', href: '/connectors', external: false },
-        { label: 'MCP Server', href: '/mcp', external: false },
+        { label: 'Use with AI tools', href: '/mcp', external: false },
       ],
     },
     {
@@ -50,7 +50,7 @@ export default function Footer() {
               <AgentworkLogo className="text-[#21201c]" />
               <div className="flex flex-col gap-1 text-xs text-[#8d8d86] leading-relaxed">
                 <p className="font-medium text-[#21201c]">DocsChat</p>
-                <p>RAG-powered AI workspace for documents, repositories, and notes.</p>
+                <p>One workspace to ask questions, write docs, and verify every answer.</p>
                 <p>© {new Date().getFullYear()} DocsChat. All rights reserved.</p>
               </div>
             </div>

@@ -6,10 +6,10 @@ import Link from 'next/link';
 export default function SecurityCompliance() {
   const items = [
     {
-      title: 'Data privacy & isolation',
-      badge: 'Active',
+      title: 'Private workspaces',
+      badge: 'Default',
       badgeColor: 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0]',
-      description: 'Multi-tenant isolation across MongoDB Atlas and Qdrant Cloud. Your documents and vectors are strictly separated by workspace.',
+      description: 'Each workspace stays separate, with access controls that respect your existing permissions.',
       icon: (
         <svg className="size-6 text-[#21201c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -18,10 +18,10 @@ export default function SecurityCompliance() {
       ),
     },
     {
-      title: 'Zero model retention',
+      title: 'Never used for training',
       badge: 'Guaranteed',
       badgeColor: 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0]',
-      description: 'Queries processed via Google GenAI and Groq use enterprise API tiers with zero data retention. Your documents never train public AI models.',
+      description: 'Your documents are never used to train public models. Disconnect any source whenever you want.',
       icon: (
         <svg className="size-6 text-[#21201c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -30,10 +30,10 @@ export default function SecurityCompliance() {
       ),
     },
     {
-      title: 'Encrypted in transit & at rest',
+      title: 'Encrypted and access-controlled',
       badge: 'Standard',
       badgeColor: 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0]',
-      description: 'All data transfers, connector tokens (OAuth), and vector payloads are encrypted using modern TLS 1.3 and AES-256 standards.',
+      description: 'Encrypted in transit and at rest, with Google sign-in and workspace-level access controls.',
       icon: (
         <svg className="size-6 text-[#21201c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -43,7 +43,7 @@ export default function SecurityCompliance() {
   ];
 
   return (
-    <section className="flex flex-col items-center px-6 py-16 md:py-24">
+    <section id="security" className="flex flex-col items-center px-6 py-16 md:py-24">
       <div className="flex w-full max-w-300 flex-col gap-12">
         {/* Top Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">

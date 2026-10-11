@@ -1,71 +1,127 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import Link from 'next/link';
+import { QuelloMark } from './Icons';
 import {
-  ChatGptIcon,
   ClaudeIcon,
-  CopilotIcon,
-  CursorIcon,
-  GeminiIcon,
+  GrokIcon,
+  ChatGptIcon,
+  PerplexityIcon,
   MistralIcon,
+  GeminiIcon,
 } from '@/components/connectors/ConnectorIcons';
 
 export default function AgentworkForAgents() {
-  const [activeIdx, setActiveIdx] = useState(0);
-
-  const agents = [
-    { name: 'ChatGPT', Icon: ChatGptIcon, desc: 'OpenAI GPT-4o & o1' },
-    { name: 'Claude', Icon: ClaudeIcon, desc: 'Anthropic Claude 3.5' },
-    { name: 'Cursor', Icon: CursorIcon, desc: 'Cursor AI IDE' },
-    { name: 'Copilot', Icon: CopilotIcon, desc: 'GitHub Copilot' },
-    { name: 'Gemini', Icon: GeminiIcon, desc: 'Google Gemini 2.5' },
-    { name: 'Mistral AI', Icon: MistralIcon, desc: 'Mistral Large' },
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveIdx((prev) => (prev + 1) % agents.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [agents.length]);
-
   return (
-    <section className="flex flex-col items-center px-6 py-16 md:py-24">
-      <div className="flex w-full max-w-300 flex-col gap-10">
-        {/* Header */}
-        <div className="flex flex-col items-start gap-3">
-          <h2 className="text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c]">
-            DocsChat for AI Agents &amp; MCP
-          </h2>
-          <p className="text-sm md:text-base leading-normal text-[#63635e] max-w-xl">
-            Connect Claude Desktop, Cursor IDE, ChatGPT, and custom AI agents directly to your DocsChat workspace using our built-in Model Context Protocol (MCP) server. Your favorite tools can now query your company documents with zero extra setup.
-          </p>
+    <section className="flex flex-col items-center px-6 py-16 md:py-24 bg-[#fdfdfc]">
+      <div className="flex w-full max-w-[1200px] flex-col gap-6">
+        {/* Website Logo App Icon Tile */}
+        <div className="size-14 rounded-[18px] shadow-[0_16px_36px_-6px_rgba(0,0,0,0.32)] overflow-hidden shrink-0">
+          <QuelloMark className="size-full" />
         </div>
 
-        {/* Coding Agents Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-          {agents.map((agent, i) => {
-            const isActive = i === activeIdx;
-            return (
-              <div
-                key={agent.name}
-                onClick={() => setActiveIdx(i)}
-                className={`flex flex-col items-center justify-center gap-3 p-5 rounded-2xl border transition-all cursor-pointer ${
-                  isActive
-                    ? 'border-[#ff6a00] bg-[#ffffff] shadow-md -translate-y-1'
-                    : 'border-[#e2e1de] bg-[#f9f9f8] hover:border-[#cfceca] hover:bg-[#ffffff]'
-                }`}
-              >
-                <div className="p-2 rounded-xl flex items-center justify-center">
-                  <agent.Icon className="w-8 h-8" />
-                </div>
-                <div className="flex flex-col items-center text-center">
-                  <span className="text-sm font-semibold text-[#21201c]">{agent.name}</span>
-                  <span className="text-[11px] text-[#8d8d86]">{agent.desc}</span>
-                </div>
+        {/* Section Heading & Subtitle */}
+        <div className="flex flex-col gap-2.5">
+          <h2 className="text-2xl sm:text-[28px] md:text-[32px] font-medium tracking-[-0.03em] text-[#1a1916]">
+            Use your workspace inside the tools you already use
+          </h2>
+          <p className="text-sm sm:text-[15px] md:text-base text-[#6b665e] max-w-2xl leading-normal">
+            Connect Claude Desktop, Cursor, and other assistants to DocsChat. Ask questions without copying files around — permissions stay respected, and you can revoke access anytime.
+          </p>
+          <Link
+            href="/mcp"
+            className="mt-1 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-[#21201c] hover:text-[#ff6a00] transition-colors"
+          >
+            <span>How it works</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+
+        {/* 6 AI Agent Lockup Cards Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4 mt-6 w-full">
+          {/* Card 1: Claude */}
+          <Link
+            href="/mcp"
+            className="group flex h-[126px] sm:h-[136px] items-center justify-center rounded-2xl border border-[#e4e4e4] bg-white transition-all duration-200 hover:border-[#cfceca] hover:shadow-xs"
+          >
+            <div className="flex items-center gap-2 text-[#1a1916]">
+              <ClaudeIcon className="size-[22px] shrink-0 text-[#D97757]" />
+              <span className="text-[17px] font-medium tracking-[-0.02em] text-[#1a1916]">
+                Claude
+              </span>
+            </div>
+          </Link>
+
+          {/* Card 2: Grok */}
+          <Link
+            href="/mcp"
+            className="group flex h-[126px] sm:h-[136px] items-center justify-center rounded-2xl border border-[#e4e4e4] bg-white transition-all duration-200 hover:border-[#cfceca] hover:shadow-xs"
+          >
+            <div className="flex items-center gap-2 text-[#1a1916]">
+              <GrokIcon className="size-[22px] shrink-0 text-[#1a1916]" />
+              <span className="text-[17px] font-semibold tracking-[-0.01em] text-[#1a1916]">
+                Grok
+              </span>
+            </div>
+          </Link>
+
+          {/* Card 3: OpenAI */}
+          <Link
+            href="/mcp"
+            className="group flex h-[126px] sm:h-[136px] items-center justify-center rounded-2xl border border-[#e4e4e4] bg-white transition-all duration-200 hover:border-[#cfceca] hover:shadow-xs"
+          >
+            <div className="flex items-center gap-2 text-[#1a1916]">
+              <ChatGptIcon className="size-[22px] shrink-0 text-[#1a1916]" fill="#1a1916" />
+              <span className="text-[17px] font-semibold tracking-[-0.02em] text-[#1a1916]">
+                OpenAI
+              </span>
+            </div>
+          </Link>
+
+          {/* Card 4: Perplexity */}
+          <Link
+            href="/mcp"
+            className="group flex h-[126px] sm:h-[136px] items-center justify-center rounded-2xl border border-[#e4e4e4] bg-white transition-all duration-200 hover:border-[#cfceca] hover:shadow-xs"
+          >
+            <div className="flex items-center gap-2 text-[#1a1916]">
+              <PerplexityIcon className="size-[22px] shrink-0 text-[#20808D]" />
+              <span className="text-[16px] font-medium tracking-[-0.01em] text-[#1a1916]">
+                Perplexity
+              </span>
+            </div>
+          </Link>
+
+          {/* Card 5: Mistral AI */}
+          <Link
+            href="/mcp"
+            className="group flex h-[126px] sm:h-[136px] items-center justify-center rounded-2xl border border-[#e4e4e4] bg-white transition-all duration-200 hover:border-[#cfceca] hover:shadow-xs"
+          >
+            <div className="flex items-center gap-2">
+              <MistralIcon className="size-[22px] shrink-0 text-[#FF7000]" />
+              <div className="flex flex-col leading-[1.05] -mt-0.5">
+                <span className="text-[12px] font-black tracking-[0.06em] text-[#1a1916]">
+                  MISTRAL
+                </span>
+                <span className="text-[12px] font-black tracking-[0.06em] text-[#1a1916]">
+                  AI_
+                </span>
               </div>
-            );
-          })}
+            </div>
+          </Link>
+
+          {/* Card 6: Gemini */}
+          <Link
+            href="/mcp"
+            className="group flex h-[126px] sm:h-[136px] items-center justify-center rounded-2xl border border-[#e4e4e4] bg-white transition-all duration-200 hover:border-[#cfceca] hover:shadow-xs"
+          >
+            <div className="flex items-center gap-2 text-[#1a1916]">
+              <GeminiIcon className="size-[22px] shrink-0" />
+              <span className="text-[17px] font-medium tracking-[-0.02em] text-[#1a1916]">
+                Gemini
+              </span>
+            </div>
+          </Link>
         </div>
       </div>
     </section>

@@ -6,32 +6,32 @@ const FAQS = [
   {
     question: 'Which tools and file formats does DocsChat connect to?',
     answer:
-      'DocsChat connects directly to Google Drive, Notion, and GitHub repositories, and supports direct uploads for PDFs, Markdown, and plain text files. You can selectively sync entire folders, specific Notion databases, or individual code repositories.',
+      'DocsChat connects to Google Drive, Notion, and GitHub, plus direct uploads for PDFs, Markdown, and text files. Sync entire folders, selected databases, or individual repositories — you control what stays connected.',
   },
   {
-    question: 'How does DocsChat ensure accurate, hallucination-free answers?',
+    question: 'How do I know an answer is accurate?',
     answer:
-      'DocsChat uses Retrieval-Augmented Generation (RAG) powered by Google’s gemini-embedding-2 and Qdrant Cloud. Ora AI grounds every answer strictly in retrieved context chunks and provides transparent footnote citations ([1], [2]) linking to the exact source passages in an expandable drawer.',
+      'Answers come only from the sources you connected. Each answer includes citations that open the exact passage it came from, so you can verify in one click instead of taking it on trust.',
   },
   {
     question: 'Can I ask questions about a single file instead of the whole workspace?',
     answer:
-      'Yes. Simply type @ in the chat input to mention and scope your question to any specific document, repository, or connector. Ora will limit its retrieval context exclusively to that file.',
+      'Yes. Type @ in the chat input to scope your question to a specific document, repository, or connector. DocsChat will answer only from that file.',
   },
   {
     question: 'What is DocsChat Studio?',
     answer:
-      'Studio is our Notion-style block editor featuring slash commands (/), task lists, tables, and formatted callouts. An integrated Ora Co-Writer sits alongside your document to help synthesize research, outline ideas, and draft sections in real time.',
+      'Studio is a clean editor for notes and drafts. You can outline, summarize, and rewrite side-by-side with your sources, without copying between tools.',
   },
   {
-    question: 'How does the Model Context Protocol (MCP) integration work?',
+    question: 'Can I use my workspace from Claude Desktop or Cursor?',
     answer:
-      'DocsChat includes a native MCP server endpoint. You can copy your workspace MCP URL and connect external desktop AI assistants like Anthropic Claude Desktop or Cursor IDE to query your indexed knowledge base directly from your favorite tools.',
+      'Yes. DocsChat gives each workspace a secure URL you can add to Claude Desktop or Cursor. Those tools can then search your workspace directly, with the same access controls. You can revoke access anytime.',
   },
   {
-    question: 'Is my organization’s data kept private and secure?',
+    question: 'Is my team’s data kept private?',
     answer:
-      'Yes. Your data is isolated per workspace with multi-tenant MongoDB separation and dedicated Qdrant vector namespaces. Authentication is protected by Google OAuth and session guards. Your documents are never used to train external foundation models.',
+      'Yes. Each workspace is kept separate, access is protected by Google sign-in, and your documents are never used to train public models. Disconnect any source whenever you want.',
   },
 ];
 
