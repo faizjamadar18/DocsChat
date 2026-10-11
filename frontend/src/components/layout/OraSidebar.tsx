@@ -16,7 +16,7 @@ import {
   MessageSquare,
   Layers,
 } from 'lucide-react';
-import { PdfIcon, StudioDocIcon, FilenameIcon } from '../connectors/ConnectorIcons';
+import { StudioDocIcon, FilenameIcon } from '../connectors/ConnectorIcons';
 import { useChat, AskQuestionOptions } from '../../hooks/useChat';
 import Markdown from '../Markdown';
 import { useChatThreads, ChatThread } from '../../hooks/useChatThreads';
