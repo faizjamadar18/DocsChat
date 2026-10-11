@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   LogOut,
@@ -21,13 +21,14 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
 import { useAuth } from '../../../hooks/useAuth';
+import { api } from '../../../lib/api';
 import { useVapiKey } from '../../../hooks/useVapiKey';
 import { useVoiceLogs, type VoiceLog } from '../../../hooks/useVoiceLogs';
 import VoiceLogModal from '../../../components/voice/VoiceLogModal';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'account' | 'organization' | 'billing' | 'voice'>('account');
-  const { currentWorkspace } = useWorkspace();
+  const { currentWorkspace, refreshWorkspaces } = useWorkspace();
   const { user, logout } = useAuth();
   const { status: vapiStatus, saving: vapiSaving, error: vapiError, saveKey, deleteKey } = useVapiKey();
   const { logs: voiceLogs, loading: voiceLogsLoading, deleteLog: deleteVoiceLog } = useVoiceLogs(currentWorkspace?.id);
@@ -49,6 +50,23 @@ export default function SettingsPage() {
   const [slug, setSlug] = useState(currentWorkspace?.slug || 'workspace');
   const [description, setDescription] = useState(currentWorkspace?.description || '');
   const [workspaceSavedFlash, setWorkspaceSavedFlash] = useState(false);
+  const [workspaceSaving, setWorkspaceSaving] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState('');
+
+  // Delete Account State
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState('');
+
+  // Keep the form in sync when the active workspace loads or switches.
+  useEffect(() => {
+    if (currentWorkspace) {
+      setWorkspaceName(currentWorkspace.name || 'My Workspace');
+      setSlug(currentWorkspace.slug || 'workspace');
+      setDescription(currentWorkspace.description || '');
+    }
+  }, [currentWorkspace?.id]);
 
   // Preferences State
   const [language, setLanguage] = useState('English');
@@ -463,12 +481,105 @@ export default function SettingsPage() {
             </p>
             <button
               type="button"
+              onClick={() => {
+                setDeleteAccountError('');
+                setDeleteConfirmEmail('');
+                setShowDeleteAccount(true);
+              }}
               className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer inline-flex items-center gap-2 shadow-xs"
             >
               <Trash2 className="w-4 h-4" />
               Delete my account
             </button>
           </div>
+
+          {/* Delete Account Confirmation Modal */}
+          {showDeleteAccount && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div
+                className="fixed inset-0 bg-black/40 backdrop-blur-xs"
+                onClick={() => {
+                  if (!deletingAccount) setShowDeleteAccount(false);
+                }}
+              />
+              <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-xl border border-border overflow-hidden animate-fade-in">
+                <div className="p-6 space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-semibold text-text-primary">
+                        Delete your account forever?
+                      </h3>
+                      <p className="text-xs text-text-secondary leading-relaxed">
+                        This removes your account, every workspace, all uploaded files,
+                        documents, chats and voice logs. You will be logged out immediately.
+                        This cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-text-primary">
+                      Type <span className="font-semibold">{user?.email}</span> to confirm
+                    </label>
+                    <input
+                      type="email"
+                      value={deleteConfirmEmail}
+                      onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                      placeholder={user?.email || 'you@example.com'}
+                      disabled={deletingAccount}
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all placeholder:text-text-muted"
+                    />
+                  </div>
+                  {deleteAccountError && (
+                    <p className="text-xs text-red-600 font-medium">{deleteAccountError}</p>
+                  )}
+                  <div className="flex items-center justify-end gap-3 pt-1">
+                    <button
+                      type="button"
+                      disabled={deletingAccount}
+                      onClick={() => setShowDeleteAccount(false)}
+                      className="px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-white hover:bg-sidebar border border-border rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        deletingAccount ||
+                        deleteConfirmEmail.trim().toLowerCase() !==
+                          (user?.email || '').toLowerCase()
+                      }
+                      onClick={() => {
+                        void (async () => {
+                          setDeleteAccountError('');
+                          setDeletingAccount(true);
+                          try {
+                            await api.delete('/auth/account');
+                            setShowDeleteAccount(false);
+                            logout();
+                          } catch (err: unknown) {
+                            setDeleteAccountError(
+                              err instanceof Error ? err.message : 'Could not delete account.'
+                            );
+                          } finally {
+                            setDeletingAccount(false);
+                          }
+                        })();
+                      }}
+                      className="px-4 py-2 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center gap-2"
+                    >
+                      {deletingAccount && (
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      )}
+                      {deletingAccount ? 'Deleting...' : 'Delete forever'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -528,7 +639,7 @@ export default function SettingsPage() {
               </label>
               <div className="w-full sm:max-w-xl lg:max-w-2xl flex items-center rounded-xl border border-border overflow-hidden bg-sidebar/40">
                 <span className="px-3.5 py-2.5 bg-sidebar text-xs text-text-secondary border-r border-border select-none">
-                  plura.in/app/
+                  quello.dev/app/
                 </span>
                 <input
                   type="text"
@@ -557,18 +668,44 @@ export default function SettingsPage() {
             <div className="pt-2 flex items-center gap-3">
               <button
                 type="button"
+                disabled={workspaceSaving || !currentWorkspace}
                 onClick={() => {
-                  setWorkspaceSavedFlash(true);
-                  setTimeout(() => setWorkspaceSavedFlash(false), 3000);
+                  void (async () => {
+                    if (!currentWorkspace || currentWorkspace.id === 'default') return;
+                    const trimmed = workspaceName.trim();
+                    if (!trimmed) {
+                      setWorkspaceError('Workspace name must not be empty.');
+                      return;
+                    }
+                    setWorkspaceError('');
+                    setWorkspaceSaving(true);
+                    try {
+                      await api.put(`/workspaces/${currentWorkspace.id}`, {
+                        name: trimmed,
+                        slug: slug.trim() || undefined,
+                        description: description.trim() || null,
+                      });
+                      await refreshWorkspaces();
+                      setWorkspaceSavedFlash(true);
+                      setTimeout(() => setWorkspaceSavedFlash(false), 3000);
+                    } catch (err: unknown) {
+                      setWorkspaceError(err instanceof Error ? err.message : 'Could not save workspace.');
+                    } finally {
+                      setWorkspaceSaving(false);
+                    }
+                  })();
                 }}
-                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
               >
-                Save Changes
+                {workspaceSaving ? 'Saving...' : 'Save Changes'}
               </button>
               {workspaceSavedFlash && (
                 <span className="text-xs text-emerald-600 font-medium inline-flex items-center gap-1">
                   <Check className="w-3.5 h-3.5" /> Workspace updated
                 </span>
+              )}
+              {workspaceError && (
+                <span className="text-xs text-red-600 font-medium">{workspaceError}</span>
               )}
             </div>
           </div>

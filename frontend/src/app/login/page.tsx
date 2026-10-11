@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { QuelloMark } from '../../components/agentwork/Icons';
 import { api } from '../../lib/api';
 import { auth } from '../../lib/auth';
 
@@ -26,7 +27,9 @@ function LoginForm() {
     try {
       const data = await api.post('/auth/google', { credential: credentialResponse.credential });
       auth.setToken(data.access_token);
-      router.push('/home');
+      const needsOnboarding =
+        data.is_new_user === true || data.user?.onboarding_completed === false;
+      router.push(needsOnboarding ? '/onboarding/welcome' : '/home');
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
       setError(errorMessage);
@@ -41,25 +44,9 @@ function LoginForm() {
       <div className="hidden lg:flex lg:w-1/2 bg-foreground relative overflow-hidden select-none">
         <div className="relative z-10 flex flex-col justify-between py-12 px-10 xl:px-16 w-full h-full">
           {/* Logo */}
-          <Link className="flex items-center text-white gap-1" href="/">
-            <svg
-              className="size-6"
-              width="179"
-              height="254"
-              viewBox="0 0 179 254"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M7.95771 218.931L53.8124 245.592C64.4931 251.802 69.8335 254.907 73.8441 252.6C77.8547 250.292 77.8547 244.115 77.8547 231.76V129.609C77.8547 125.101 77.8547 122.847 76.783 120.991C75.7113 119.135 73.7593 118.008 69.8554 115.753L24.0007 89.2759C13.3338 83.1166 8.00036 80.037 4.00018 82.3464C0 84.6557 0 90.8145 0 103.132V205.099C0 209.592 0 211.838 1.0657 213.691C2.13139 215.543 4.0735 216.672 7.95771 218.931Z"
-                fill="currentColor"
-              />
-              <path
-                d="M170.201 56.8134L85.4194 7.85851C74.7525 1.69922 69.4191 -1.38043 65.4189 0.928939C61.4187 3.23831 61.4187 9.39702 61.4187 21.7145V72.6429C61.4187 76.9602 61.4187 79.1188 62.4145 80.9232C63.4103 82.7277 65.2366 83.8784 68.8893 86.1799L93.7405 101.838C97.3932 104.14 99.2195 105.291 100.215 107.095C101.211 108.899 101.211 111.058 101.211 115.375V169.051C101.211 181.429 101.211 187.618 105.228 189.924C109.245 192.23 114.59 189.109 125.279 182.868L170.269 156.598C174.141 154.337 176.077 153.206 177.139 151.356C178.201 149.507 178.201 147.265 178.201 142.781V70.6693C178.201 66.1613 178.201 63.9073 177.129 62.051C176.057 60.1947 174.105 59.0676 170.201 56.8134Z"
-                fill="currentColor"
-              />
-            </svg>
-            <span className="text-lg font-medium tracking-tight">Plura</span>
+          <Link className="flex items-center text-white gap-2" href="/">
+            <QuelloMark className="size-6" />
+            <span className="text-lg font-medium tracking-tight">Quello</span>
           </Link>
 
           {/* Heading & Features */}
@@ -138,24 +125,9 @@ function LoginForm() {
         <div className="w-full max-w-sm mx-auto">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-6">
-            <Link className="flex items-center gap-1.5" href="/">
-              <svg
-                className="size-6 text-foreground"
-                width="179"
-                height="254"
-                viewBox="0 0 179 254"
-                fill="none"
-              >
-                <path
-                  d="M7.95771 218.931L53.8124 245.592C64.4931 251.802 69.8335 254.907 73.8441 252.6C77.8547 250.292 77.8547 244.115 77.8547 231.76V129.609C77.8547 125.101 77.8547 122.847 76.783 120.991C75.7113 119.135 73.7593 118.008 69.8554 115.753L24.0007 89.2759C13.3338 83.1166 8.00036 80.037 4.00018 82.3464C0 84.6557 0 90.8145 0 103.132V205.099C0 209.592 0 211.838 1.0657 213.691C2.13139 215.543 4.0735 216.672 7.95771 218.931Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M170.201 56.8134L85.4194 7.85851C74.7525 1.69922 69.4191 -1.38043 65.4189 0.928939C61.4187 3.23831 61.4187 9.39702 61.4187 21.7145V72.6429C61.4187 76.9602 61.4187 79.1188 62.4145 80.9232C63.4103 82.7277 65.2366 83.8784 68.8893 86.1799L93.7405 101.838C97.3932 104.14 99.2195 105.291 100.215 107.095C101.211 108.899 101.211 111.058 101.211 115.375V169.051C101.211 181.429 101.211 187.618 105.228 189.924C109.245 192.23 114.59 189.109 125.279 182.868L170.269 156.598C174.141 154.337 176.077 153.206 177.139 151.356C178.201 149.507 178.201 147.265 178.201 142.781V70.6693C178.201 66.1613 178.201 63.9073 177.129 62.051C176.057 60.1947 174.105 59.0676 170.201 56.8134Z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span className="text-xl font-semibold tracking-tight font-heading">Plura</span>
+            <Link className="flex items-center gap-2" href="/">
+              <QuelloMark className="size-6 text-foreground" />
+              <span className="text-xl font-semibold tracking-tight font-heading">Quello</span>
             </Link>
           </div>
 
@@ -168,7 +140,7 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Plura exact Google Button Container with GoogleLogin trigger */}
+          {/* Quello Google Button Container with GoogleLogin trigger */}
           <div className="relative w-full mt-6">
             <button
               data-slot="button"

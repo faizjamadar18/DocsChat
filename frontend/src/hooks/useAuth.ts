@@ -10,6 +10,7 @@ export interface User {
   auth_provider?: string;
   picture?: string | null;
   active_workspace_id?: string | null;
+  onboarding_completed?: boolean;
   created_at: string;
 }
 

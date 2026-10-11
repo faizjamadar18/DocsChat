@@ -61,5 +61,6 @@ async def get_current_user(
         "auth_provider": user.get("auth_provider", "google"),
         "picture": user.get("picture"),
         "active_workspace_id": user.get("active_workspace_id"),
+        "onboarding_completed": user.get("onboarding_completed", True),
         "created_at": user.get("created_at"),
     }

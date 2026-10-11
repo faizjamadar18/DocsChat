@@ -14,6 +14,7 @@ class UserInDB(BaseModel):
     auth_provider: str = "google"
     picture: Optional[str] = None
     active_workspace_id: Optional[str] = None
+    onboarding_completed: bool = False
     created_at: datetime
 
 
@@ -24,10 +25,16 @@ class UserResponse(BaseModel):
     auth_provider: str = "google"
     picture: Optional[str] = None
     active_workspace_id: Optional[str] = None
+    onboarding_completed: bool = False
     created_at: datetime
+
+
+class OnboardingRequest(BaseModel):
+    workspace_name: str = Field(..., min_length=1, max_length=100)
 
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    is_new_user: bool = False
     user: UserResponse

@@ -83,7 +83,13 @@ async def run_migrations():
             {"$set": update_fields}
         )
 
-    # 2. Backfill users without an active workspace
+    # 2. Backfill onboarding flag: pre-onboarding users skip onboarding.
+    await users_collection.update_many(
+        {"onboarding_completed": {"$exists": False}},
+        {"$set": {"onboarding_completed": True}},
+    )
+
+    # 3. Backfill users without an active workspace
     cursor = users_collection.find({
         "$or": [
             {"active_workspace_id": None},
