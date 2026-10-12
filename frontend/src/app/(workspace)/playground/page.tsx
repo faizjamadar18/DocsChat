@@ -9,21 +9,29 @@ import {
   Mic,
   AudioWaveform,
   Languages,
-  FileText,
-  Layers,
   X,
   Copy,
   Check,
 } from 'lucide-react';
 import { useWorkspace } from '@/context/WorkspaceContext';
 import Markdown from '@/components/Markdown';
+import SourceFooter, { FilenameIcon } from '@/components/chat/SourceFooter';
+import { StudioDocIcon } from '@/components/connectors/ConnectorIcons';
 import { useChat } from '@/hooks/useChat';
+import { useMentionScope, type MentionItem } from '@/hooks/useMentionScope';
 import { api } from '@/lib/api';
 
-interface MentionItem {
-  id: string;
-  title: string;
-  type: 'document' | 'asset';
+function parseHandoffScope(
+  searchParams: { get(name: string): string | null } | null
+): MentionItem | null {
+  const id = searchParams?.get('scope_id');
+  const type = searchParams?.get('scope_type');
+  if (!id || (type !== 'document' && type !== 'asset')) return null;
+  return {
+    id,
+    title: searchParams?.get('scope_title') || 'Referenced file',
+    type,
+  };
 }
 
 function PlaygroundContent() {
@@ -42,14 +50,23 @@ function PlaygroundContent() {
     switchThread,
   } = useChat(currentWorkspace?.id, threadId, 'universal');
 
-  const [input, setInput] = useState('');
-  const [attachedScope, setAttachedScope] = useState<MentionItem | null>(null);
-  const [showMentions, setShowMentions] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
+  const [input, setInput] = useState(() => searchParams.get('q') ?? '');
   const [docs, setDocs] = useState<MentionItem[]>([]);
   const [assets, setAssets] = useState<MentionItem[]>([]);
+
+  const {
+    attachedScope,
+    setAttachedScope,
+    showMentions,
+    setShowMentions,
+    filteredDocs,
+    filteredAssets,
+    allFilteredMentions,
+    selectedIndex,
+    processTextChange,
+    attachMention,
+    navigateMentions,
+  } = useMentionScope(docs, assets, parseHandoffScope(searchParams));
 
   const STARTER_SUGGESTIONS = [
     {
@@ -107,10 +124,11 @@ function PlaygroundContent() {
           })
         );
         const assetItems: MentionItem[] = (assetsRes.sources || []).map(
-          (s: { id: string; filename: string }) => ({
+          (s: { id: string; filename: string; source_type?: string }) => ({
             id: s.id,
             title: s.filename || 'Untitled Asset',
             type: 'asset',
+            source_type: s.source_type,
           })
         );
 
@@ -164,6 +182,84 @@ function PlaygroundContent() {
     };
   }, [threadId, router]);
 
+  // Home hero-input handoff (?q= + scope_*). The input text and scope chip
+  // are prefilled via state initializers above so the handoff survives one
+  // render; the effect below captures the payload, strips the params and
+  // sends exactly once.
+  const handoffSentRef = useRef(false);
+  const handoffPayloadRef = useRef<{
+    q: string;
+    scope: MentionItem | null;
+  } | null>(null);
+
+  const handoffQ = searchParams.get('q');
+  const hasHandoff = Boolean(handoffQ);
+
+  // Capture + strip: nothing may linger in the field (refresh, failed send).
+  useEffect(() => {
+    if (!hasHandoff || !currentWorkspace?.id) return;
+    handoffPayloadRef.current = {
+      q: handoffQ as string,
+      scope: parseHandoffScope(searchParams),
+    };
+    let cancelled = false;
+    (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      router.replace('/playground', { scroll: false });
+      setInput('');
+      setAttachedScope(null);
+      setShowMentions(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    hasHandoff,
+    handoffQ,
+    searchParams,
+    currentWorkspace?.id,
+    router,
+    setAttachedScope,
+    setShowMentions,
+  ]);
+
+  // Auto-send once, waiting for any in-flight stream to finish, because
+  // askQuestion silently drops calls while streaming is true.
+  useEffect(() => {
+    const payload = handoffPayloadRef.current;
+    if (!payload || !currentWorkspace?.id || streaming) return;
+    if (handoffSentRef.current) return;
+    handoffSentRef.current = true;
+    let cancelled = false;
+    (async () => {
+      const scopeOptions = payload.scope
+        ? {
+            workspaceId: currentWorkspace?.id,
+            threadId: undefined,
+            mode: 'universal' as const,
+            scopeIds: [payload.scope.id],
+            attachedName: payload.scope.title,
+          }
+        : {
+            workspaceId: currentWorkspace?.id,
+            threadId: undefined,
+            mode: 'universal' as const,
+          };
+      await askQuestion(payload.q, scopeOptions);
+      if (cancelled) return;
+      setInput('');
+      setAttachedScope(null);
+      setShowMentions(false);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [askQuestion, streaming, currentWorkspace?.id, setAttachedScope, setShowMentions]);
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -180,73 +276,42 @@ function PlaygroundContent() {
     }
   };
 
-  const filteredDocs = docs.filter((d) =>
-    d.title.toLowerCase().includes(mentionQuery.toLowerCase())
-  );
-  const filteredAssets = assets.filter((a) =>
-    a.title.toLowerCase().includes(mentionQuery.toLowerCase())
-  );
-  const allFilteredMentions = [...filteredDocs, ...filteredAssets];
-
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setInput(val);
+    processTextChange(val);
     adjustTextareaHeight();
-
-    const lastAtIndex = val.lastIndexOf('@');
-    if (lastAtIndex !== -1 && (lastAtIndex === 0 || val[lastAtIndex - 1] === ' ')) {
-      const query = val.slice(lastAtIndex + 1);
-      if (!query.includes(' ')) {
-        setShowMentions(true);
-        setMentionQuery(query);
-        setSelectedIndex(0);
-        return;
-      }
-    }
-    setShowMentions(false);
   };
 
   const handleSelectMention = useCallback(
     (item: MentionItem) => {
-      setAttachedScope(item);
-      const lastAtIndex = input.lastIndexOf('@');
-      if (lastAtIndex !== -1) {
-        setInput(input.slice(0, lastAtIndex).trim());
-      }
+      setInput(attachMention(item, input));
       setShowMentions(false);
-      setMentionQuery('');
       if (textareaRef.current) {
         textareaRef.current.focus();
       }
     },
-    [input]
+    [input, attachMention, setShowMentions]
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (showMentions && allFilteredMentions.length > 0) {
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % allFilteredMentions.length);
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev === 0 ? allFilteredMentions.length - 1 : prev - 1
-        );
+        navigateMentions(e.key);
         return;
       }
       if (e.key === 'Enter') {
         e.preventDefault();
-        const selected = allFilteredMentions[selectedIndex];
-        if (selected) {
+        const selected = navigateMentions('Enter');
+        if (selected && selected !== 'dismiss') {
           handleSelectMention(selected);
         }
         return;
       }
       if (e.key === 'Escape') {
         e.preventDefault();
-        setShowMentions(false);
+        navigateMentions('Escape');
         return;
       }
     }
@@ -309,15 +374,18 @@ function PlaygroundContent() {
 
   return (
     <div className="flex flex-col h-full w-full select-none overflow-hidden bg-surface relative">
-      {/* Main Content: Hero State vs Conversation Stream */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+      {/* Main Content: Hero State vs Conversation Stream.
+          Hero scrolls internally; stream splits into scroll region (messages)
+          + fixed footer (input) so the input never drifts with chat length. */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {!isConversationActive ? (
           /* ============================================================ */
           /* HERO STATE (Exact layout as User Reference Image)             */
           /* ============================================================ */
-          <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 max-w-2xl mx-auto w-full animate-fade-in">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="min-h-full flex flex-col items-center justify-center px-4 py-12 max-w-2xl mx-auto w-full animate-fade-in">
             {/* Greeting Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-text-primary text-center">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-text-primary text-center">
               {getGreeting()}, {workspaceTitle}
             </h1>
 
@@ -327,16 +395,24 @@ function PlaygroundContent() {
             </p>
 
             {/* Central Large Prompt Input Card */}
-            <div className="w-full mt-8 bg-white border border-border rounded-3xl p-4 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary [color-scheme:light]">
+            <div className="w-full mt-8 bg-white border border-border rounded-3xl p-4 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary scheme-light">
               {/* Attached Scoped Document Tag */}
               {attachedScope && (
-                <div className="mb-2.5 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-3 py-1 rounded-full text-xs font-medium animate-fade-in">
-                  <FileText className="w-3.5 h-3.5 text-[#765D96]" />
+                <div className="mb-2.5 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-3 py-1 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
+                  {attachedScope.type === 'document' ? (
+                    <StudioDocIcon className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                  ) : (
+                    <FilenameIcon
+                      filename={attachedScope.title}
+                      sourceType={attachedScope.source_type}
+                      className="w-3.5 h-3.5 text-text-secondary shrink-0"
+                    />
+                  )}
                   <span className="truncate max-w-xs">{attachedScope.title}</span>
                   <button
                     type="button"
                     onClick={() => setAttachedScope(null)}
-                    className="hover:text-black cursor-pointer ml-0.5"
+                    className="cursor-pointer ml-0.5 text-text-muted hover:text-text-primary"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -349,7 +425,7 @@ function PlaygroundContent() {
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Ora anything across your workspace..."
+                placeholder="Ask Quello anything across your workspace..."
                 rows={2}
                 spellCheck={false}
                 autoCorrect="off"
@@ -368,7 +444,7 @@ function PlaygroundContent() {
                   <button
                     type="button"
                     onClick={() => setShowMentions((prev) => !prev)}
-                    title="Reference specific workspace document (@)"
+                    title="Reference document or asset (@)"
                     className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
                   >
                     <Paperclip className="w-4 h-4" />
@@ -459,7 +535,7 @@ function PlaygroundContent() {
                               : 'hover:bg-[#F3F4F6] text-text-primary'
                           }`}
                         >
-                          <FileText className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                          <StudioDocIcon className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">{d.title}</span>
                         </button>
                       ))}
@@ -482,7 +558,11 @@ function PlaygroundContent() {
                               : 'hover:bg-[#F3F4F6] text-text-primary'
                           }`}
                         >
-                          <FileText className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                          <FilenameIcon
+                            filename={a.title}
+                            sourceType={a.source_type}
+                            className="w-3.5 h-3.5 shrink-0"
+                          />
                           <span className="truncate">{a.title}</span>
                         </button>
                       ))}
@@ -500,7 +580,7 @@ function PlaygroundContent() {
                   type="button"
                   onClick={() => handlePreset(s.prompt)}
                   disabled={streaming}
-                  className="px-3.5 py-1.5 rounded-full border border-border bg-white text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 hover:shadow-2xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3.5 py-1.5 rounded-full border border-border bg-white text-xs text-text-secondary hover:text-text-primary hover:border-border-subtle hover:shadow-2xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {s.label}
                 </button>
@@ -524,13 +604,16 @@ function PlaygroundContent() {
               </Link>
             </div>
           </div>
+          </div>
         ) : (
           /* ============================================================ */
-          /* ACTIVE CONVERSATION STREAM (Hero-to-stream transition)        */
+          /* ACTIVE CONVERSATION: scroll region + fixed input footer       */
           /* ============================================================ */
-          <div className="flex-1 flex flex-col justify-between max-w-3xl w-full mx-auto px-4 py-6 animate-fade-in">
+          <>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="max-w-3xl w-full mx-auto px-4 py-6 animate-fade-in">
             {/* Messages Stream */}
-            <div className="space-y-6 flex-1 pb-4">
+            <div className="space-y-6 pb-4">
               {messages.map((msg, index) => {
                 const isUser = msg.role === 'user';
                 const isLast = index === messages.length - 1;
@@ -542,17 +625,20 @@ function PlaygroundContent() {
                     className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
                   >
                     {isUser ? (
-                      /* User Message Bubble */
-                      <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-[#83699e] text-white shadow-xs">
+                      /* User Message Bubble (Claude / ChatGPT style: subtle neutral #F4F4F6) */
+                      <div className="max-w-[92%] sm:max-w-[85%] rounded-2xl px-3.5 sm:px-4.5 py-2.5 sm:py-3 bg-[#F4F4F6] border border-border/40 text-text-primary shadow-2xs">
                         {(msg.attached_name || (msg.scope_ids && msg.scope_ids.length > 0)) && (
-                          <div className="bg-white/20 text-white text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit">
-                            <FileText className="w-3 h-3 text-white/90" />
+                          <div className="bg-white border border-border/80 text-text-secondary text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit shadow-2xs">
+                            <FilenameIcon
+                              filename={msg.attached_name || ''}
+                              className="w-3 h-3 text-text-secondary shrink-0"
+                            />
                             <span className="truncate max-w-xs">
                               {msg.attached_name || 'Referenced Document'}
                             </span>
                           </div>
                         )}
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap font-normal">
+                        <p className="text-[14.5px] leading-relaxed whitespace-pre-wrap font-normal text-text-primary">
                           {msg.content}
                         </p>
                       </div>
@@ -564,77 +650,58 @@ function PlaygroundContent() {
                         </span>
                       </div>
                     ) : (
-                      /* Assistant Message Card */
-                      <div className="max-w-[92%] w-full flex flex-col group">
-                        <div className="rounded-2xl p-5 bg-[#F4F4F6] text-text-primary text-sm leading-relaxed border border-border/40">
-                          {/* Status badges */}
-                          <div className="flex flex-wrap items-center gap-2 mb-3">
-                            {(msg.has_read_document || (msg.sources && msg.sources.length > 0)) && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setShowSourcesForMsg((prev) =>
-                                    prev === msg.id ? null : msg.id
-                                  )
-                                }
-                                className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#ECE8F4] text-[#765D96] hover:bg-[#E4DCF0] transition-colors cursor-pointer inline-flex items-center gap-1"
-                                title="Click to view referenced citations"
-                              >
-                                <FileText className="w-3 h-3" />
-                                <span>Read document</span>
-                              </button>
-                            )}
+                      /* Assistant Message Flow (ChatGPT / Claude style: unboxed, transparent canvas) */
+                      <div className="w-full flex flex-col group py-1">
+                        <div className="w-full text-text-primary">
+                          {/* Formatted Assistant Output */}
+                          <Markdown content={msg.content} />
 
-                            {(msg.has_searched_workspace ||
-                              (!msg.has_read_document &&
-                                (!msg.sources || msg.sources.length === 0))) && (
-                              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#ECE8F4] text-[#765D96] inline-flex items-center gap-1">
-                                <Layers className="w-3 h-3" />
-                                <span>Searched workspace</span>
-                              </span>
-                            )}
-                          </div>
+                          {/* Sources footer: N sources used + official icons + arrow */}
+                          {msg.sources && msg.sources.length > 0 && (
+                            <SourceFooter
+                              sources={msg.sources}
+                              expanded={showSourcesForMsg === msg.id}
+                              onToggle={() =>
+                                setShowSourcesForMsg((prev) =>
+                                  prev === msg.id ? null : msg.id
+                                )
+                              }
+                            />
+                          )}
 
-                          {/* Expandable Citations Drawer */}
+                          {/* Expandable Sources Drawer — transparent, names only */}
                           {showSourcesForMsg === msg.id &&
                             msg.sources &&
                             msg.sources.length > 0 && (
-                              <div className="mb-3 p-3 bg-white rounded-xl border border-border/80 space-y-2 animate-fade-in text-xs">
-                                <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
-                                  Referenced Citations
-                                </div>
-                                {msg.sources.map((cit, cIdx) => (
-                                  <div
-                                    key={cIdx}
-                                    className="flex flex-col gap-1 p-2 rounded-lg bg-surface border border-border/60"
-                                  >
-                                    <div className="flex items-center gap-1.5 font-medium text-text-primary">
-                                      <FileText className="w-3 h-3 text-[#765D96]" />
-                                      <span className="truncate">{cit.filename}</span>
-                                      {cit.page && (
-                                        <span className="text-[10px] text-text-muted">
-                                          p.{cit.page}
-                                        </span>
-                                      )}
+                              <div className="mt-2.5 space-y-1 animate-fade-in text-xs">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Array.from(
+                                    new Map(
+                                      msg.sources.map((s) => [s.source_id || s.filename, s])
+                                    ).values()
+                                  ).map((cit, cIdx) => (
+                                    <div
+                                      key={`${cit.source_id}-${cIdx}`}
+                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/4 transition-colors cursor-default"
+                                      title={cit.filename}
+                                    >
+                                      <FilenameIcon filename={cit.filename} />
+                                      <span className="truncate font-normal max-w-xs">
+                                        {cit.filename}
+                                      </span>
                                     </div>
-                                    <p className="text-[11px] text-text-secondary line-clamp-3">
-                                      {cit.snippet}
-                                    </p>
-                                  </div>
-                                ))}
+                                  ))}
+                                </div>
                               </div>
                             )}
-
-                          {/* Formatted Assistant Output */}
-                          <Markdown content={msg.content} />
                         </div>
 
                         {/* Actions row: Copy */}
-                        <div className="flex items-center gap-1 mt-1.5 ml-1">
+                        <div className="flex items-center gap-1 mt-2 -ml-1">
                           <button
                             type="button"
                             onClick={() => handleCopyMessage(msg.id, msg.content)}
-                            className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
                             title="Copy response"
                           >
                             {copiedMessageId === msg.id ? (
@@ -651,18 +718,29 @@ function PlaygroundContent() {
               })}
               <div ref={messagesEndRef} />
             </div>
+          </div>
+          </div>
 
-            {/* Pinned Bottom Input Card in Conversation Mode */}
-            <div className="sticky bottom-0 bg-surface/80 backdrop-blur-md pt-2 pb-1">
-              <div className="bg-white border border-border rounded-2xl p-3 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary [color-scheme:light]">
+            {/* Fixed Bottom Input Footer in Conversation Mode (sibling of scroll region) */}
+            <div className="shrink-0 bg-surface px-3 sm:px-4 pt-2 pb-3 sm:pb-4 pb-safe">
+              <div className="max-w-3xl w-full mx-auto">
+              <div className="bg-white border border-border rounded-2xl p-3 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary scheme-light">
                 {attachedScope && (
-                  <div className="mb-2 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-2.5 py-0.5 rounded-full text-xs font-medium animate-fade-in">
-                    <FileText className="w-3 h-3 text-[#765D96]" />
+                  <div className="mb-2 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-2.5 py-0.5 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
+                    {attachedScope.type === 'document' ? (
+                      <StudioDocIcon className="w-3 h-3 text-text-secondary shrink-0" />
+                    ) : (
+                      <FilenameIcon
+                        filename={attachedScope.title}
+                        sourceType={attachedScope.source_type}
+                        className="w-3 h-3 text-text-secondary shrink-0"
+                      />
+                    )}
                     <span className="truncate max-w-xs">{attachedScope.title}</span>
                     <button
                       type="button"
                       onClick={() => setAttachedScope(null)}
-                      className="hover:text-black cursor-pointer"
+                      className="text-text-muted hover:text-black cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -690,7 +768,7 @@ function PlaygroundContent() {
                     <button
                       type="button"
                       onClick={() => setShowMentions((prev) => !prev)}
-                      title="Reference specific workspace document (@)"
+                      title="Reference document or asset (@)"
                       className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
                     >
                       <Paperclip className="w-4 h-4" />
@@ -740,7 +818,7 @@ function PlaygroundContent() {
                                 : 'hover:bg-[#F3F4F6] text-text-primary'
                             }`}
                           >
-                            <FileText className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                            <StudioDocIcon className="w-3.5 h-3.5 shrink-0" />
                             <span className="truncate">{d.title}</span>
                           </button>
                         ))}
@@ -763,7 +841,11 @@ function PlaygroundContent() {
                                 : 'hover:bg-[#F3F4F6] text-text-primary'
                             }`}
                           >
-                            <FileText className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+                            <FilenameIcon
+                              filename={a.title}
+                              sourceType={a.source_type}
+                              className="w-3.5 h-3.5 shrink-0"
+                            />
                             <span className="truncate">{a.title}</span>
                           </button>
                         ))}
@@ -772,8 +854,9 @@ function PlaygroundContent() {
                   </div>
                 )}
               </div>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -785,7 +868,7 @@ export default function PlaygroundPage() {
     <Suspense
       fallback={
         <div className="flex h-full w-full items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-text-primary" />
         </div>
       }
     >

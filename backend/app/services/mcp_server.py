@@ -1,4 +1,4 @@
-"""DocsChat MCP tools: workspace search + document fetch.
+"""Quello MCP tools: workspace search + document fetch.
 
 Two layers:
 1. Pure functions (search/fetch below) — the real logic.
@@ -30,7 +30,7 @@ FETCH_CHARS = 9000
 FETCH_TOP_K = 20
 
 WORKSPACE_SEARCH_DESC = (
-    "Search the user's DocsChat workspace (uploaded PDFs, "
+    "Search the user's Quello workspace (uploaded PDFs, "
     "Studio documents, and connected sources like Notion, "
     "Google Drive, GitHub). "
     "Returns matching passages with source name, page, "
@@ -174,7 +174,7 @@ except Exception:  # SDK missing: registry is a passthrough
     _sdk_get_access_token = None
 
 if _FastMCP is not None:
-    mcp = _FastMCP("DocsChat", stateless_http=True)
+    mcp = _FastMCP("Quello", stateless_http=True)
 
     def _sdk_caller() -> tuple[str, Optional[str]]:
         get_token = _sdk_get_access_token

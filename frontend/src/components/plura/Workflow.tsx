@@ -22,7 +22,7 @@ export default function Workflow() {
           </div>
           <div>
             <p className="paragraph text-muted-foreground/80 max-w-lg mx-auto text-base md:text-lg">
-              Plura streamlines your entire creative process, turning scattered ideas into polished content automatically
+              Quello streamlines your entire creative process, turning scattered ideas into polished content automatically
             </p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function Workflow() {
                       Let your work compound
                     </h3>
                     <p className="text-muted-foreground text-sm md:text-base max-w-md text-balance">
-                      Upload references once. Reuse ideas automatically. Plura remembers context so your work gets smarter over time
+                      Upload references once. Reuse ideas automatically. Quello remembers context so your work gets smarter over time
                     </p>
                   </div>
                 </div>
@@ -227,11 +227,11 @@ export default function Workflow() {
               </div>
             </div>
             <div>
-              <h2 className="heading">See how Plura talks like your content assistant</h2>
+              <h2 className="heading">See how Quello talks like your content assistant</h2>
             </div>
             <div>
               <p className="paragraph">
-                Tell Plura what you need and see it draft content across your favorite platforms
+                Tell Quello what you need and see it draft content across your favorite platforms
               </p>
             </div>
           </div>
@@ -287,13 +287,13 @@ export default function Workflow() {
               <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-6 z-10">
                 <div className="bg-neutral-50/80 border border-neutral-100 rounded-xl p-4 text-sm leading-relaxed text-neutral-800">
                   <p className="font-semibold text-neutral-900 mb-2">
-                    🚀 Unlock your content superpowers with Plura
+                    🚀 Unlock your content superpowers with Quello
                   </p>
                   <p className="mb-2">
                     Content creation shouldn&apos;t feel like managing a digital puzzle across 10 different apps.
                   </p>
                   <p className="text-neutral-700">
-                    With Plura, your ideas, references, docs, and AI workflows live in one unified workspace. Start with a messy thought—publish with polished precision.
+                    With Quello, your ideas, references, docs, and AI workflows live in one unified workspace. Start with a messy thought—publish with polished precision.
                   </p>
                   <div className="mt-3 flex gap-2 text-xs text-primary font-medium">
                     <span>#ContentCreation</span>

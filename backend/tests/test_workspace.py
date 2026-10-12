@@ -238,6 +238,7 @@ async def test_migration_hook(mock_db):
     inserted_ws.inserted_id = ObjectId(WORKSPACE_1_ID)
     mock_db["workspaces"].insert_one = AsyncMock(return_value=inserted_ws)
     mock_db["users"].update_one = AsyncMock()
+    mock_db["users"].update_many = AsyncMock()
     mock_db["sources"].update_many = AsyncMock()
     mock_db["messages"].update_many = AsyncMock()
 

@@ -30,7 +30,7 @@ export default function Footer() {
                   />
                 </svg>
                 <span className="hidden lg:block text-lg font-semibold font-heading tracking-tight">
-                  plura
+                  quello
                 </span>
               </Link>
             </div>
@@ -92,7 +92,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/50 hover:text-white transition-colors size-8 flex items-center justify-center rounded-md"
-                href="mailto:support@plura.in"
+                href="mailto:support@quello.dev"
                 aria-label="Email"
               >
                 <svg className="size-5" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -122,7 +122,7 @@ export default function Footer() {
         <div className="pb-6">
           <div className="flex justify-center items-center">
             <p className="text-white/60 text-sm">
-              © 2026 Plura. All rights reserved.
+              © 2026 Quello. All rights reserved.
             </p>
           </div>
         </div>

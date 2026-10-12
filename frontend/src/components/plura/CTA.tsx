@@ -74,7 +74,7 @@ export default function CTA() {
 
             <div>
               <p className="text-sm md:text-base text-neutral-300 text-center mt-4">
-                Plura brings all your creative tools into one place
+                Quello brings all your creative tools into one place
               </p>
             </div>
           </div>

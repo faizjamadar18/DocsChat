@@ -1,10 +1,11 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { PanelLeft, Search, Bell } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useVoiceAgent } from '../../context/VoiceAgentContext';
+import SearchCommandPalette from './SearchCommandPalette';
 
 export default function Header({
   onToggleMobileSidebar,
@@ -15,14 +16,21 @@ export default function Header({
   const { currentWorkspace, toggleSidebar, activeDocTitle } = useWorkspace();
   const { user } = useAuth();
   const { startVoice, status: voiceStatus } = useVoiceAgent();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'DocsChat HQ');
+  useEffect(() => {
+    const handleOpen = () => setIsSearchOpen(true);
+    window.addEventListener('open-search-palette', handleOpen);
+    return () => window.removeEventListener('open-search-palette', handleOpen);
+  }, []);
+
+  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'Quello HQ');
 
   // Compute breadcrumb segments
   const getBreadcrumbs = () => {
     const parts = [{ label: workspaceName, href: '/home' }];
     if (pathname?.startsWith('/playground')) {
-      parts.push({ label: 'Ora', href: '/playground' });
+      parts.push({ label: 'Playground', href: '/playground' });
     } else if (pathname?.startsWith('/studio')) {
       parts.push({ label: 'Studio', href: '/studio' });
       if (activeDocTitle) {
@@ -32,6 +40,16 @@ export default function Header({
       parts.push({ label: 'Assets', href: '/assets' });
     } else if (pathname?.startsWith('/connectors')) {
       parts.push({ label: 'Connectors', href: '/connectors' });
+      const sub = pathname.split('/')[2];
+      if (sub) {
+        const names: Record<string, string> = {
+          notion: 'Notion',
+          drive: 'Google Drive',
+          github: 'GitHub',
+        };
+        const label = names[sub.toLowerCase()] || (sub.charAt(0).toUpperCase() + sub.slice(1));
+        parts.push({ label, href: pathname });
+      }
     } else if (pathname?.startsWith('/mcp')) {
       parts.push({ label: 'MCP Server', href: '/mcp' });
     } else if (pathname?.startsWith('/settings')) {
@@ -43,7 +61,7 @@ export default function Header({
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="h-14 px-4 sm:px-6 bg-surface border-b border-border flex items-center justify-between shrink-0 select-none">
+    <header className="h-14 pl-3 sm:pl-3.5 pr-4 sm:pr-6 bg-sidebar flex items-center justify-between shrink-0 select-none">
       {/* Left side: Sidebar collapse toggle & Breadcrumb */}
       <div className="flex items-center gap-3">
         {/* Desktop Sidebar Toggle */}
@@ -56,50 +74,70 @@ export default function Header({
           <PanelLeft className="w-4 h-4" />
         </button>
 
-        {/* Mobile Sidebar Toggle */}
+        {/* Mobile Sidebar Toggle (40px touch target) */}
         <button
           type="button"
           onClick={onToggleMobileSidebar}
           title="Open menu"
-          className="lg:hidden p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+          className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer shrink-0"
         >
           <PanelLeft className="w-4 h-4" />
         </button>
 
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-text-secondary font-medium">
-          {breadcrumbs.map((crumb, idx) => (
-            <React.Fragment key={crumb.href + idx}>
-              {idx > 0 && <span className="text-text-muted select-none">&rsaquo;</span>}
-              <span
-                className={
-                  idx === breadcrumbs.length - 1
-                    ? 'text-text-primary font-semibold'
-                    : 'hover:text-text-primary transition-colors'
-                }
-              >
-                {crumb.label}
-              </span>
-            </React.Fragment>
-          ))}
+        <nav className="flex items-center gap-1.5 text-xs text-text-secondary font-medium min-w-0">
+          {/* Mobile view: show only the active leaf page */}
+          <span className="sm:hidden text-text-primary font-semibold truncate max-w-32.5">
+            {breadcrumbs[breadcrumbs.length - 1]?.label}
+          </span>
+          {/* Desktop/Tablet view: full breadcrumb sequence */}
+          <div className="hidden sm:flex items-center gap-1.5">
+            {breadcrumbs.map((crumb, idx) => (
+              <React.Fragment key={crumb.href + idx}>
+                {idx > 0 && <span className="text-text-muted select-none">&rsaquo;</span>}
+                <span
+                  className={
+                    idx === breadcrumbs.length - 1
+                      ? 'text-text-primary font-semibold'
+                      : 'hover:text-text-primary transition-colors'
+                  }
+                >
+                  {crumb.label}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
         </nav>
       </div>
 
       {/* Right side: Search bar, Ora voice pill, Notification bell */}
       <div className="flex items-center gap-3">
+        {/* Mobile Search button */}
+        <button
+          type="button"
+          onClick={() => setIsSearchOpen(true)}
+          title="Search (⌘K)"
+          className="sm:hidden p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+
         {/* Search input box */}
         <div className="relative hidden sm:flex items-center">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-subtle bg-base hover:border-[#D1D5DB] transition-colors w-44 md:w-56 cursor-text">
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-subtle bg-base hover:border-[#D1D5DB] transition-colors w-44 md:w-56 cursor-pointer text-left"
+            title="Search or jump to... (⌘K)"
+          >
             <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="bg-transparent border-none text-xs text-text-primary placeholder-text-muted focus:outline-none w-full"
-            />
-            <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] text-text-secondary bg-surface border border-border rounded shadow-2xs font-sans">
+            <span className="text-xs text-text-muted flex-1 select-none">
+              Search...
+            </span>
+            <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] text-text-secondary bg-surface border border-border rounded shadow-2xs font-sans select-none">
               ⌘K
             </kbd>
-          </div>
+          </button>
         </div>
 
         {/* Black Pill: ●● Ora — tap to talk, tap outside the bubble to stop */}
@@ -110,13 +148,13 @@ export default function Header({
           }}
           disabled={voiceStatus === 'checking' || voiceStatus === 'warming' || voiceStatus === 'connecting'}
           className="bg-[#111113] hover:bg-black text-white px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all shadow-xs hover:shadow-sm disabled:opacity-60"
-          title="Talk to Ora (voice)"
+          title="Talk to Quello (voice)"
         >
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span className="w-1.5 h-1.5 rounded-full bg-white" />
           </span>
-          <span className="tracking-tight">Ora</span>
+          <span className="tracking-tight">Quello</span>
         </button>
 
         {/* Notification Bell */}
@@ -128,6 +166,12 @@ export default function Header({
           <Bell className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Global Command Palette Search Modal */}
+      <SearchCommandPalette
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </header>
   );
 }

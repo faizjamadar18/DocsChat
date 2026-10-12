@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { X, UploadCloud, File, AlertCircle } from 'lucide-react';
+import { X, UploadCloud, AlertCircle } from 'lucide-react';
+import { PdfIcon } from '../connectors/ConnectorIcons';
 
 const emptySubscribe = () => () => {};
 
@@ -119,8 +120,8 @@ export default function UploadModal({ isOpen, onClose, onStartUpload }: UploadMo
           ) : (
             <div className="bg-sidebar/50 border border-border rounded-xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-lg bg-white border border-border/80 flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
-                  <File className="w-5 h-5 text-text-secondary" />
+                <div className="w-10 h-10 rounded-lg bg-white border border-border/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <PdfIcon className="w-6 h-6" />
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-sm font-medium text-text-primary truncate">{file.name}</p>

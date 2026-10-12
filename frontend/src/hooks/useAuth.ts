@@ -10,6 +10,8 @@ export interface User {
   auth_provider?: string;
   picture?: string | null;
   active_workspace_id?: string | null;
+  onboarding_completed?: boolean;
+  preferences?: Record<string, any>;
   created_at: string;
 }
 
@@ -18,22 +20,23 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (auth.isAuthenticated()) {
-        try {
-          const userData = await api.get('/auth/me');
-          setUser(userData);
-        } catch (error) {
-          console.error("Failed to fetch user", error);
-          auth.removeToken();
-          setUser(null);
-        }
+  const fetchUser = async () => {
+    if (auth.isAuthenticated()) {
+      try {
+        const userData = await api.get('/auth/me');
+        setUser(userData);
+        return userData;
+      } catch (error) {
+        console.error("Failed to fetch user", error);
+        auth.removeToken();
+        setUser(null);
       }
-      setLoading(false);
-    };
+    }
+    return null;
+  };
 
-    fetchUser();
+  useEffect(() => {
+    fetchUser().finally(() => setLoading(false));
   }, []);
 
   const logout = () => {
@@ -42,5 +45,5 @@ export function useAuth() {
     router.push('/login');
   };
 
-  return { user, loading, logout, isAuthenticated: !!user };
+  return { user, loading, logout, isAuthenticated: !!user, refreshUser: fetchUser, setUser };
 }

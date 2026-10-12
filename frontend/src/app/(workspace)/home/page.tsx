@@ -1,32 +1,43 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowUp,
   PenLine,
   ChevronRight,
-  FileText,
   Search,
   Feather,
   Clock,
-  File,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useWorkspace } from '../../../context/WorkspaceContext';
+import { useMentionScope, type MentionItem } from '../../../hooks/useMentionScope';
 import { api } from '../../../lib/api';
+import { StudioDocIcon, FilenameIcon } from '../../../components/connectors/ConnectorIcons';
 
 interface RecentItem {
   id: string;
   title: string;
   subtitle: string;
   type: 'document' | 'asset';
+  sourceType?: string;
 }
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [askQuery, setAskQuery] = useState('');
   const [recentAssets, setRecentAssets] = useState<RecentItem[]>([]);
   const [recentDocs, setRecentDocs] = useState<RecentItem[]>([]);
+  const [mentionDocs, setMentionDocs] = useState<MentionItem[]>([]);
+  const [mentionAssets, setMentionAssets] = useState<MentionItem[]>([]);
+
+  const mention = useMentionScope(mentionDocs, mentionAssets);
 
   // Time-based greeting
   const getGreeting = () => {
@@ -57,11 +68,12 @@ export default function HomePage() {
       try {
         const data = await api.get(`/workspaces/${user.active_workspace_id}/dashboard`);
         if (data) {
-          const assets: RecentItem[] = (data.recent_assets || []).map((a: { id: string; filename: string; file_size: number; uploaded_at: string }) => ({
+          const assets: RecentItem[] = (data.recent_assets || []).map((a: { id: string; filename: string; file_size: number; uploaded_at: string; source_type?: string }) => ({
             id: a.id,
             title: a.filename,
             subtitle: `${(a.file_size / 1024).toFixed(1)} KB • Added ${formatTimeAgo(a.uploaded_at)}`,
             type: 'asset',
+            sourceType: a.source_type,
           }));
           setRecentAssets(assets);
 
@@ -80,6 +92,97 @@ export default function HomePage() {
     loadData();
   }, [user?.active_workspace_id]);
 
+  // Full workspace source lists for the @ mention dropdown.
+  useEffect(() => {
+    const wsId = currentWorkspace?.id || user?.active_workspace_id;
+    if (!wsId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [docsRes, assetsRes] = await Promise.all([
+          api.get(`/documents?workspace_id=${wsId}`).catch(() => ({ documents: [] })),
+          api.get(`/sources?workspace_id=${wsId}`).catch(() => ({ sources: [] })),
+        ]);
+        if (cancelled) return;
+        setMentionDocs(
+          ((docsRes.documents || []) as { id: string; title: string }[]).map((d) => ({
+            id: d.id,
+            title: d.title || 'Untitled Document',
+            type: 'document' as const,
+          }))
+        );
+        setMentionAssets(
+          ((assetsRes.sources || []) as { id: string; filename: string; source_type?: string }[]).map(
+            (s) => ({
+              id: s.id,
+              title: s.filename || 'Untitled Asset',
+              type: 'asset' as const,
+              source_type: s.source_type,
+            })
+          )
+        );
+      } catch {
+        // Mention lookup is best-effort; the send path works without it.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentWorkspace?.id, user?.active_workspace_id]);
+
+  // Enter/send hands the query to a fresh Playground chat.
+  const submitToPlayground = () => {
+    const query = askQuery.trim();
+    if (!query) return;
+    const params = new URLSearchParams({ q: query });
+    if (mention.attachedScope) {
+      params.set('scope_id', mention.attachedScope.id);
+      params.set('scope_title', mention.attachedScope.title);
+      params.set('scope_type', mention.attachedScope.type);
+    }
+    router.push(`/playground?${params.toString()}`);
+  };
+
+  const handleAskChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setAskQuery(val);
+    mention.processTextChange(val);
+  };
+
+  const handleAskKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      mention.navigateMentions(e.key);
+      if (mention.showMentions && mention.allFilteredMentions.length > 0) {
+        e.preventDefault();
+      }
+      return;
+    }
+    if (e.key === 'Enter') {
+      const result = mention.navigateMentions('Enter');
+      if (result === 'dismiss') {
+        e.preventDefault();
+        return;
+      }
+      if (result) {
+        e.preventDefault();
+        setAskQuery(mention.attachMention(result, askQuery));
+        inputRef.current?.focus();
+        return;
+      }
+      e.preventDefault();
+      submitToPlayground();
+      return;
+    }
+    if (e.key === 'Escape') {
+      mention.navigateMentions('Escape');
+    }
+  };
+
+  const handleSelectMention = (item: MentionItem) => {
+    setAskQuery(mention.attachMention(item, askQuery));
+    inputRef.current?.focus();
+  };
+
   const quickChips = [
     { label: 'Improve a draft', icon: PenLine },
     { label: 'Research a topic', icon: Search },
@@ -88,20 +191,41 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="w-full px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
+    <div className="w-full px-3.5 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in max-w-full overflow-hidden">
       {/* Greeting Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
           {getGreeting()}, {displayName}
         </h1>
-        <p className="text-xs text-text-secondary mt-1 font-normal">
+        <p className="text-xs text-text-secondary mt-0.5 sm:mt-1 font-normal">
           Let&apos;s bring your ideas to life
         </p>
       </div>
 
-      {/* Ask Ora Input Bar */}
-      <div className="relative rounded-2xl bg-sidebar border border-border p-2 flex items-center gap-3 shadow-2xs hover:border-[#D1D5DB] transition-all">
-        <div className="pl-3 flex items-center text-text-muted">
+      {/* Ask Quello Input Bar */}
+      {mention.attachedScope && (
+        <div className="mb-2 flex items-center gap-1.5 w-fit bg-white border border-border text-text-primary px-3 py-1 rounded-full text-xs font-medium animate-fade-in shadow-2xs max-w-full">
+          {mention.attachedScope.type === 'document' ? (
+            <StudioDocIcon className="w-3.5 h-3.5 text-text-secondary shrink-0" />
+          ) : (
+            <FilenameIcon
+              filename={mention.attachedScope.title}
+              sourceType={mention.attachedScope.source_type}
+              className="w-3.5 h-3.5 text-text-secondary shrink-0"
+            />
+          )}
+          <span className="truncate max-w-45 sm:max-w-xs">{mention.attachedScope.title}</span>
+          <button
+            type="button"
+            onClick={() => mention.clearScope()}
+            className="cursor-pointer ml-0.5 text-text-muted hover:text-text-primary shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+      <div className="relative rounded-2xl bg-sidebar border border-border p-2 sm:p-2.5 flex items-center gap-2 sm:gap-3 shadow-2xs hover:border-[#D1D5DB] transition-all">
+        <div className="pl-2 sm:pl-3 flex items-center text-text-muted shrink-0">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-text-secondary">
             <path
               d="M6 4h8a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4H8a4 4 0 0 0-4 4v1a4 4 0 0 0 4 4h10"
@@ -113,25 +237,73 @@ export default function HomePage() {
           </svg>
         </div>
         <input
+          ref={inputRef}
           type="text"
           value={askQuery}
-          onChange={(e) => setAskQuery(e.target.value)}
-          placeholder="Ask Ora anything... type @ to reference"
-          className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-muted focus:outline-none"
+          onChange={handleAskChange}
+          onKeyDown={handleAskKeyDown}
+          placeholder="Ask Quello anything... type @ to reference"
+          className="flex-1 bg-transparent text-xs sm:text-sm text-text-primary placeholder-text-muted focus:outline-none min-w-0"
         />
         <button
           type="button"
+          onClick={submitToPlayground}
           className="w-8 h-8 rounded-xl bg-accent-hover/20 hover:bg-accent-hover/30 text-accent-hover flex items-center justify-center transition-colors cursor-pointer shrink-0"
           title="Send query"
         >
           <ArrowUp className="w-4 h-4" />
         </button>
+        {/* Mention Autocomplete Dropdown */}
+        {mention.showMentions && mention.allFilteredMentions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-border p-2 max-h-56 overflow-y-auto z-40 animate-fade-in text-xs">
+            {mention.filteredDocs.length > 0 && (
+              <div className="mb-2">
+                <div className="px-2 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                  STUDIO DOCUMENTS
+                </div>
+                {mention.filteredDocs.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => handleSelectMention(d)}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer hover:bg-[#F3F4F6] text-text-primary"
+                  >
+                    <StudioDocIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{d.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {mention.filteredAssets.length > 0 && (
+              <div>
+                <div className="px-2 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
+                  UPLOADED ASSETS
+                </div>
+                {mention.filteredAssets.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => handleSelectMention(a)}
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer hover:bg-[#F3F4F6] text-text-primary"
+                  >
+                    <FilenameIcon
+                      filename={a.title}
+                      sourceType={a.source_type}
+                      className="w-3.5 h-3.5 shrink-0"
+                    />
+                    <span className="truncate">{a.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Start Writing Action Card */}
       <Link
         href="/studio"
-        className="flex items-center justify-between p-4 rounded-xl bg-sidebar hover:bg-[#EFEFF2] border border-border transition-colors cursor-pointer group"
+        className="flex items-center justify-between p-4 rounded-xl bg-sidebar hover:bg-accent-subtle border border-border transition-colors cursor-pointer group"
       >
         <div className="flex items-center gap-3.5">
           <div className="w-9 h-9 rounded-lg bg-[#111113] flex items-center justify-center text-white shrink-0 shadow-xs">
@@ -163,42 +335,6 @@ export default function HomePage() {
         })}
       </div>
 
-      {/* Recent Documents Section */}
-      <div className="space-y-2 pt-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-text-primary">Recent Documents</h2>
-          <Link
-            href="/studio"
-            className="text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
-          >
-            <span>View all</span>
-          </Link>
-        </div>
-
-        <div className="space-y-1">
-          {recentDocs.map((doc) => (
-            <Link
-              key={doc.id}
-              href="/studio"
-              className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-text-secondary shrink-0">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
-                    {doc.title}
-                  </h4>
-                  <p className="text-[11px] text-text-muted">{doc.subtitle}</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors" />
-            </Link>
-          ))}
-        </div>
-      </div>
-
       {/* Recent Assets Section */}
       <div className="space-y-2 pt-2">
         <div className="flex items-center justify-between">
@@ -219,8 +355,8 @@ export default function HomePage() {
               className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-text-secondary shrink-0">
-                  <File className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                  <FilenameIcon filename={asset.title} sourceType={asset.sourceType} className="w-4 h-4" />
                 </div>
                 <div>
                   <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
@@ -234,6 +370,43 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* Recent Documents Section */}
+      <div className="space-y-2 pt-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-text-primary">Recent Documents</h2>
+          <Link
+            href="/studio"
+            className="text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+          >
+            <span>View all</span>
+          </Link>
+        </div>
+
+        <div className="space-y-1">
+          {recentDocs.map((doc) => (
+            <Link
+              key={doc.id}
+              href="/studio"
+              className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                  <StudioDocIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
+                    {doc.title}
+                  </h4>
+                  <p className="text-[11px] text-text-muted">{doc.subtitle}</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors" />
+            </Link>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }

@@ -66,7 +66,7 @@ export default function ConnectorsPage() {
             ) : status?.notion.connected ? (
               <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
             ) : (
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">Not connected</span>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-accent-subtle text-text-secondary">Not connected</span>
             )}
             <ChevronRight className="w-4 h-4 text-text-muted" />
           </Link>
@@ -87,7 +87,7 @@ export default function ConnectorsPage() {
             ) : status?.drive.connected ? (
               <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
             ) : (
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">Not connected</span>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-accent-subtle text-text-secondary">Not connected</span>
             )}
             <ChevronRight className="w-4 h-4 text-text-muted" />
           </Link>
@@ -108,7 +108,7 @@ export default function ConnectorsPage() {
             ) : status?.github.connected ? (
               <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800">Connected</span>
             ) : (
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">Not connected</span>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-accent-subtle text-text-secondary">Not connected</span>
             )}
             <ChevronRight className="w-4 h-4 text-text-muted" />
           </Link>
@@ -121,7 +121,7 @@ export default function ConnectorsPage() {
               <p className="text-xs font-semibold text-text-primary">{c.name}</p>
               <p className="text-[11px] text-text-secondary">{c.desc}</p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">Soon</span>
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-accent-subtle text-text-secondary">Soon</span>
           </div>
         ))}
       </div>

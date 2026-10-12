@@ -34,7 +34,7 @@ export function StatusPill({ status }: { status: string }) {
     );
   }
   return (
-    <span className={`${base} bg-[#EFEFF2] text-text-secondary`}>
+    <span className={`${base} bg-accent-subtle text-text-secondary`}>
       {status}
     </span>
   );

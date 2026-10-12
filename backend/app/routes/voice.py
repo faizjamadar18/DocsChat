@@ -275,7 +275,7 @@ async def tool_call(request: dict | None = None, token: Optional[str] = Query(No
     if not session:
         return {"results": [
             {"toolCallId": (c or {}).get("id", "unknown"),
-             "error": "Voice session expired. Please tap Ora again."}
+             "error": "Voice session expired. Please tap Quello again."}
             for c in calls
         ]}
 
@@ -295,7 +295,7 @@ async def tool_call(request: dict | None = None, token: Optional[str] = Query(No
             continue
         if _is_greeting(query):
             results.append({"toolCallId": call_id,
-                            "result": "Hey! I'm Ora. Ask me about your documents and I'll keep it short."})
+                            "result": "Hey! I'm Quello. Ask me about your documents and I'll keep it short."})
             continue
         try:
             catalog_summary, doc_count, asset_count = await get_workspace_catalog(

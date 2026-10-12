@@ -19,7 +19,7 @@ NO_DOCUMENTS_MESSAGE = (
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-SYSTEM_PROMPT = """You are Ora, an intelligent workspace AI assistant.
+SYSTEM_PROMPT = """You are Quello, an intelligent workspace AI assistant.
 Answer the user's question clearly, accurately, and helpfully based on the workspace catalog and document context provided below.
 
 Guidelines:

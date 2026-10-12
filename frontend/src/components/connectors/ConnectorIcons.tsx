@@ -86,9 +86,9 @@ export function SlackIcon({ className = 'w-5 h-5' }: { className?: string }) {
   );
 }
 
-export function GitHubIcon({ className = 'w-5 h-5' }: { className?: string }) {
+export function GitHubIcon({ className = 'w-5 h-5 text-[#181717]' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className.includes('text-') ? className : `text-[#181717] ${className}`} aria-hidden="true">
       <path
         fillRule="evenodd"
         clipRule="evenodd"
@@ -158,6 +158,60 @@ export function GenericIcon({ letter, className = 'w-5 h-5' }: { letter: string;
 }
 
 /**
+ * Source-type icons for RAG citations, Studio docs, and Assets.
+ * PdfIcon: Official premium Adobe Acrobat red PDF document icon.
+ * StudioDocIcon / GoogleDocIcon: Official Google Docs document icon with folded corner and signature lines.
+ */
+
+export function PdfIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      {/* Official Adobe Red document sheet with folded top-right corner */}
+      <path
+        d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+        fill="#E5252A"
+      />
+      {/* Darker red top-right fold */}
+      <path
+        d="M14 2v5.5a.5.5 0 0 0 .5.5H20L14 2z"
+        fill="#B71C1C"
+      />
+      {/* Official Adobe Acrobat ribbon loop */}
+      <path
+        d="M18.2 13.8c-.3-.3-.9-.5-1.7-.5-.6 0-1.3.1-2.1.2-.4-.3-.7-.6-1.1-1-.5-.6-1-1.2-1.3-1.8.2-.7.3-1.4.4-2 .1-.4 0-.8-.1-1.1-.1-.4-.4-.6-.8-.6-.4 0-.7.2-.8.6-.2.5-.1 1.2.2 2 .2.7.6 1.5 1.1 2.2-.2.6-.5 1.3-.7 2-.4 1-.9 1.9-1.4 2.7-.9.4-1.7.8-2.1 1.3-.3.4-.4.8-.3 1.2.1.4.5.6.9.6.6 0 1.3-.4 2-1.2.7-.8 1.4-1.7 2-2.9 1-.3 2.1-.5 3.1-.6.7.6 1.4 1 2.1 1.3.4.1.8.2 1.1.1.4-.1.7-.3.8-.6.2-.4.1-.9-.2-1.2zm-6.6-4.7c-.1-.4-.1-.8 0-1.1 0-.1.1-.2.2-.2.1 0 .2.1.2.2.1.2.1.4.1.7-.1.5-.2 1-.3 1.5-.1-.5-.2-.8-.2-1.1zm-3.5 10.2c-.1-.2 0-.4.1-.5.3-.3.9-.7 1.6-1-.5.7-.9 1.3-1.4 1.6-.2.1-.3.1-.3-.1zm4.8-3.4c.2-.5.5-1 .6-1.5.3.3.6.6.9.8-.7.2-1.5.4-2.2.5.2-.2.5-.4.7-.8zm4.6.2c-.1.2-.2.2-.4.3-.2 0-.5 0-.9-.1-.5-.2-1.1-.5-1.6-.9.5 0 1 0 1.4.1.5.1 1 .2 1.2.4.1.1.2.2.3.2z"
+        fill="#FFFFFF"
+      />
+    </svg>
+  );
+}
+
+export function StudioDocIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      {/* Official Google Docs blue document sheet with folded top-right corner */}
+      <path
+        d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"
+        fill="#4285F4"
+      />
+      {/* Lighter blue fold */}
+      <path
+        d="M14 2v5.5a.5.5 0 0 0 .5.5H20L14 2z"
+        fill="#A1C2FA"
+      />
+      {/* White document lines */}
+      <path
+        d="M8 12h8M8 15h8M8 18h5"
+        stroke="#FFFFFF"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export const GoogleDocIcon = StudioDocIcon;
+
+/**
  * AI provider brand marks for the MCP Server tab.
  * Official brand SVGs matching authentic brand guidelines and vectors.
  */
@@ -182,9 +236,9 @@ export function GrokIcon({ className = 'w-5 h-5' }: { className?: string }) {
   );
 }
 
-export function ChatGptIcon({ className = 'w-5 h-5' }: { className?: string }) {
+export function ChatGptIcon({ className = 'w-5 h-5', fill = 'currentColor' }: { className?: string; fill?: string }) {
   return (
-    <svg viewBox="0 0 256 260" className={className} aria-hidden="true" fill="#000000">
+    <svg viewBox="0 0 256 260" className={className} aria-hidden="true" fill={fill}>
       <path d="M239.184 106.203c5.87-17.679 3.838-37.03-5.576-53.103-14.156-24.641-42.608-37.316-70.395-31.36-15.659-17.418-39.418-25.164-62.334-20.321-22.916 4.843-41.51 21.538-48.783 43.803-18.252 3.743-34.006 15.171-43.23 31.36-14.31 24.601-11.061 55.633 8.033 76.738-5.893 17.67-3.879 37.024 5.525 53.103 14.174 24.65 42.644 37.324 70.446 31.36 12.366 13.925 30.131 21.848 48.754 21.744 28.481.025 53.714-18.361 62.414-45.481 18.25-3.75 34.001-15.176 43.23-31.361 14.137-24.558 10.875-55.422-8.084-76.482zm-97.56 136.338c-11.368.018-22.38-3.966-31.105-11.255l1.535-.87 51.67-29.825c2.616-1.535 4.23-4.334 4.246-7.367v-72.85l21.845 12.636c.218.112.37.321.409.563v60.367c-.056 26.818-21.783 48.545-48.601 48.601zm-104.466-44.61c-5.701-9.845-7.748-21.384-5.781-32.589l1.535.921 51.721 29.826c2.606 1.529 5.836 1.529 8.442 0l63.181-36.425v25.221c-.012.265-.144.51-.358.665l-52.336 30.184c-23.256 13.398-52.969 5.431-66.404-17.803zm-13.608-112.55c5.74-9.907 14.802-17.464 25.579-21.333v61.391c-.04 3.021 1.568 5.824 4.195 7.316l62.874 36.271-21.845 12.637c-.24.127-.527.127-.767 0l-52.233-30.133c-23.211-13.453-31.171-43.144-17.803-66.404v.255zm179.465 41.695l-63.079-36.63 21.794-12.585c.24-.127.527-.127.767 0l52.233 30.184c16.302 9.407 25.707 27.382 24.142 46.138-1.566 18.757-13.821 34.923-31.457 41.497v-61.391c-.092-3.012-1.764-5.753-4.4-7.213zm21.743-32.691l-1.535-.92-51.62-30.082c-2.621-1.538-5.87-1.538-8.492 0l-63.13 36.425v-25.221c-.027-.261.09-.517.307-.665l52.233-30.133c16.342-9.415 36.654-8.536 52.122 2.254 15.469 10.791 23.307 29.55 20.115 48.138v.204zm-136.697 44.712l-21.845-12.585c-.22-.134-.37-.359-.409-.614V65.685c.025-18.856 10.944-36 28.021-43.996 17.077-7.997 37.237-5.405 51.736 6.65l-1.535.87-51.67 29.826c-2.616 1.534-4.23 4.334-4.246 7.367v72.696zm11.869-25.579l28.137-16.217 28.189 16.217v32.435l-28.086 16.217-28.189-16.217v-32.435z" />
     </svg>
   );
@@ -342,4 +396,92 @@ export function ManusIcon({ className = 'w-5 h-5' }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * Universal Filename & Source Icon Resolver.
+ * Intelligently maps filename prefixes, connector sync tags, repository paths,
+ * and file extensions to authentic brand SVGs (GitHub, Google Drive, Notion, Slack, PDF, Google Doc).
+ */
+export function FilenameIcon({
+  filename = '',
+  sourceType,
+  className = 'w-4 h-4 shrink-0',
+}: {
+  filename?: string;
+  sourceType?: string;
+  className?: string;
+}) {
+  const raw = (filename || '').trim();
+  const lower = raw.toLowerCase();
+  const type = (sourceType || '').toLowerCase();
+
+  // 1. Connector prefix tags in filename (e.g. "[GitHub] repo", "[Drive] file.pdf", "[Notion] page")
+  // NOTE: check connector tags BEFORE source_type or file extensions, because a Drive sync might be "[Drive] resume.pdf" or legacy source_type might default to "pdf"!
+  if (lower.startsWith('[github]') || lower.includes('github.com') || lower.startsWith('gh:')) {
+    return <GitHubIcon className={className} />;
+  }
+  if (
+    lower.startsWith('[drive]') ||
+    lower.startsWith('[google drive]') ||
+    lower.startsWith('[googledrive]') ||
+    lower.includes('drive.google.com')
+  ) {
+    return <GoogleDriveIcon className={className} />;
+  }
+  if (lower.startsWith('[notion]') || lower.includes('notion.so') || lower.startsWith('[notion doc]')) {
+    return <NotionIcon className={className} />;
+  }
+  if (lower.startsWith('[slack]')) {
+    return <SlackIcon className={className} />;
+  }
+
+  // 2. Explicit source_type checks
+  if (type === 'github') return <GitHubIcon className={className} />;
+  if (type === 'notion') return <NotionIcon className={className} />;
+  if (type === 'drive' || type === 'googledrive') return <GoogleDriveIcon className={className} />;
+  if (type === 'slack') return <SlackIcon className={className} />;
+  if (type === 'pdf') return <PdfIcon className={className} />;
+  if (type === 'document' || type === 'studio') return <StudioDocIcon className={className} />;
+
+  // 3. File extension checks
+  if (lower.endsWith('.pdf')) {
+    return <PdfIcon className={className} />;
+  }
+
+  // 4. Code / Repo patterns (e.g. "faizjamadar18/Quello", or code file extensions)
+  if (
+    lower.endsWith('.ts') ||
+    lower.endsWith('.tsx') ||
+    lower.endsWith('.js') ||
+    lower.endsWith('.jsx') ||
+    lower.endsWith('.py') ||
+    lower.endsWith('.json') ||
+    lower.endsWith('.yaml') ||
+    lower.endsWith('.yml') ||
+    lower.endsWith('.sh') ||
+    lower.endsWith('.go') ||
+    lower.endsWith('.rs') ||
+    /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(raw)
+  ) {
+    return <GitHubIcon className={className} />;
+  }
+
+  // 5. Google Docs / Word / text documents
+  if (
+    lower.endsWith('.doc') ||
+    lower.endsWith('.docx') ||
+    lower.endsWith('.gdoc') ||
+    lower.endsWith('.txt') ||
+    lower.endsWith('.rtf') ||
+    lower.endsWith('.md') ||
+    lower.endsWith('.markdown') ||
+    lower.endsWith('.odt')
+  ) {
+    return <StudioDocIcon className={className} />;
+  }
+
+  // 6. Fallback
+  return <StudioDocIcon className={className} />;
+}
+
 

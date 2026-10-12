@@ -9,7 +9,7 @@ export default function Nav() {
     <nav className="sticky top-0 z-20 bg-[#000000]/80 ">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="text-lg font-semibold tracking-tight">DocsChat</span>
+          <span className="text-lg font-semibold tracking-tight">Quello</span>
         </Link>
         {!loading && (
           <div className="flex items-center gap-2">

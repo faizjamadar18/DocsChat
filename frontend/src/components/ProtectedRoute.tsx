@@ -1,17 +1,27 @@
 'use client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
+      return;
     }
-  }, [isAuthenticated, loading, router]);
+    if (
+      !loading &&
+      isAuthenticated &&
+      user?.onboarding_completed === false &&
+      !pathname?.startsWith('/onboarding')
+    ) {
+      router.push('/onboarding/welcome');
+    }
+  }, [isAuthenticated, loading, user, pathname, router]);
 
   if (loading) {
     return (

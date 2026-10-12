@@ -7,8 +7,6 @@ import {
   Trash2,
   Copy,
   Check,
-  FileText,
-  File,
   Sparkles,
   Wand2,
   HelpCircle,
@@ -18,6 +16,7 @@ import {
   MessageSquare,
   Layers,
 } from 'lucide-react';
+import { StudioDocIcon, FilenameIcon } from '../connectors/ConnectorIcons';
 import { useChat, AskQuestionOptions } from '../../hooks/useChat';
 import Markdown from '../Markdown';
 import { useChatThreads, ChatThread } from '../../hooks/useChatThreads';
@@ -83,6 +82,7 @@ export interface MentionItem {
   id: string;
   title: string;
   type: 'document' | 'asset';
+  source_type?: string;
 }
 
 export interface OraSidebarProps {
@@ -209,10 +209,11 @@ export default function OraSidebar({
           })
         );
         const assetItems: MentionItem[] = (assetsRes.sources || []).map(
-          (s: { id: string; filename: string }) => ({
+          (s: { id: string; filename: string; source_type?: string }) => ({
             id: s.id,
             title: s.filename || 'Untitled Asset',
             type: 'asset',
+            source_type: s.source_type,
           })
         );
 
@@ -640,28 +641,38 @@ export default function OraSidebar({
   const olderThreads = threads.filter((t) => !isToday(t.updated_at || t.created_at));
 
   return (
-    <aside
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      className={`shrink-0 h-full bg-white flex flex-col select-none relative z-20 transition-all duration-300 ease-in-out overflow-hidden ${
-        isOpen
-          ? 'w-80 sm:w-96 opacity-100 border-l border-border'
-          : 'w-0 opacity-0 border-l-0 pointer-events-none'
-      }`}
-    >
-      {/* Drag & Drop Visual Target Overlay */}
-      {isDragOver && (
-        <div className="absolute inset-0 z-50 bg-[#ECE8F4]/90 backdrop-blur-xs border-2 border-dashed border-[#765D96] rounded-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in pointer-events-none">
-          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3">
-            <FileText className="w-6 h-6 text-[#765D96]" />
-          </div>
-          <span className="text-sm font-semibold text-text-primary">Drop PDF to add it</span>
-          <span className="text-xs text-text-secondary mt-1">{mode === 'assets' ? 'Ora adds it to the queried assets' : 'Ora will focus on this document'}</span>
-        </div>
-      )}
+    <>
+      {/* Mobile/Tablet Backdrop when Ora is open */}
+      <div
+        className={`fixed inset-0 bg-black/40 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      <div className="w-80 sm:w-96 h-full flex flex-col shrink-0">
+      <aside
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`fixed inset-y-0 right-0 z-50 w-full sm:w-96 max-w-[92vw] lg:max-w-none bg-white flex flex-col select-none transition-all duration-300 ease-in-out overflow-hidden shadow-2xl lg:shadow-none lg:static lg:h-full lg:shrink-0 lg:z-20 ${
+          isOpen
+            ? 'translate-x-0 lg:translate-x-0 lg:w-80 xl:w-96 opacity-100 lg:border-l border-border pointer-events-auto'
+            : 'translate-x-full lg:translate-x-0 lg:w-0 opacity-0 lg:border-l-0 pointer-events-none'
+        }`}
+      >
+        {/* Drag & Drop Visual Target Overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-xs border-2 border-dashed border-zinc-900 rounded-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in pointer-events-none">
+            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3">
+              <Layers className="w-6 h-6 text-text-primary" />
+            </div>
+            <span className="text-sm font-semibold text-text-primary">Drop to add to context</span>
+            <span className="text-xs text-text-secondary mt-1">{mode === 'assets' ? 'Quello adds it to the queried assets' : 'Quello will focus on this source'}</span>
+          </div>
+        )}
+
+        <div className="w-full h-full flex flex-col shrink-0">
         {/* Top Header with Chat History Dropdown Trigger (matching Notion user image) */}
       <div className="h-14 px-4 flex items-center justify-between border-b border-border/80 shrink-0 bg-white relative">
         <div className="flex items-center gap-1.5 min-w-0 max-w-[65%]">
@@ -673,7 +684,7 @@ export default function OraSidebar({
             title="Conversation history"
           >
             <span className="text-sm font-semibold truncate tracking-tight">
-              {activeThread?.title || 'Ora'}
+              {activeThread?.title || 'Quello'}
             </span>
             <ChevronDown
               className={`w-3.5 h-3.5 text-text-muted group-hover:text-text-primary shrink-0 transition-transform duration-200 ${
@@ -703,7 +714,7 @@ export default function OraSidebar({
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
-            title="Close Ora"
+            title="Close Quello"
           >
             <X className="w-4 h-4" />
           </button>
@@ -838,7 +849,7 @@ export default function OraSidebar({
             <div className="flex-1 flex flex-col justify-center items-center p-5 space-y-4 my-auto">
               <div className="text-center space-y-1">
                 <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2 shadow-2xs">
-                  <Sparkles className="w-5 h-5 text-[#765D96]" />
+                  <Sparkles className="w-5 h-5 text-text-primary" />
                 </div>
                 <h3 className="text-sm font-semibold text-text-primary">Studio Assistant</h3>
                 <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
@@ -860,9 +871,9 @@ export default function OraSidebar({
                       key={item.label}
                       type="button"
                       onClick={() => handleStudioPrompt(item.prompt)}
-                      className="flex items-center gap-3 p-2.5 rounded-xl border border-border/80 bg-white hover:bg-[#F9F9FB] hover:border-[#765D96]/40 text-left transition-all shadow-2xs group cursor-pointer"
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-border/80 bg-white hover:bg-[#F9F9FB] hover:border-border-subtle text-left transition-all shadow-2xs group cursor-pointer"
                     >
-                      <div className="w-7 h-7 rounded-lg bg-[#ECE8F4] text-[#765D96] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-lg bg-sidebar border border-border text-text-primary flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                         <Icon className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -882,19 +893,23 @@ export default function OraSidebar({
             /* Assets Scoped Empty State — All-assets default, narrow via chip/@/rows */
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto">
               <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1 shadow-2xs">
-                <FileText className="w-5 h-5 text-[#765D96]" />
+                {narrowedAssets.length === 1 ? (
+                  <FilenameIcon filename={narrowedAssets[0].title} className="w-5 h-5 shrink-0" />
+                ) : (
+                  <Layers className="w-5 h-5 text-text-secondary shrink-0" />
+                )}
               </div>
               <h3 className="text-sm font-semibold text-text-primary truncate max-w-xs">
                 {assetsScopeLabel ?? displayScope?.title ?? 'Asset Assistant'}
               </h3>
               <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
                 {scopeCatalog.length === 0
-                  ? 'Upload your first PDF to start asking questions.'
+                  ? 'Upload a document or connect a service to get started.'
                   : isAllAssetsMode
-                    ? `Ask across your PDFs — all ${scopeCatalog.length}, or type @ to narrow to one.`
+                    ? `Ask across your sources — all ${scopeCatalog.length}, or type @ to narrow to one.`
                     : narrowedAssets.length > 1
-                      ? `Asking across ${narrowedAssets.length} selected PDFs. Click the scope chip to adjust.`
-                      : 'Ask questions or extract insights strictly from this attached PDF.'}
+                      ? `Asking across ${narrowedAssets.length} selected sources. Click the scope chip to adjust.`
+                      : 'Ask questions or extract insights strictly from this attached source.'}
               </p>
               {scopeCatalog.length > 0 ? (
                 <div className="pt-2 flex flex-wrap gap-1.5 justify-center">
@@ -910,7 +925,7 @@ export default function OraSidebar({
                         attachedName,
                       });
                     }}
-                    className="px-2.5 py-1 text-xs rounded-full bg-[#ECE8F4] text-[#765D96] hover:bg-[#E2D9EE] transition-colors cursor-pointer"
+                    className="px-2.5 py-1 text-xs rounded-full bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer"
                   >
                     Summarize {isAllAssetsMode ? 'all' : 'document'}
                   </button>
@@ -926,7 +941,7 @@ export default function OraSidebar({
                         attachedName,
                       });
                     }}
-                    className="px-2.5 py-1 text-xs rounded-full bg-[#ECE8F4] text-[#765D96] hover:bg-[#E2D9EE] transition-colors cursor-pointer"
+                    className="px-2.5 py-1 text-xs rounded-full bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer"
                   >
                     Key takeaways
                   </button>
@@ -939,7 +954,7 @@ export default function OraSidebar({
               <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1">
                 <OraLogoMark className="w-5 h-5 text-text-secondary" />
               </div>
-              <h3 className="text-sm font-semibold text-text-primary">Ask Ora anything</h3>
+              <h3 className="text-sm font-semibold text-text-primary">Ask Quello anything</h3>
               <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
                 Type{' '}
                 <span className="bg-[#F3F4F6] text-text-primary px-1.5 py-0.5 rounded border border-border font-mono text-[11px]">
@@ -971,18 +986,18 @@ export default function OraSidebar({
                   className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
                 >
                   {isUser ? (
-                    /* User Message Bubble (Replicating User Image 1 & 2) */
-                    <div className="max-w-[88%] rounded-2xl px-4 py-3 bg-[#83699e] text-white shadow-2xs">
+                    /* User Message Bubble */
+                    <div className="max-w-[88%] rounded-2xl px-4 py-3 bg-[#F4F4F6] border border-border/40 text-text-primary shadow-2xs">
                       {/* Attached Document Pill inside User Bubble */}
                       {(msg.attached_name || (msg.scope_ids && msg.scope_ids.length > 0)) && (
-                        <div className="bg-white/20 text-white text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit">
-                          <FileText className="w-3 h-3 text-white/90" />
+                        <div className="bg-white border border-border/80 text-text-secondary text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit shadow-2xs">
+                          <FilenameIcon filename={msg.attached_name || ''} className="w-3 h-3 text-text-secondary shrink-0" />
                           <span className="truncate max-w-50">
                             {msg.attached_name || 'Referenced Document'}
                           </span>
                         </div>
                       )}
-                      <p className="text-[13px] leading-relaxed whitespace-pre-wrap font-normal">
+                      <p className="text-[13px] leading-relaxed whitespace-pre-wrap font-normal text-text-primary">
                         {msg.content}
                       </p>
                     </div>
@@ -994,11 +1009,11 @@ export default function OraSidebar({
                       </span>
                     </div>
                   ) : (
-                    /* Assistant Message Card (Replicating User Image 2) */
-                    <div className="max-w-[92%] w-full flex flex-col group">
-                      <div className="rounded-2xl p-4 bg-[#F4F4F6] text-text-primary text-[13px] leading-relaxed">
+                    /* Assistant Message Card (unboxed, transparent flow) */
+                    <div className="w-full flex flex-col group py-1">
+                      <div className="w-full text-text-primary text-[13px] leading-relaxed">
                         {/* Status Pills: Read document / Searched workspace */}
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <div className="flex flex-wrap items-center gap-2 mb-2.5">
                           {(msg.has_read_document || (msg.sources && msg.sources.length > 0)) && (
                             <button
                               type="button"
@@ -1007,7 +1022,7 @@ export default function OraSidebar({
                                   prev === msg.id ? null : msg.id
                                 )
                               }
-                              className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#ECE8F4] text-[#765D96] hover:bg-[#E4DCF0] transition-colors cursor-pointer inline-flex items-center gap-1"
+                              className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-sidebar text-text-secondary border border-border/80 hover:bg-accent-subtle hover:text-text-primary transition-colors cursor-pointer inline-flex items-center gap-1"
                               title="Click to view referenced source citations"
                             >
                               <span>Read document</span>
@@ -1016,35 +1031,29 @@ export default function OraSidebar({
 
                           {(msg.has_searched_workspace ||
                             (!msg.has_read_document && (!msg.sources || msg.sources.length === 0))) && (
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-[#ECE8F4] text-[#765D96] inline-flex items-center gap-1">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-sidebar text-text-secondary border border-border/80 inline-flex items-center gap-1">
                               <span>Searched workspace</span>
                             </span>
                           )}
                         </div>
 
-                        {/* Interactive Citations Expandable Drawer */}
+                        {/* Interactive Citations Expandable Drawer — transparent names only */}
                         {showSourcesForMsg === msg.id && msg.sources && msg.sources.length > 0 && (
-                          <div className="mb-3 p-2.5 bg-white rounded-xl border border-border/80 space-y-2 animate-fade-in text-xs">
-                            <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">
-                              Referenced Citations
-                            </div>
-                            {msg.sources.map((cit, cIdx) => (
+                          <div className="mb-2.5 space-y-1 animate-fade-in text-xs">
+                            {Array.from(
+                              new Map(msg.sources.map((s) => [s.source_id || s.filename, s])).values()
+                            ).map((cit, cIdx) => (
                               <div
                                 key={cIdx}
-                                className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-surface border border-border/60"
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/4 transition-colors"
                               >
-                                <div className="flex items-center gap-1 font-medium text-text-primary">
-                                  <FileText className="w-3 h-3 text-accent" />
-                                  <span className="truncate">{cit.filename}</span>
-                                  {cit.page ? (
-                                    <span className="text-[10px] text-text-muted">
-                                      p.{cit.page}
-                                    </span>
-                                  ) : null}
-                                </div>
-                                <p className="text-[11px] text-text-secondary line-clamp-2">
-                                  {cit.snippet}
-                                </p>
+                                <FilenameIcon filename={cit.filename} className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate flex-1 font-normal text-[12px]">{cit.filename}</span>
+                                {cit.page ? (
+                                  <span className="text-[10px] text-text-muted">
+                                    p.{cit.page}
+                                  </span>
+                                ) : null}
                               </div>
                             ))}
                           </div>
@@ -1094,7 +1103,7 @@ export default function OraSidebar({
                   onClick={() => handleSelectMention(d)}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#F3F4F6] text-text-primary text-left cursor-pointer transition-colors"
                 >
-                  <FileText className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                  <StudioDocIcon className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{d.title}</span>
                 </button>
               ))}
@@ -1113,7 +1122,7 @@ export default function OraSidebar({
                   onClick={() => handleSelectMention(a)}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#F3F4F6] text-text-primary text-left cursor-pointer transition-colors"
                 >
-                  <File className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                  <FilenameIcon filename={a.title} sourceType={a.source_type} className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{a.title}</span>
                 </button>
               ))}
@@ -1131,12 +1140,12 @@ export default function OraSidebar({
               type="button"
               onClick={() => setIsScopeSelectorOpen((prev) => !prev)}
               title={isAllAssetsMode ? 'Querying all assets — click to narrow' : 'Click to adjust queried assets'}
-              className="flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] pl-2.5 pr-2 py-1 rounded-full text-xs font-medium hover:bg-[#E2D9EE] transition-colors cursor-pointer max-w-full"
+              className="flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary pl-2.5 pr-2 py-1 rounded-full text-xs font-medium hover:bg-accent-subtle transition-colors cursor-pointer max-w-full"
             >
               {isAllAssetsMode ? (
-                <Layers className="w-3 h-3 text-[#765D96] shrink-0" />
+                <Layers className="w-3 h-3 text-text-secondary shrink-0" />
               ) : (
-                <FileText className="w-3 h-3 text-[#765D96] shrink-0" />
+                <FilenameIcon filename={assetsScopeLabel} className="w-3 h-3 shrink-0" />
               )}
               <span className="truncate max-w-55">{assetsScopeLabel}</span>
               <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isScopeSelectorOpen ? 'rotate-180' : ''}`} />
@@ -1155,13 +1164,13 @@ export default function OraSidebar({
         ) : null}
         {/* Legacy single-attachment chip (studio / universal / uncontrolled) */}
         {mode !== 'assets' && attachedScope ? (
-          <div className="mb-2 flex items-center gap-1.5 w-fit bg-[#ECE8F4] text-[#765D96] px-2.5 py-1 rounded-full text-xs font-medium">
-            <FileText className="w-3 h-3 text-[#765D96]" />
+          <div className="mb-2 flex items-center gap-1.5 w-fit bg-sidebar border border-border text-text-primary px-2.5 py-1 rounded-full text-xs font-medium">
+            <FilenameIcon filename={attachedScope.title} sourceType={attachedScope.source_type} className="w-3 h-3 text-text-secondary shrink-0" />
             <span className="truncate max-w-55">{attachedScope.title}</span>
             <button
               type="button"
               onClick={() => setAttachedScope(null)}
-              className="hover:text-red-500 cursor-pointer ml-0.5"
+              className="hover:text-red-500 cursor-pointer ml-0.5 text-text-muted"
               title="Remove attachment"
             >
               <X className="w-3 h-3" />
@@ -1189,7 +1198,7 @@ export default function OraSidebar({
               {isAllAssetsMode && <Check className="w-3.5 h-3.5 shrink-0" />}
             </button>
             <div className="px-2 py-1 text-[10px] font-semibold text-text-muted uppercase tracking-wider">
-              Narrow to specific PDFs
+              Narrow to specific sources
             </div>
             {scopeCatalog.map((s) => {
               const checked = isAllAssetsMode || narrowedAssets.some((n) => n.id === s.id);
@@ -1203,7 +1212,7 @@ export default function OraSidebar({
                   <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${checked ? 'bg-accent border-accent text-white' : 'border-border text-transparent'}`}>
                     <Check className="w-3 h-3" />
                   </span>
-                  <FileText className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                  <FilenameIcon filename={s.title} sourceType={s.source_type} className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate flex-1">{s.title}</span>
                 </button>
               );
@@ -1223,9 +1232,9 @@ export default function OraSidebar({
                 ? (attachedScope ? `Ask about ${attachedScope.title}...` : 'Ask about this document...')
                 : mode === 'assets'
                 ? (scopeCatalog.length === 0
-                    ? 'Upload a PDF to get started...'
+                    ? 'Upload a document to get started...'
                     : (assetsScopeLabel ? `Ask across ${assetsScopeLabel}... or type @` : 'Ask across your assets... or type @'))
-                : 'Ask Ora... or type @'
+                : 'Ask Quello... or type @'
             }
             disabled={streaming}
             className="flex-1 bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
@@ -1236,7 +1245,7 @@ export default function OraSidebar({
             <button
               type="button"
               onClick={stopGenerating}
-              className="w-7 h-7 rounded-lg bg-[#83699e] hover:bg-[#775d91] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+              className="w-7 h-7 rounded-lg bg-text-primary hover:bg-black text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title="Stop generating"
             >
               <Square className="w-3 h-3 fill-white text-white" />
@@ -1246,7 +1255,7 @@ export default function OraSidebar({
             <button
               type="submit"
               disabled={!input.trim() || streaming}
-              className="w-7 h-7 rounded-lg bg-[#83699e] hover:bg-[#775d91] text-white flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="w-7 h-7 rounded-lg bg-text-primary hover:bg-black text-white flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               title="Send"
             >
               <ArrowUp className="w-4 h-4 text-white" />
@@ -1256,5 +1265,6 @@ export default function OraSidebar({
       </form>
       </div>
     </aside>
+    </>
   );
 }

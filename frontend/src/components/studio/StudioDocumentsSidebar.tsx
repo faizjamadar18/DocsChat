@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import {
   Plus,
   Search,
-  FileText,
   MoreVertical,
   Pencil,
   Trash2,
   X,
 } from 'lucide-react';
 import DeleteDocModal from './DeleteDocModal';
+import { StudioDocIcon } from '../connectors/ConnectorIcons';
 
 export interface StudioDoc {
   id: string;
@@ -96,7 +96,7 @@ export function StudioDocumentsSidebar({
             type="button"
             onClick={onCreateDoc}
             disabled={isCreating}
-            className="w-6 h-6 rounded-md hover:bg-[#EFEFF2] text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
+            className="w-6 h-6 rounded-md hover:bg-accent-subtle text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
             title="New document"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -140,7 +140,7 @@ export function StudioDocumentsSidebar({
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="mt-2.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-[#EFEFF2] transition-colors cursor-pointer"
+                  className="mt-2.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-sidebar border border-border text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer"
                 >
                   Clear search
                 </button>
@@ -148,7 +148,7 @@ export function StudioDocumentsSidebar({
             ) : (
               <div className="px-2 py-10 text-center">
                 <div className="w-9 h-9 rounded-xl bg-sidebar border border-border flex items-center justify-center mx-auto mb-2.5">
-                  <FileText className="w-4 h-4 text-text-muted" />
+                  <StudioDocIcon className="w-4 h-4" />
                 </div>
                 <p className="text-[13px] font-medium text-text-primary">No documents yet</p>
                 <p className="text-xs text-text-muted mt-0.5">
@@ -179,10 +179,10 @@ export function StudioDocumentsSidebar({
                   className={`group relative flex items-center gap-2 pl-2 pr-1 h-8 rounded-lg text-[13px] cursor-pointer transition-colors ${
                     isActive
                       ? 'bg-accent-subtle text-accent-hover font-medium'
-                      : 'text-text-secondary hover:bg-[#EFEFF2] hover:text-text-primary'
+                      : 'text-text-secondary hover:bg-accent-subtle hover:text-text-primary'
                   }`}
                 >
-                  <FileText className={`w-4 h-4 shrink-0 ${isActive ? 'text-accent-hover' : 'text-text-muted group-hover:text-text-secondary'}`} />
+                  <StudioDocIcon className="w-4 h-4 shrink-0" />
                   {isRenaming ? (
                     <input
                       type="text"

@@ -1,7 +1,10 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Mic, Copy, Check, Trash2, Clock, CalendarDays } from 'lucide-react';
 import type { VoiceLog } from '../../hooks/useVoiceLogs';
+
+const emptySubscribe = () => () => {};
 
 function formatFullDate(dateStr?: string): string {
   if (!dateStr) return '';
@@ -36,6 +39,7 @@ export default function VoiceLogModal({
   onClose: () => void;
   onDelete: (logId: string) => void;
 }) {
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -47,9 +51,9 @@ export default function VoiceLogModal({
     return () => document.removeEventListener('keydown', handleEsc);
   }, [log, onClose]);
 
-  if (!log) return null;
+  if (!log || !isMounted) return null;
 
-  const fullText = `You: ${log.user_text || '(no speech recorded)'}\n\nOra: ${
+  const fullText = `You: ${log.user_text || '(no speech recorded)'}\n\nQuello: ${
     log.ora_text || '(no reply recorded)'
   }`;
 
@@ -63,10 +67,14 @@ export default function VoiceLogModal({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-xs" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl border border-border w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-fade-in">
+      {/* Full viewport blurred backdrop covering sidebar, header, and content */}
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+      <div className="relative z-10 bg-white rounded-2xl shadow-2xl border border-border w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-fade-in">
         {/* Header */}
         <div className="flex items-start gap-3 px-5 pt-4 pb-3 border-b border-border/70">
           <div className="w-9 h-9 rounded-xl bg-[#111113] text-white flex items-center justify-center shrink-0">
@@ -79,7 +87,7 @@ export default function VoiceLogModal({
                 <CalendarDays className="w-3 h-3" />
                 {formatFullDate(log.created_at)}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[#ECE8F4] text-[#765D96]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-sidebar text-text-secondary border border-border">
                 <Clock className="w-3 h-3" />
                 {formatDuration(log.duration_seconds)}
               </span>
@@ -104,16 +112,16 @@ export default function VoiceLogModal({
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">
               You said
             </div>
-            <div className="rounded-2xl px-4 py-3 bg-[#83699e] text-white text-[13px] leading-relaxed whitespace-pre-wrap">
+            <div className="rounded-2xl px-4 py-3 bg-[#F4F4F6] border border-border/40 text-text-primary text-[13px] leading-relaxed whitespace-pre-wrap">
               {log.user_text || '(no speech was recorded for this call)'}
             </div>
           </div>
           <div>
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-              Ora replied
+              Quello replied
             </div>
-            <div className="rounded-2xl px-4 py-3 bg-[#F4F4F6] text-text-primary text-[13px] leading-relaxed whitespace-pre-wrap">
-              {log.ora_text || '(Ora didn’t get to reply before the call ended)'}
+            <div className="rounded-2xl px-4 py-3 border border-border/40 bg-transparent text-text-primary text-[13px] leading-relaxed whitespace-pre-wrap">
+              {log.ora_text || '(Quello didn’t get to reply before the call ended)'}
             </div>
           </div>
         </div>
@@ -147,6 +155,7 @@ export default function VoiceLogModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

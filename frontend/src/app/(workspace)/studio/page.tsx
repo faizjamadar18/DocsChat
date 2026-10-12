@@ -10,7 +10,12 @@ import OraSidebar, { OraLogoMark } from '../../../components/layout/OraSidebar';
 export default function StudioPage() {
   const { currentWorkspace, setActiveDocTitle } = useWorkspace();
   const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
   const [documents, setDocuments] = useState<StudioDoc[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [activeDoc, setActiveDoc] = useState<StudioDoc | null>(null);
@@ -292,10 +297,10 @@ export default function StudioPage() {
                 ? 'bg-accent/10 text-accent font-semibold'
                 : 'text-text-primary hover:bg-[#F3F4F6]'
             }`}
-            title="Ora Assistant"
+            title="Quello Assistant"
           >
             <OraLogoMark className="w-3.5 h-3.5" />
-            <span>Ora</span>
+            <span>Quello</span>
           </button>
 
           {/* Cloud Auto-save Sync Status */}
@@ -322,32 +327,47 @@ export default function StudioPage() {
 
       {/* Main Studio Split Content Area */}
       <div className="flex flex-1 min-h-0 relative">
-        {/* Studio Sub-sidebar (Left Documents Column) */}
+        {/* Studio Sub-sidebar (Left Documents Column): in-flow on desktop, slide drawer on mobile */}
         {isSidebarOpen && (
-          <StudioDocumentsSidebar
-            documents={documents}
-            activeDocId={activeDocId}
-            onSelectDoc={handleSelectDoc}
-            onCreateDoc={() => handleCreateDoc()}
-            onRenameDoc={handleRenameDoc}
-            onDeleteDoc={handleDeleteDoc}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            isCreating={isCreating}
-          />
+          <>
+            {/* Mobile backdrop */}
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-30 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-hidden="true"
+            />
+            <div className="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto h-full shadow-2xl lg:shadow-none animate-slide-in-left lg:animate-none">
+              <StudioDocumentsSidebar
+                documents={documents}
+                activeDocId={activeDocId}
+                onSelectDoc={(id) => {
+                  handleSelectDoc(id);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setIsSidebarOpen(false);
+                  }
+                }}
+                onCreateDoc={() => handleCreateDoc()}
+                onRenameDoc={handleRenameDoc}
+                onDeleteDoc={handleDeleteDoc}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                isCreating={isCreating}
+              />
+            </div>
+          </>
         )}
 
         {/* Studio Canvas Area (Middle Editor Column) */}
-        <main className="flex-1 flex flex-col h-full overflow-y-auto bg-surface">
+        <main className="flex-1 flex flex-col h-full overflow-y-auto bg-surface w-full">
           {activeDoc ? (
-            <div className="w-full max-w-3xl mx-auto px-6 sm:px-12 py-10 flex-1 flex flex-col">
+            <div className="w-full max-w-3xl mx-auto px-4 sm:px-8 md:px-12 py-6 sm:py-10 flex-1 flex flex-col">
               {/* Document Title H1 Input */}
               <input
                 type="text"
                 value={titleInput}
                 onChange={handleTitleChange}
                 placeholder="Untitled Document"
-                className="w-full text-3xl sm:text-4xl font-bold text-text-primary placeholder:text-text-muted focus:outline-none border-none bg-transparent mb-5 tracking-tight transition-all"
+                className="w-full text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary placeholder:text-text-muted focus:outline-none border-none bg-transparent mb-4 sm:mb-5 tracking-tight transition-all"
               />
 
               {/* TipTap Notion-style Editor Canvas */}

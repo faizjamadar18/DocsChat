@@ -162,6 +162,20 @@ async def get_workspace_dashboard(workspace_id: str, current_user: dict = Depend
         uploaded_at = source.get("uploaded_at")
         if uploaded_at and uploaded_at.tzinfo is None:
             uploaded_at = uploaded_at.replace(tzinfo=timezone.utc)
+        source_type = source.get("source_type")
+        if not source_type or source_type == "pdf":
+            fn = source.get("filename", "").lower()
+            if fn.startswith("[github]") or "github.com" in fn:
+                source_type = "github"
+            elif fn.startswith("[drive]") or fn.startswith("[google drive]") or fn.startswith("[googledrive]"):
+                source_type = "drive"
+            elif fn.startswith("[notion]"):
+                source_type = "notion"
+            elif fn.startswith("[slack]"):
+                source_type = "slack"
+            else:
+                source_type = source.get("source_type", "pdf")
+
         recent_assets.append(SourceResponse(
             id=str(source["_id"]),
             workspace_id=source.get("workspace_id"),
@@ -171,6 +185,7 @@ async def get_workspace_dashboard(workspace_id: str, current_user: dict = Depend
             chunk_count=source["chunk_count"],
             status=source["status"],
             uploaded_at=uploaded_at,
+            source_type=source_type,
         ))
 
     return WorkspaceDashboardResponse(

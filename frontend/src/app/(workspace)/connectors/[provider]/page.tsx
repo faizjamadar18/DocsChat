@@ -71,7 +71,7 @@ function timeAgo(iso?: string | null): string {
 const PROVIDERS: Record<string, { name: string; desc: string; icon: React.ReactNode }> = {
   notion: {
     name: 'Notion',
-    desc: 'Import pages you shared with DocsChat as sources for Q&A and voice.',
+    desc: 'Import pages you shared with Quello as sources for Q&A and voice.',
     icon: <NotionIcon className="w-8 h-8" />,
   },
   drive: {
@@ -277,7 +277,7 @@ export default function ConnectorDetailPage() {
 
   if (!meta) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-4 animate-fade-in">
+      <div className="w-full px-4 sm:px-6 py-8 space-y-4 animate-fade-in">
         <BackLink />
         <p className="text-sm text-text-secondary">Unknown connector.</p>
       </div>
@@ -300,7 +300,7 @@ export default function ConnectorDetailPage() {
   const connected = provider === 'notion' ? !!status?.notion.connected : false;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8 space-y-8 animate-fade-in">
+    <div className="w-full px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
       <BackLink />
 
       {/* Header: big brand mark + name, like the reference */}
@@ -355,7 +355,7 @@ export default function ConnectorDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-text-primary">Imported sources</p>
                   <p className="text-[11px] text-text-secondary">
-                    {driveSources.length} file{driveSources.length === 1 ? '' : 's'} available to Ora and voice
+                    {driveSources.length} file{driveSources.length === 1 ? '' : 's'} available to Quello and voice
                   </p>
                 </div>
                 <button
@@ -445,7 +445,7 @@ export default function ConnectorDetailPage() {
                   type="checkbox"
                   checked={deleteOnDisconnect}
                   onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
-                  className="accent-[#6E56CF]"
+                  className="accent-zinc-900"
                 />
                 Also delete copied content when disconnecting
               </label>
@@ -504,7 +504,7 @@ export default function ConnectorDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-text-primary">Imported sources</p>
                   <p className="text-[11px] text-text-secondary">
-                    {githubSources.length} repo{githubSources.length === 1 ? '' : 's'} available to Ora and voice
+                    {githubSources.length} repo{githubSources.length === 1 ? '' : 's'} available to Quello and voice
                   </p>
                 </div>
                 <button
@@ -593,7 +593,7 @@ export default function ConnectorDetailPage() {
                   type="checkbox"
                   checked={deleteOnDisconnect}
                   onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
-                  className="accent-[#6E56CF]"
+                  className="accent-zinc-900"
                 />
                 Also delete copied content when disconnecting
               </label>
@@ -626,7 +626,7 @@ export default function ConnectorDetailPage() {
             <div className="flex items-center gap-3 p-4">
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-text-primary">Connection</p>
-                <p className="text-[11px] text-text-secondary">Pages you shared with DocsChat</p>
+                <p className="text-[11px] text-text-secondary">Pages you shared with Quello</p>
               </div>
               {loading ? (
                 <span className="text-[11px] text-text-muted">Loading...</span>
@@ -652,7 +652,7 @@ export default function ConnectorDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-text-primary">Imported sources</p>
                   <p className="text-[11px] text-text-secondary">
-                    {notionSources.length} page{notionSources.length === 1 ? '' : 's'} available to Ora and voice
+                    {notionSources.length} page{notionSources.length === 1 ? '' : 's'} available to Quello and voice
                   </p>
                 </div>
                 <button
@@ -741,7 +741,7 @@ export default function ConnectorDetailPage() {
                   type="checkbox"
                   checked={deleteOnDisconnect}
                   onChange={(e) => setDeleteOnDisconnect(e.target.checked)}
-                  className="accent-[#6E56CF]"
+                  className="accent-zinc-900"
                 />
                 Also delete copied content when disconnecting
               </label>
@@ -814,7 +814,7 @@ export default function ConnectorDetailPage() {
                               else next[p.id] = p;
                               return next;
                             })}
-                            className="accent-[#6E56CF]"
+                            className="accent-zinc-900"
                           />
                           <span className="flex-1 min-w-0">
                             <span className="flex items-center gap-2">
@@ -912,14 +912,14 @@ export default function ConnectorDetailPage() {
                               else next[r.id] = r;
                               return next;
                             })}
-                            className="accent-[#6E56CF]"
+                            className="accent-zinc-900"
                           />
                           <GitHubIcon className="w-4 h-4 shrink-0" />
                           <span className="flex-1 min-w-0">
                             <span className="flex items-center gap-2">
                               <span className="block text-xs font-medium text-text-primary truncate">{r.name}</span>
                               {r.private ? (
-                                <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#EFEFF2] text-text-secondary">
+                                <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent-subtle text-text-secondary">
                                   Private
                                 </span>
                               ) : null}
@@ -980,7 +980,7 @@ function BackLink() {
       className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
     >
       <ArrowLeft className="w-3.5 h-3.5" />
-      Connections
+      Connectors
     </Link>
   );
 }

@@ -270,7 +270,7 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
             'Vapi rejected the key (401). In dashboard.vapi.ai → API Keys → your Public key: 1) turn ON Transient Assistant, 2) add this site to Allowed Origins, 3) confirm it starts with pk_. Then re-save it in Settings.'
           );
         } else if (/microphone|permission|not allowed/i.test(msg)) {
-          setErrorMsg('Please allow microphone access in your browser to talk to Ora.');
+          setErrorMsg('Please allow microphone access in your browser to talk to Quello.');
         } else if (/credit|billing|payment|quota/i.test(msg)) {
           setErrorMsg('Your free Vapi credit seems over. Add billing in Vapi or use a new free key.');
         } else {
@@ -332,7 +332,7 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
 
     const wsId = currentWorkspace?.id;
     if (!wsId) {
-      setErrorMsg('Open a workspace first, then talk to Ora.');
+      setErrorMsg('Open a workspace first, then talk to Quello.');
       setBothStatus('error');
       setTimeout(() => setBothStatus('idle'), 3000);
       return;
@@ -407,7 +407,7 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
             {
               role: 'system',
               content:
-                'You are Ora, a warm workspace voice helper. Answer in 2-3 short spoken lines. Never read file names aloud. For document questions call search_workspace_knowledge once. For hi/thanks just reply warmly without tools. If nothing found, say you could not find it and suggest uploading the file.',
+                'You are Quello, a warm workspace voice helper. Answer in 2-3 short spoken lines. Never read file names aloud. For document questions call search_workspace_knowledge once. For hi/thanks just reply warmly without tools. If nothing found, say you could not find it and suggest uploading the file.',
             },
           ],
           tools: [
@@ -430,7 +430,7 @@ export function VoiceAgentProvider({ children }: { children: React.ReactNode }) 
         },
         voice: { provider: 'vapi', voiceId: 'Elliot' },
         transcriber: { provider: 'deepgram', model: 'nova-2', language: 'en' },
-        firstMessage: 'Hey, I am Ora. Ask me about your documents.',
+        firstMessage: 'Hey, I am Quello. Ask me about your documents.',
         clientMessages: ['transcript', 'tool-calls'],
         serverMessages: ['tool-calls'],
         silenceTimeoutSeconds: 20,
