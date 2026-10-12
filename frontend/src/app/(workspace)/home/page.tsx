@@ -214,7 +214,7 @@ export default function HomePage() {
               className="w-3.5 h-3.5 text-text-secondary shrink-0"
             />
           )}
-          <span className="truncate max-w-[180px] sm:max-w-xs">{mention.attachedScope.title}</span>
+          <span className="truncate max-w-45 sm:max-w-xs">{mention.attachedScope.title}</span>
           <button
             type="button"
             onClick={() => mention.clearScope()}

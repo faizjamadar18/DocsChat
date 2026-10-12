@@ -80,7 +80,7 @@ export default function OrganizationPage() {
 
   return (
     <div className="animate-fade-in font-sans">
-      <h1 className="text-[26px] sm:text-[28px] font-semibold tracking-[-0.025em] text-white leading-[1.25]">
+      <h1 className="text-[26px] sm:text-[28px] font-semibold tracking-tight text-white leading-tight">
         Create your workspace
       </h1>
       <p className="mt-3.5 text-[14px] leading-[1.55] text-neutral-400 font-normal tracking-[-0.01em]">

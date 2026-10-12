@@ -89,9 +89,9 @@ export default function HeroMockup() {
   ];
 
   return (
-    <div className="w-full h-full bg-sidebar rounded-xl sm:rounded-2xl border border-border shadow-ui-visual flex overflow-hidden text-text-primary select-none text-left relative">
+    <div className="w-full h-full bg-sidebar rounded-2xl border border-border shadow-ui-visual flex overflow-hidden text-text-primary select-none text-left relative">
       {/* Left Sidebar */}
-      <aside className="hidden md:flex md:w-52 shrink-0 flex-col justify-between bg-sidebar">
+      <aside className="w-52 shrink-0 flex flex-col justify-between bg-sidebar">
         <div className="flex flex-col flex-1 min-h-0">
           {/* Workspace Brand / Header */}
           <div className="h-12 px-3.5 flex items-center justify-between shrink-0">
@@ -158,7 +158,7 @@ export default function HeroMockup() {
           </nav>
 
           {/* Chats Section */}
-          <div className="px-2.5 pt-2 flex-1 min-h-0 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="px-2.5 pt-2 flex-1 min-h-0 overflow-y-auto no-scrollbar scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <div className="px-2.5 py-1 text-[11px] font-semibold text-text-muted">
               Chats
             </div>
@@ -199,7 +199,7 @@ export default function HeroMockup() {
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-sidebar">
         {/* Header Bar */}
-        <header className="h-12 px-3 sm:px-4 bg-sidebar flex items-center justify-between shrink-0 select-none">
+        <header className="h-12 px-4 bg-sidebar flex items-center justify-between shrink-0 select-none">
           <div className="flex items-center gap-1.5">
             <div className="p-1 rounded-md text-text-secondary">
               <PanelLeft className="w-4 h-4" />
@@ -209,9 +209,9 @@ export default function HeroMockup() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2.5">
             {/* Search Box */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border-subtle bg-base w-36 md:w-44">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border-subtle bg-base w-44">
               <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <span className="text-[11px] text-text-muted flex-1 truncate">Search...</span>
               <kbd className="inline-flex items-center px-1 py-0.2 text-[9px] text-text-secondary bg-surface border border-border rounded font-sans shadow-2xs">
@@ -236,20 +236,20 @@ export default function HeroMockup() {
         </header>
 
         {/* Scrollable Canvas / Workspace View */}
-        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-surface rounded-tl-xl sm:rounded-tl-[20px] shadow-2xs p-3 sm:p-5 space-y-3 sm:space-y-4">
+        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto no-scrollbar scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-surface rounded-tl-[20px] shadow-2xs p-5 space-y-4">
           {/* Greeting Header */}
           <div>
-            <h1 className="text-base sm:text-xl font-bold tracking-tight text-text-primary">
+            <h1 className="text-xl font-bold tracking-tight text-text-primary">
               Good Afternoon, Faiz
             </h1>
-            <p className="text-[11px] sm:text-xs text-text-secondary mt-0.5 font-normal">
+            <p className="text-xs text-text-secondary mt-0.5 font-normal">
               Let&apos;s bring your ideas to life
             </p>
           </div>
 
           {/* Ask Quello Input Bar */}
-          <div className="relative rounded-2xl bg-sidebar border border-border p-2 sm:p-2.5 flex items-center gap-2.5 shadow-2xs">
-            <div className="pl-1 sm:pl-2 flex items-center text-text-muted">
+          <div className="relative rounded-2xl bg-sidebar border border-border p-2.5 flex items-center gap-2.5 shadow-2xs">
+            <div className="pl-2 flex items-center text-text-muted">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-text-secondary">
                 <path
                   d="M6 4h8a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4H8a4 4 0 0 0-4 4v1a4 4 0 0 0 4 4h10"
@@ -260,7 +260,7 @@ export default function HeroMockup() {
                 />
               </svg>
             </div>
-            <span className="flex-1 text-xs sm:text-sm text-text-muted truncate select-none">
+            <span className="flex-1 text-sm text-text-muted truncate select-none">
               Ask Quello anything... type @ to reference
             </span>
             <div className="w-7 h-7 rounded-xl bg-accent-hover/20 text-accent-hover flex items-center justify-center shrink-0 cursor-default">
@@ -269,7 +269,7 @@ export default function HeroMockup() {
           </div>
 
           {/* Start Writing Action Card */}
-          <div className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-sidebar border border-border cursor-default hover:bg-accent-subtle transition-colors">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-sidebar border border-border cursor-default hover:bg-accent-subtle transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[#111113] flex items-center justify-center text-white shrink-0 shadow-xs">
                 <PenLine className="w-3.5 h-3.5" />
@@ -283,7 +283,7 @@ export default function HeroMockup() {
           </div>
 
           {/* Quick Prompt Action Chips */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {quickChips.map((chip) => {
               const Icon = chip.icon;
               return (
@@ -311,7 +311,7 @@ export default function HeroMockup() {
                 return (
                   <div
                     key={asset.id}
-                    className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
+                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
@@ -342,7 +342,7 @@ export default function HeroMockup() {
               {recentDocs.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
+                  className="flex items-center justify-between p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">

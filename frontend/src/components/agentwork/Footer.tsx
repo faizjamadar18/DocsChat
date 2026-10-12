@@ -56,13 +56,13 @@ export default function Footer() {
 
         {/* Large Footer Wordmark Vector (Edge-to-edge monumental watermark matching agentwork.com) */}
         <div className="w-full mt-6 sm:mt-10 md:mt-16 overflow-hidden pointer-events-none select-none">
-          <div className="relative w-full aspect-[1585/415] max-h-36 sm:max-h-56 md:max-h-88 lg:max-h-[220px] -mb-1 sm:-mb-3 md:-mb-6">
+          <div className="relative w-full aspect-1585/415 max-h-36 sm:max-h-56 md:max-h-88 lg:max-h-55 -mb-1 sm:-mb-3 md:-mb-6">
             <Image
               src="/images/footer-wordmark.svg"
               alt="Quello.dev"
               fill
               priority
-              className="object-contain object-bottom drop-shadow-[0_8px_20px_rgba(255,255,255,0.95)] drop-shadow-[0_4px_12px_rgba(33,32,28,0.04)]"
+              className="object-contain object-bottom drop-shadow-[0_8px_20px_rgba(255,255,255,0.95)]"
             />
           </div>
         </div>

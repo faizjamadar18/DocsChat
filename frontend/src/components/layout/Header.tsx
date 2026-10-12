@@ -87,7 +87,7 @@ export default function Header({
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-text-secondary font-medium min-w-0">
           {/* Mobile view: show only the active leaf page */}
-          <span className="sm:hidden text-text-primary font-semibold truncate max-w-[130px]">
+          <span className="sm:hidden text-text-primary font-semibold truncate max-w-32.5">
             {breadcrumbs[breadcrumbs.length - 1]?.label}
           </span>
           {/* Desktop/Tablet view: full breadcrumb sequence */}

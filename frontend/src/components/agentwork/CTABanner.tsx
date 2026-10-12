@@ -17,7 +17,7 @@ function CornerPlus({ position }: CornerPlusProps) {
 
   return (
     <div
-      className={`pointer-events-none absolute size-[17px] bg-[#fdfdfc] z-20 flex items-center justify-center ${positionClasses[position]}`}
+      className={`pointer-events-none absolute size-4.25 bg-[#fdfdfc] z-20 flex items-center justify-center ${positionClasses[position]}`}
       aria-hidden="true"
     >
       {/* Horizontal 1px line */}
@@ -40,7 +40,7 @@ export default function CTABanner() {
         <CornerPlus position="br" />
 
         {/* Inner dark panel */}
-        <div className="relative w-full overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.06] bg-gradient-to-b from-[#1a1a17] to-[#121210] py-12 px-6 sm:py-16 md:py-20 md:px-12 text-center flex flex-col items-center justify-center gap-7 sm:gap-8 shadow-sm">
+        <div className="relative w-full overflow-hidden rounded-xl sm:rounded-2xl border border-white/6 bg-linear-to-b from-[#1a1a17] to-[#121210] py-12 px-6 sm:py-16 md:py-20 md:px-12 text-center flex flex-col items-center justify-center gap-7 sm:gap-8 shadow-sm">
           {/* Background layer: dot grid + breathing warm glow */}
           <div
             className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
@@ -62,7 +62,7 @@ export default function CTABanner() {
 
             {/* Soft warm glow behind the headline */}
             <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[620px] max-w-[90%] h-[300px] rounded-full blur-[24px] pointer-events-none animate-cta-glow motion-reduce:animate-none"
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-155 max-w-[90%] h-75 rounded-full blur-xl pointer-events-none animate-cta-glow motion-reduce:animate-none"
               style={{
                 background:
                   'radial-gradient(ellipse at center, rgba(214, 180, 120, 0.22) 0%, rgba(214, 180, 120, 0.08) 50%, transparent 75%)',
@@ -73,7 +73,7 @@ export default function CTABanner() {
           {/* Content layer */}
           <div className="relative z-10 flex flex-col items-center gap-6 max-w-xl">
             {/* Pill badge above headline */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-dashed border-white/[0.18] bg-white/[0.03] text-[11px] font-medium tracking-[0.08em] uppercase text-[#98938a]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-dashed border-white/18 bg-white/3 text-[11px] font-medium tracking-[0.08em] uppercase text-[#98938a]">
               <span className="size-1.5 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
               <span>Ready when you are</span>
             </div>
@@ -94,16 +94,16 @@ export default function CTABanner() {
                 {/* Primary Button */}
                 <Link
                   href="/register"
-                  className="group relative w-full sm:w-44 py-3 px-6 rounded-lg bg-[#f3f1ec] text-[#171715] font-medium text-sm transition-all duration-200 hover:-translate-y-[2px] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_6px_16px_rgba(0,0,0,0.45)] overflow-hidden inline-flex items-center justify-center gap-1.5"
+                  className="group relative w-full sm:w-44 py-3 px-6 rounded-lg bg-[#f3f1ec] text-[#171715] font-medium text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_2px_8px_rgba(0,0,0,0.35)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_6px_16px_rgba(0,0,0,0.45)] overflow-hidden inline-flex items-center justify-center gap-1.5"
                 >
                   {/* Diagonal shine sweep */}
                   <span
-                    className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out bg-gradient-to-r from-transparent via-white/50 to-transparent -skew-x-12"
+                    className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out bg-linear-to-r from-transparent via-white/50 to-transparent -skew-x-12"
                     aria-hidden="true"
                   />
                   <span className="relative z-10 font-medium">Start for free</span>
                   <svg
-                    className="relative z-10 size-3.5 transition-transform duration-200 group-hover:translate-x-[3px]"
+                    className="relative z-10 size-3.5 transition-transform duration-200 group-hover:translate-x-0.75"
                     viewBox="0 0 16 16"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"

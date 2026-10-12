@@ -183,7 +183,7 @@ export default function HowItWorks() {
 
   return (
     <section id="how-it-works" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-20 bg-[#fdfdfc] w-full max-w-full overflow-hidden">
-      <div className="flex w-full max-w-[1200px] flex-col gap-8 sm:gap-10">
+      <div className="flex w-full max-w-300 flex-col gap-8 sm:gap-10">
         {/* Header Lines */}
         <div className="max-w-2xl text-xl sm:text-2xl md:text-[28px] font-medium leading-[1.35] tracking-[-0.03em]">
           {headerLines.map((line, index) => {
@@ -198,7 +198,7 @@ export default function HowItWorks() {
               >
                 <span>{line.text}</span>
                 <sup
-                  className={`text-xs font-semibold tabular-nums lining-nums transition-colors duration-300 relative top-[-6px] ${
+                  className={`text-xs font-semibold tabular-nums lining-nums transition-colors duration-300 relative -top-1.5 ${
                     isActive ? 'text-[#ff6a00]' : 'text-[#8d8d86]'
                   }`}
                 >
@@ -219,14 +219,14 @@ export default function HowItWorks() {
             {/* Visual Box */}
             <div className="relative w-full">
               <div
-                className={`relative flex h-[280px] sm:h-[300px] w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+                className={`relative flex h-70 sm:h-75 w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
                   activeStep === 0
                     ? 'border-[#cfceca] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05),inset_0_0_0_3.5px_#f9f9f8]'
                     : 'group-hover:border-[#cfceca]'
                 }`}
               >
                 {/* 15 Integration Icons Grid */}
-                <div className="flex size-full flex-wrap content-center items-center justify-center gap-x-7 sm:gap-x-10 md:gap-x-12 gap-y-7 sm:gap-y-9 md:gap-y-11 px-4 sm:px-6 pb-[60px] sm:pb-[68px] pt-6 text-[#21201c]">
+                <div className="flex size-full flex-wrap content-center items-center justify-center gap-x-7 sm:gap-x-10 md:gap-x-12 gap-y-7 sm:gap-y-9 md:gap-y-11 px-4 sm:px-6 pb-15 sm:pb-17 pt-6 text-[#21201c]">
                   {integrationIcons.map(({ name, Icon }, index) => {
                     const delay = activeStep === 0 ? iconDelays[index] : 0;
                     return (
@@ -257,7 +257,7 @@ export default function HowItWorks() {
               {/* Subtle bottom fade */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -inset-x-2 -bottom-2 h-24 bg-gradient-to-t from-[#fdfdfc] from-[22%] to-transparent"
+                className="pointer-events-none absolute -inset-x-2 -bottom-2 h-24 bg-linear-to-t from-[#fdfdfc] from-22% to-transparent"
               />
             </div>
 
@@ -297,7 +297,7 @@ export default function HowItWorks() {
             {/* Visual Box */}
             <div className="relative w-full">
               <div
-                className={`relative flex h-[300px] w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+                className={`relative flex h-75 w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
                   activeStep === 1
                     ? 'border-[#cfceca] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05),inset_0_0_0_3.5px_#f9f9f8]'
                     : 'group-hover:border-[#cfceca]'
@@ -341,8 +341,8 @@ export default function HowItWorks() {
                   </p>
 
                   {/* Chat Input Box */}
-                  <div className="w-full max-w-[270px] rounded-2xl border border-[#e2e1de] bg-white p-3.5 shadow-[0px_1px_4px_rgba(0,0,0,0.04)] flex flex-col justify-between min-h-[82px] mt-0.5">
-                    <div className="text-[14px] font-normal text-[#21201c] tracking-[-0.01em] flex items-center min-h-[22px]">
+                  <div className="w-full max-w-67.5 rounded-2xl border border-[#e2e1de] bg-white p-3.5 shadow-[0px_1px_4px_rgba(0,0,0,0.04)] flex flex-col justify-between min-h-20.5 mt-0.5">
+                    <div className="text-[14px] font-normal text-[#21201c] tracking-[-0.01em] flex items-center min-h-5.5">
                       <span>{activeStep === 1 ? typedText : fullPrompt}</span>
                       {activeStep === 1 && (
                         <span className="inline-block w-[1.5px] h-3.5 bg-[#21201c] ml-0.5 align-middle animate-pulse" />
@@ -362,7 +362,7 @@ export default function HowItWorks() {
               {/* Subtle bottom fade */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -inset-x-2 -bottom-2 h-24 bg-gradient-to-t from-[#fdfdfc] from-[22%] to-transparent"
+                className="pointer-events-none absolute -inset-x-2 -bottom-2 h-24 bg-linear-to-t from-[#fdfdfc] from-22% to-transparent"
               />
             </div>
 
@@ -402,7 +402,7 @@ export default function HowItWorks() {
             {/* Visual Box */}
             <div className="relative w-full">
               <div
-                className={`relative flex h-[300px] w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+                className={`relative flex h-75 w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
                   activeStep === 2
                     ? 'border-[#cfceca] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05),inset_0_0_0_3.5px_#f9f9f8]'
                     : 'group-hover:border-[#cfceca]'
@@ -427,7 +427,7 @@ export default function HowItWorks() {
               {/* Subtle bottom fade */}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute -inset-x-2 -bottom-2 h-24 bg-gradient-to-t from-[#fdfdfc] from-[22%] to-transparent"
+                className="pointer-events-none absolute -inset-x-2 -bottom-2 h-24 bg-linear-to-t from-[#fdfdfc] from-22% to-transparent"
               />
             </div>
 

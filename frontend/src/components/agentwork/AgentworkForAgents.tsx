@@ -26,7 +26,7 @@ const CARDS: CardItem[] = [
     href: '/mcp',
     renderContent: () => (
       <div className="flex items-center gap-2 text-[#1a1916]">
-        <ClaudeIcon className="size-[22px] shrink-0 text-[#D97757]" />
+        <ClaudeIcon className="size-5.5 shrink-0 text-[#D97757]" />
         <span className="text-[17px] font-medium tracking-[-0.02em] text-[#1a1916]">
           Claude
         </span>
@@ -39,7 +39,7 @@ const CARDS: CardItem[] = [
     href: '/mcp',
     renderContent: () => (
       <div className="flex items-center gap-2 text-[#1a1916]">
-        <GrokIcon className="size-[22px] shrink-0 text-[#1a1916]" />
+        <GrokIcon className="size-5.5 shrink-0 text-[#1a1916]" />
         <span className="text-[17px] font-semibold tracking-[-0.01em] text-[#1a1916]">
           Grok
         </span>
@@ -52,7 +52,7 @@ const CARDS: CardItem[] = [
     href: '/mcp',
     renderContent: () => (
       <div className="flex items-center gap-2 text-[#1a1916]">
-        <ChatGptIcon className="size-[22px] shrink-0 text-[#1a1916]" fill="#1a1916" />
+        <ChatGptIcon className="size-5.5 shrink-0 text-[#1a1916]" fill="#1a1916" />
         <span className="text-[17px] font-semibold tracking-[-0.02em] text-[#1a1916]">
           OpenAI
         </span>
@@ -65,7 +65,7 @@ const CARDS: CardItem[] = [
     href: '/mcp',
     renderContent: () => (
       <div className="flex items-center gap-2 text-[#1a1916]">
-        <PerplexityIcon className="size-[22px] shrink-0 text-[#20808D]" />
+        <PerplexityIcon className="size-5.5 shrink-0 text-[#20808D]" />
         <span className="text-[16px] font-medium tracking-[-0.01em] text-[#1a1916]">
           Perplexity
         </span>
@@ -78,7 +78,7 @@ const CARDS: CardItem[] = [
     href: '/mcp',
     renderContent: () => (
       <div className="flex items-center gap-2">
-        <MistralIcon className="size-[22px] shrink-0 text-[#FF7000]" />
+        <MistralIcon className="size-5.5 shrink-0 text-[#FF7000]" />
         <div className="flex flex-col leading-[1.05] -mt-0.5">
           <span className="text-[12px] font-black tracking-[0.06em] text-[#1a1916]">
             MISTRAL
@@ -96,7 +96,7 @@ const CARDS: CardItem[] = [
     href: '/mcp',
     renderContent: () => (
       <div className="flex items-center gap-2 text-[#1a1916]">
-        <GeminiIcon className="size-[22px] shrink-0" />
+        <GeminiIcon className="size-5.5 shrink-0" />
         <span className="text-[17px] font-medium tracking-[-0.02em] text-[#1a1916]">
           Gemini
         </span>
@@ -225,7 +225,7 @@ export default function AgentworkForAgents() {
 
   return (
     <section id="connectors" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-16 md:py-24 bg-[#fdfdfc] w-full max-w-full overflow-hidden">
-      <div className="flex w-full max-w-[1200px] flex-col gap-6">
+      <div className="flex w-full max-w-300 flex-col gap-6">
         {/* Website Logo App Icon Tile with Animated Highlight Border */}
         <div className="relative shrink-0 w-fit">
           <div
@@ -273,7 +273,7 @@ export default function AgentworkForAgents() {
               <Link
                 key={card.id}
                 href={card.href}
-                className={`group relative flex h-[126px] sm:h-[136px] items-center justify-center rounded-2xl border bg-white transition-all duration-300 ${
+                className={`group relative flex h-31.5 sm:h-34 items-center justify-center rounded-2xl border bg-white transition-all duration-300 ${
                   isActive
                     ? 'border-[#e4e4e4] shadow-xs'
                     : 'border-[#e4e4e4] hover:border-[#cfceca] hover:shadow-xs'
