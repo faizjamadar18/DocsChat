@@ -174,7 +174,7 @@ except Exception:  # SDK missing: registry is a passthrough
     _sdk_get_access_token = None
 
 if _FastMCP is not None:
-    mcp = _FastMCP("DocsChat", stateless_http=True)
+    mcp = _FastMCP("Quello", stateless_http=True)
 
     def _sdk_caller() -> tuple[str, Optional[str]]:
         get_token = _sdk_get_access_token

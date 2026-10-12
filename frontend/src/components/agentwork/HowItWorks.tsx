@@ -1,11 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Mic, PhoneOff, ChevronDown } from 'lucide-react';
-import SourceFooter, { FilenameIcon } from '../chat/SourceFooter';
-import type { Citation } from '@/hooks/useChat';
 import {
-  SyncIcon,
   PaperclipIcon,
   ArrowUpIcon,
 } from './Icons';
@@ -78,13 +75,6 @@ const integrationIcons = [
   { name: 'Mistral', Icon: MistralIcon },
 ];
 
-const cardSources: Citation[] = [
-  { source_id: 'notion', filename: '[Notion] Team Docs', snippet: '', similarity_score: 0.95 },
-  { source_id: 'github', filename: '[GitHub] Quello', snippet: '', similarity_score: 0.92 },
-  { source_id: 'drive', filename: '[Drive] QA Sign-Off', snippet: '', similarity_score: 0.89 },
-  { source_id: 'docs', filename: 'Release Notes.gdoc', snippet: '', similarity_score: 0.85 },
-];
-
 const fullPrompt = "Catch me up on this doc?";
 
 export default function HowItWorks() {
@@ -93,7 +83,6 @@ export default function HowItWorks() {
   const [typedText, setTypedText] = useState<string>('');
   const [isTypingPhase, setIsTypingPhase] = useState<boolean>(false);
   const [manualOverride, setManualOverride] = useState<boolean>(false);
-  const [expandedSources, setExpandedSources] = useState<boolean>(false);
 
   // Stagger order for icons in Step 1
   const iconDelays = useMemo(() => {
@@ -193,10 +182,10 @@ export default function HowItWorks() {
   };
 
   return (
-    <section id="how-it-works" className="flex flex-col items-center px-6 py-20 bg-[#fdfdfc]">
-      <div className="flex w-full max-w-[1200px] flex-col gap-10">
+    <section id="how-it-works" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-20 bg-[#fdfdfc] w-full max-w-full overflow-hidden">
+      <div className="flex w-full max-w-[1200px] flex-col gap-8 sm:gap-10">
         {/* Header Lines */}
-        <div className="max-w-2xl text-2xl md:text-[28px] font-medium leading-[1.35] tracking-[-0.03em]">
+        <div className="max-w-2xl text-xl sm:text-2xl md:text-[28px] font-medium leading-[1.35] tracking-[-0.03em]">
           {headerLines.map((line, index) => {
             const isActive = index === activeStep;
             return (
@@ -221,23 +210,23 @@ export default function HowItWorks() {
         </div>
 
         {/* 3 Step Cards Grid */}
-        <div className="grid grid-cols-1 gap-16 md:gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-10 sm:gap-16 md:gap-6 md:grid-cols-3">
           {/* Card 1: Integrate */}
           <div
             onClick={() => handleSelectStep(0)}
-            className="flex flex-col gap-8 cursor-pointer group"
+            className="flex flex-col gap-6 sm:gap-8 cursor-pointer group"
           >
             {/* Visual Box */}
             <div className="relative w-full">
               <div
-                className={`relative flex h-[300px] w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+                className={`relative flex h-[280px] sm:h-[300px] w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
                   activeStep === 0
                     ? 'border-[#cfceca] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05),inset_0_0_0_3.5px_#f9f9f8]'
                     : 'group-hover:border-[#cfceca]'
                 }`}
               >
                 {/* 15 Integration Icons Grid */}
-                <div className="flex size-full flex-wrap content-center items-center justify-center gap-x-12 gap-y-11 px-6 pb-[68px] pt-6 text-[#21201c]">
+                <div className="flex size-full flex-wrap content-center items-center justify-center gap-x-7 sm:gap-x-10 md:gap-x-12 gap-y-7 sm:gap-y-9 md:gap-y-11 px-4 sm:px-6 pb-[60px] sm:pb-[68px] pt-6 text-[#21201c]">
                   {integrationIcons.map(({ name, Icon }, index) => {
                     const delay = activeStep === 0 ? iconDelays[index] : 0;
                     return (
@@ -421,41 +410,17 @@ export default function HowItWorks() {
               >
                 {/* Source Footer Visual Box (Matching chat footer) */}
                 <div className="flex size-full flex-col items-center justify-center px-6 py-8 select-none">
-                  <div className="flex flex-col items-center gap-3.5">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedSources((prev) => !prev)}
-                      aria-expanded={expandedSources}
-                      className="flex items-center gap-3 text-sm md:text-[15px] text-[#63635e] hover:text-[#21201c] transition-colors cursor-pointer select-none group"
-                    >
-                      <span className="shrink-0 font-normal">
-                        4 sources used
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <NotionIcon className="w-5 h-5 shrink-0" />
-                        <GitHubIcon className="w-5 h-5 shrink-0" />
-                        <GoogleDriveIcon className="w-5 h-5 shrink-0" />
-                        <GoogleDocIcon className="w-5 h-5 shrink-0" />
-                      </span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-[#8d8d86] group-hover:text-[#21201c] shrink-0 transition-transform duration-200 ${
-                          expandedSources ? 'rotate-180' : ''
-                        }`}
-                      />
-                    </button>
-                    {expandedSources && (
-                      <div className="mt-1 flex flex-col gap-2 w-full max-w-[280px] animate-fade-in text-[13px]">
-                        {cardSources.map((s) => (
-                          <div
-                            key={s.source_id}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[#e2e1de] bg-[#f9f9f8] text-[#21201c]"
-                          >
-                            <FilenameIcon filename={s.filename} className="w-4.5 h-4.5 shrink-0" />
-                            <span className="truncate font-medium text-[#63635e]">{s.filename}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-3 text-sm md:text-[15px] text-[#63635e] select-none pointer-events-none">
+                    <span className="shrink-0 font-normal">
+                      4 sources used
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <NotionIcon className="w-5 h-5 shrink-0" />
+                      <GitHubIcon className="w-5 h-5 shrink-0 text-[#181717]" />
+                      <GoogleDriveIcon className="w-5 h-5 shrink-0" />
+                      <GoogleDocIcon className="w-5 h-5 shrink-0" />
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-[#8d8d86] shrink-0" />
                   </div>
                 </div>
               </div>

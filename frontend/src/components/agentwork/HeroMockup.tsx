@@ -1,215 +1,367 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
-import { AgentworkMark, NotionIcon, GoogleDriveIcon, GitHubIcon } from './Icons';
+import {
+  Home01Icon,
+  CommandLineIcon,
+  NoteEditIcon,
+  Folder01Icon,
+  Plug01Icon,
+  ServerStack01Icon,
+  Edit02Icon,
+  ArrowDown01Icon,
+  ArrowUpDownIcon,
+} from 'hugeicons-react';
+import {
+  ArrowUp,
+  PenLine,
+  ChevronRight,
+  Search,
+  Feather,
+  Clock,
+  PanelLeft,
+  Bell,
+} from 'lucide-react';
+import {
+  NotionIcon,
+  GitHubIcon,
+  GoogleDriveIcon,
+  PdfIcon,
+  StudioDocIcon,
+} from '../connectors/ConnectorIcons';
 
 export default function HeroMockup() {
+  const quickChips = [
+    { label: 'Improve a draft', icon: PenLine },
+    { label: 'Research a topic', icon: Search },
+    { label: 'Capture a thought', icon: Feather },
+    { label: 'Recap my week', icon: Clock },
+  ];
+
+  const recentAssets = [
+    {
+      id: 'asset-notion',
+      title: 'Engineering Knowledge Base',
+      subtitle: 'Notion • Synced 2 hours ago',
+      icon: NotionIcon,
+    },
+    {
+      id: 'asset-github',
+      title: 'docschat-core-backend',
+      subtitle: 'GitHub • Synced 1 day ago',
+      icon: GitHubIcon,
+    },
+    {
+      id: 'asset-drive',
+      title: 'Q4 Strategic Roadmap & OKRs',
+      subtitle: 'Google Drive • Synced 3 days ago',
+      icon: GoogleDriveIcon,
+    },
+    {
+      id: 'asset-pdf',
+      title: 'Enterprise Security & RAG Compliance.pdf',
+      subtitle: '2.4 MB • Added 5 days ago',
+      icon: PdfIcon,
+    },
+  ];
+
+  const recentDocs = [
+    {
+      id: 'doc-1',
+      title: 'System Architecture & Unified Indexing Spec',
+      subtitle: 'Edited today',
+    },
+    {
+      id: 'doc-2',
+      title: 'Multi-Source RAG Synthesis & Context Guidelines',
+      subtitle: 'Edited 2 days ago',
+    },
+  ];
+
+  const chatHistory = [
+    'Cross-source PR analysis & launch blockers',
+    'API contract diff: v1 vs v2 embeddings',
+    'Synthesize Q4 roadmap with engineering tasks',
+    'Compliance review for vector storage',
+    'Evaluate vector index latency & Qdrant recall',
+    'SOC2 data boundary & connector access audit',
+    'Summarize feedback from customer syncs',
+  ];
+
   return (
-    <div className="w-full h-full bg-[#fdfdfc] rounded-xl border border-[#21201c]/15 shadow-ui-visual flex flex-col md:flex-row overflow-hidden text-[#21201c] select-none text-left">
+    <div className="w-full h-full bg-sidebar rounded-xl sm:rounded-2xl border border-border shadow-ui-visual flex overflow-hidden text-text-primary select-none text-left relative">
       {/* Left Sidebar */}
-      <aside className="hidden md:flex md:w-54 shrink-0 flex-col justify-between border-r border-[#e2e1de] bg-[#f9f9f8] p-4">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between px-2">
-            <AgentworkMark className="size-5 text-[#21201c]" />
-            <button className="text-[#8d8d86] hover:text-[#21201c] transition-colors text-xs" aria-label="Toggle sidebar">
-              <svg className="size-4" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M2 3.75A.75.75 0 012.75 3h10.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zm0 4.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H2.75A.75.75 0 012 8zm0 4.25a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
-              </svg>
-            </button>
+      <aside className="hidden md:flex md:w-52 shrink-0 flex-col justify-between bg-sidebar">
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Workspace Brand / Header */}
+          <div className="h-12 px-3.5 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Logo Mark */}
+              <div className="w-6 h-6 rounded-md bg-[#111113] flex items-center justify-center shrink-0 shadow-xs overflow-hidden">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-white"
+                >
+                  <path
+                    d="M6 4h8a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4H8a4 4 0 0 0-4 4v1a4 4 0 0 0 4 4h10"
+                    stroke="#FF5533"
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <span className="text-xs font-semibold text-text-primary truncate">
+                Faiz HQ
+              </span>
+            </div>
+            <ArrowDown01Icon size={13} className="text-text-muted shrink-0" />
           </div>
 
-          <nav className="flex flex-col gap-1">
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#63635e] hover:bg-[#e9e8e6]/60 transition-colors text-sm font-medium">
-              <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-              </svg>
+          {/* New Chat Button */}
+          <div className="px-2.5 pt-2 pb-1.5 shrink-0">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors w-full cursor-default">
+              <Edit02Icon size={15} className="text-text-secondary shrink-0" />
+              <span>New Chat</span>
+            </div>
+          </div>
+
+          {/* Navigation Items */}
+          <nav className="px-2.5 pb-1 space-y-0.5">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-accent-subtle text-accent-hover cursor-default">
+              <Home01Icon size={15} className="text-accent-hover shrink-0" />
               <span>Home</span>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-[#e9e8e6] text-[#21201c] text-sm font-medium">
-              <svg className="size-4 text-[#ff6a00]" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6.4-4.8-6.4 4.8 2.4-7.2-6-4.8h7.6z" />
-              </svg>
-              <span>Ora</span>
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+              <CommandLineIcon size={15} className="shrink-0 text-text-secondary" />
+              <span>Playground</span>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#63635e] hover:bg-[#e9e8e6]/60 transition-colors text-sm font-medium">
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+              <NoteEditIcon size={15} className="shrink-0 text-text-secondary" />
               <span>Studio</span>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#63635e] hover:bg-[#e9e8e6]/60 transition-colors text-sm font-medium">
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+              <Folder01Icon size={15} className="shrink-0 text-text-secondary" />
+              <span>Assets</span>
+            </div>
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+              <Plug01Icon size={15} className="shrink-0 text-text-secondary" />
               <span>Connectors</span>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[#63635e] hover:bg-[#e9e8e6]/60 transition-colors text-sm font-medium">
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="2" width="20" height="8" rx="2" />
-                <rect x="2" y="14" width="20" height="8" rx="2" />
-                <line x1="6" y1="6" x2="6.01" y2="6" />
-                <line x1="6" y1="18" x2="6.01" y2="18" />
-              </svg>
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+              <ServerStack01Icon size={15} className="shrink-0 text-text-secondary" />
               <span>MCP Server</span>
             </div>
           </nav>
+
+          {/* Chats Section */}
+          <div className="px-2.5 pt-2 flex-1 min-h-0 overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="px-2.5 py-1 text-[11px] font-semibold text-text-muted">
+              Chats
+            </div>
+            <div className="mt-0.5 space-y-0.5">
+              {chatHistory.map((title, idx) => (
+                <div
+                  key={idx}
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default truncate leading-tight"
+                >
+                  {title}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* User Card */}
-        <div className="flex items-center gap-2.5 p-2 rounded-lg bg-[#ffffff] border border-[#e2e1de]">
-          <div className="relative size-8 rounded-full overflow-hidden shrink-0 bg-[#e9e8e6]">
-            <Image
-              src="/images/jane-doe-avatar.webp"
-              alt="Alex Chen"
-              width={32}
-              height={32}
-              className="object-cover size-full"
-            />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-[#21201c] truncate">Alex Chen</span>
-            <span className="text-[11px] text-[#8d8d86] truncate">alex@quello.dev</span>
+        {/* User Profile Footer */}
+        <div className="p-2.5 border-t border-border/80">
+          <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-accent-subtle cursor-default transition-colors">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-full bg-text-primary text-white flex items-center justify-center text-[10px] font-semibold shrink-0">
+                F
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-text-primary truncate leading-tight">
+                  Faiz Jamadar
+                </p>
+                <p className="text-[10px] text-text-secondary truncate leading-tight">
+                  faiz@quello.dev
+                </p>
+              </div>
+            </div>
+            <ArrowUpDownIcon size={13} className="text-text-muted shrink-0 ml-1" />
           </div>
         </div>
       </aside>
 
-      {/* Main Chat Workspace */}
-      <section className="flex-1 flex flex-col justify-between overflow-hidden bg-[#ffffff]">
-        {/* Workspace Header Bar */}
-        <header className="flex items-center justify-between border-b border-[#e2e1de] px-5 py-3 bg-[#fdfdfc]">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[#21201c]">v2 Launch Readiness</span>
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-sidebar">
+        {/* Header Bar */}
+        <header className="h-12 px-3 sm:px-4 bg-sidebar flex items-center justify-between shrink-0 select-none">
+          <div className="flex items-center gap-1.5">
+            <div className="p-1 rounded-md text-text-secondary">
+              <PanelLeft className="w-4 h-4" />
+            </div>
+            <nav className="flex items-center gap-1.5 text-xs text-text-secondary font-medium">
+              <span className="text-text-primary font-semibold">Faiz HQ</span>
+            </nav>
           </div>
-          <div className="flex items-center gap-2 text-[#8d8d86]">
-            <button className="p-1 hover:text-[#21201c]" aria-label="Thread options">
-              <svg className="size-4" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-              </svg>
-            </button>
-            <button className="p-1 hover:text-[#21201c]" aria-label="Expand view">
-              <svg className="size-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l3.293 3.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-3.293 3.293a1 1 0 01-1.414-1.414L13.586 5H12zm-7 9a1 1 0 012 0v1.586l3.293-3.293a1 1 0 011.414 1.414L8.414 17H10a1 1 0 010 2H6a1 1 0 01-1-1v-4zm11-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-3.293-3.293a1 1 0 011.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-            </button>
+
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Search Box */}
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border-subtle bg-base w-36 md:w-44">
+              <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
+              <span className="text-[11px] text-text-muted flex-1 truncate">Search...</span>
+              <kbd className="inline-flex items-center px-1 py-0.2 text-[9px] text-text-secondary bg-surface border border-border rounded font-sans shadow-2xs">
+                ⌘K
+              </kbd>
+            </div>
+
+            {/* Quello Voice Pill */}
+            <div className="bg-[#111113] text-white px-2.5 py-1 rounded-full flex items-center gap-1.5 text-xs font-medium shadow-xs shrink-0 cursor-default">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
+              </span>
+              <span className="tracking-tight text-[11px]">Quello</span>
+            </div>
+
+            {/* Notification Bell */}
+            <div className="p-1 rounded-lg text-text-secondary">
+              <Bell className="w-3.5 h-3.5" />
+            </div>
           </div>
         </header>
 
-        {/* Message Thread */}
-        <div className="flex-1 p-5 md:p-6 overflow-y-auto flex flex-col gap-5 text-sm">
-          {/* User Message */}
-          <div className="flex items-start gap-3">
-            <div className="relative size-7 rounded-full overflow-hidden shrink-0 bg-[#e9e8e6]">
-              <Image
-                src="/images/jane-doe-avatar.webp"
-                alt="You"
-                width={28}
-                height={28}
-                className="object-cover size-full"
-              />
+        {/* Scrollable Canvas / Workspace View */}
+        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-surface rounded-tl-xl sm:rounded-tl-[20px] shadow-2xs p-3 sm:p-5 space-y-3 sm:space-y-4">
+          {/* Greeting Header */}
+          <div>
+            <h1 className="text-base sm:text-xl font-bold tracking-tight text-text-primary">
+              Good Afternoon, Faiz
+            </h1>
+            <p className="text-[11px] sm:text-xs text-text-secondary mt-0.5 font-normal">
+              Let&apos;s bring your ideas to life
+            </p>
+          </div>
+
+          {/* Ask Quello Input Bar */}
+          <div className="relative rounded-2xl bg-sidebar border border-border p-2 sm:p-2.5 flex items-center gap-2.5 shadow-2xs">
+            <div className="pl-1 sm:pl-2 flex items-center text-text-muted">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="text-text-secondary">
+                <path
+                  d="M6 4h8a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4H8a4 4 0 0 0-4 4v1a4 4 0 0 0 4 4h10"
+                  stroke="currentColor"
+                  strokeWidth="2.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-[#63635e]">You</span>
-              <p className="text-[#21201c] font-normal leading-relaxed">
-                What is the status of our v2 release, and what is still blocking launch?
-              </p>
+            <span className="flex-1 text-xs sm:text-sm text-text-muted truncate select-none">
+              Ask Quello anything... type @ to reference
+            </span>
+            <div className="w-7 h-7 rounded-xl bg-accent-hover/20 text-accent-hover flex items-center justify-center shrink-0 cursor-default">
+              <ArrowUp className="w-3.5 h-3.5" />
             </div>
           </div>
 
-          {/* Assistant Message */}
-          <div className="flex items-start gap-3">
-            <div className="size-7 rounded-full bg-[#f97316] text-[#ffffff] flex items-center justify-center shrink-0">
-              <AgentworkMark className="size-4" />
+          {/* Start Writing Action Card */}
+          <div className="flex items-center justify-between p-3 sm:p-3.5 rounded-xl bg-sidebar border border-border cursor-default hover:bg-accent-subtle transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#111113] flex items-center justify-center text-white shrink-0 shadow-xs">
+                <PenLine className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold text-text-primary">Start writing</h3>
+                <p className="text-[11px] text-text-secondary">Open a blank canvas and let ideas flow</p>
+              </div>
             </div>
-            <div className="flex flex-col gap-2.5 max-w-xl">
-              <span className="text-xs font-semibold text-[#63635e]">Ora AI</span>
+            <ChevronRight className="w-4 h-4 text-text-muted" />
+          </div>
 
-              {/* Actions pill */}
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#f9f9f8] border border-[#e2e1de] text-xs font-medium text-[#63635e] w-fit">
-                <span>3 sources checked • Answer with citations</span>
-                <span className="text-[10px]">›</span>
-              </div>
-
-              {/* Resolution body */}
-              <div className="text-[#21201c] leading-relaxed flex flex-col gap-2 text-sm">
-                <p>
-                  According to the{' '}
-                  <span className="underline decoration-[#8d8d86] cursor-pointer">Q4 Release Plan in Notion</span>{' '}
-                  <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">1</span>,
-                  v2 is on track for November 18th pending QA sign-off.
-                </p>
-                <p>
-                  One blocker remains in the{' '}
-                  <span className="underline decoration-[#8d8d86] cursor-pointer">backend repository on GitHub</span>{' '}
-                  <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">2</span>:
-                  session refresh handling in PR #142, assigned to Marcus. The{' '}
-                  <span className="underline decoration-[#8d8d86] cursor-pointer">QA sign-off in Drive</span>{' '}
-                  <span className="inline-block px-1 rounded bg-[#f1f0ef] text-[10px] font-mono text-[#63635e]">3</span> confirms performance tests passed.
-                </p>
-              </div>
-
-              {/* Suggested Action */}
-              <div className="pt-1">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#e2e1de] bg-[#ffffff] hover:bg-[#f9f9f8] text-xs font-medium text-[#21201c] shadow-xs cursor-pointer"
+          {/* Quick Prompt Action Chips */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {quickChips.map((chip) => {
+              const Icon = chip.icon;
+              return (
+                <div
+                  key={chip.label}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-white text-[11px] text-[#4B5563] shadow-2xs cursor-default"
                 >
-                  <svg className="size-3.5 text-[#ff6a00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                  <span>Open in Studio</span>
-                </button>
-              </div>
-
-              {/* Source citations chips */}
-              <div className="flex items-center gap-2 pt-2 text-xs text-[#8d8d86]">
-                <span>3 sources used</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#f1f0ef] hover:bg-[#e9e8e6] transition-colors cursor-pointer" title="Notion">
-                    <NotionIcon className="size-3 text-[#21201c]" />
-                    <span className="text-[11px] text-[#21201c] font-medium">Notion</span>
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#f1f0ef] hover:bg-[#e9e8e6] transition-colors cursor-pointer" title="GitHub">
-                    <GitHubIcon className="size-3 text-[#21201c]" />
-                    <span className="text-[11px] text-[#21201c] font-medium">GitHub</span>
-                  </div>
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#f1f0ef] hover:bg-[#e9e8e6] transition-colors cursor-pointer" title="Google Drive">
-                    <GoogleDriveIcon className="size-3" />
-                    <span className="text-[11px] text-[#21201c] font-medium">Drive</span>
-                  </div>
+                  <Icon className="w-3 h-3 text-text-secondary" />
+                  <span>{chip.label}</span>
                 </div>
-              </div>
+              );
+            })}
+          </div>
+
+          {/* Recent Assets Section */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold text-text-primary">Recent Assets</h2>
+              <span className="text-[11px] text-text-secondary cursor-default">View all</span>
+            </div>
+
+            <div className="space-y-1">
+              {recentAssets.map((asset) => {
+                const Icon = asset.icon;
+                return (
+                  <div
+                    key={asset.id}
+                    className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-medium text-text-primary truncate">
+                          {asset.title}
+                        </h4>
+                        <p className="text-[10px] text-text-muted truncate">{asset.subtitle}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#D1D5DB] shrink-0 ml-2" />
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* Input Bar */}
-        <footer className="p-4 border-t border-[#e2e1de] bg-[#fdfdfc]">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#ffffff] border border-[#e2e1de] shadow-xs">
-            <input
-              type="text"
-              readOnly
-              placeholder="Ask anything about your workspace... (type @ to scope)"
-              className="flex-1 bg-transparent text-sm text-[#21201c] placeholder-[#8d8d86] focus:outline-none cursor-default"
-            />
-            <button type="button" className="text-[#8d8d86] hover:text-[#21201c] p-1" aria-label="Attach file">
-              <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="size-7 rounded-lg bg-[#21201c] text-[#ffffff] flex items-center justify-center hover:bg-accent-hover transition-colors cursor-pointer shrink-0"
-              aria-label="Send query"
-            >
-              <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="19" x2="12" y2="5" />
-                <polyline points="5 12 12 5 19 12" />
-              </svg>
-            </button>
+          {/* Recent Documents Section */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold text-text-primary">Recent Documents</h2>
+              <span className="text-[11px] text-text-secondary cursor-default">View all</span>
+            </div>
+
+            <div className="space-y-1">
+              {recentDocs.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                      <StudioDocIcon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-medium text-text-primary truncate">
+                        {doc.title}
+                      </h4>
+                      <p className="text-[10px] text-text-muted truncate">{doc.subtitle}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-[#D1D5DB] shrink-0 ml-2" />
+                </div>
+              ))}
+            </div>
           </div>
-        </footer>
-      </section>
+        </main>
+      </div>
     </div>
   );
 }

@@ -355,7 +355,7 @@ export default function ConnectorDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-text-primary">Imported sources</p>
                   <p className="text-[11px] text-text-secondary">
-                    {driveSources.length} file{driveSources.length === 1 ? '' : 's'} available to Ora and voice
+                    {driveSources.length} file{driveSources.length === 1 ? '' : 's'} available to Quello and voice
                   </p>
                 </div>
                 <button
@@ -504,7 +504,7 @@ export default function ConnectorDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-text-primary">Imported sources</p>
                   <p className="text-[11px] text-text-secondary">
-                    {githubSources.length} repo{githubSources.length === 1 ? '' : 's'} available to Ora and voice
+                    {githubSources.length} repo{githubSources.length === 1 ? '' : 's'} available to Quello and voice
                   </p>
                 </div>
                 <button
@@ -652,7 +652,7 @@ export default function ConnectorDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-text-primary">Imported sources</p>
                   <p className="text-[11px] text-text-secondary">
-                    {notionSources.length} page{notionSources.length === 1 ? '' : 's'} available to Ora and voice
+                    {notionSources.length} page{notionSources.length === 1 ? '' : 's'} available to Quello and voice
                   </p>
                 </div>
                 <button

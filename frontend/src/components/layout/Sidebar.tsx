@@ -4,19 +4,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  Home,
-  Sparkles,
-  FileEdit,
-  Folder,
-  Plug2,
-  Server,
-  Settings,
-  ChevronsUpDown,
-  ChevronDown,
-  LogOut,
-  SquarePen,
-  Trash2,
-} from 'lucide-react';
+  Home01Icon,
+  CommandLineIcon,
+  NoteEditIcon,
+  Folder01Icon,
+  Plug01Icon,
+  ServerStack01Icon,
+  Edit02Icon,
+  ArrowDown01Icon,
+  ArrowUpDownIcon,
+  Delete02Icon,
+  Settings01Icon,
+  Logout01Icon,
+} from 'hugeicons-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChatThreads } from '../../hooks/useChatThreads';
@@ -65,12 +65,12 @@ export default function Sidebar({
   };
 
   const navItems = [
-    { label: 'Home', href: '/home', icon: Home },
-    { label: 'Ora', href: '/playground', icon: Sparkles },
-    { label: 'Studio', href: '/studio', icon: FileEdit },
-    { label: 'Assets', href: '/assets', icon: Folder },
-    { label: 'Connectors', href: '/connectors', icon: Plug2 },
-    { label: 'MCP Server', href: '/mcp', icon: Server },
+    { label: 'Home', href: '/home', icon: Home01Icon },
+    { label: 'Playground', href: '/playground', icon: CommandLineIcon },
+    { label: 'Studio', href: '/studio', icon: NoteEditIcon },
+    { label: 'Assets', href: '/assets', icon: Folder01Icon },
+    { label: 'Connectors', href: '/connectors', icon: Plug01Icon },
+    { label: 'MCP Server', href: '/mcp', icon: ServerStack01Icon },
   ];
 
   const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'Quello HQ');
@@ -120,7 +120,7 @@ export default function Sidebar({
               {workspaceName}
             </span>
 
-            <ChevronDown className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            <ArrowDown01Icon size={14} className="text-text-muted shrink-0" />
           </button>
         </div>
 
@@ -131,7 +131,7 @@ export default function Sidebar({
             onClick={handleNewChat}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer w-full text-left"
           >
-            <SquarePen className="w-4 h-4 text-text-secondary shrink-0" />
+            <Edit02Icon size={16} className="text-text-secondary shrink-0" />
             <span>New Chat</span>
           </button>
         </div>
@@ -158,7 +158,8 @@ export default function Sidebar({
                 }`}
               >
                 <Icon
-                  className={`w-4 h-4 shrink-0 ${
+                  size={16}
+                  className={`shrink-0 ${
                     isActive ? 'text-accent-hover' : 'text-text-secondary'
                   }`}
                 />
@@ -216,7 +217,7 @@ export default function Sidebar({
                         className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
                         title="Delete chat"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Delete02Icon size={14} />
                       </button>
                     </div>
                   </div>
@@ -229,7 +230,7 @@ export default function Sidebar({
       </div>
 
       {/* User profile footer */}
-      <div className="p-3 border-t border-border/80 relative" ref={userMenuRef}>
+      <div className="p-3 pb-safe border-t border-border/80 relative" ref={userMenuRef}>
         <div
           onClick={() => setUserMenuOpen(!userMenuOpen)}
           className="flex items-center justify-between p-2 rounded-lg hover:bg-accent-subtle cursor-pointer transition-colors"
@@ -258,7 +259,7 @@ export default function Sidebar({
             </div>
           </div>
 
-          <ChevronsUpDown className="w-3.5 h-3.5 text-text-muted shrink-0 ml-1" />
+          <ArrowUpDownIcon size={14} className="text-text-muted shrink-0 ml-1" />
         </div>
 
         {/* Dropdown Menu */}
@@ -272,7 +273,7 @@ export default function Sidebar({
               }}
               className="flex items-center gap-2 px-3 py-2 text-xs text-text-primary hover:bg-sidebar rounded-lg transition-colors"
             >
-              <Settings className="w-3.5 h-3.5 text-text-secondary" />
+              <Settings01Icon size={14} className="text-text-secondary" />
               Settings
             </Link>
             <button
@@ -283,7 +284,7 @@ export default function Sidebar({
               }}
               className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left cursor-pointer"
             >
-              <LogOut className="w-3.5 h-3.5 text-red-600" />
+              <Logout01Icon size={14} className="text-red-600" />
               Sign Out
             </button>
           </div>
@@ -300,18 +301,25 @@ export default function Sidebar({
         {content}
       </div>
 
-      {/* Mobile Drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/30 backdrop-blur-xs transition-opacity"
-            onClick={onCloseMobile}
-          />
-          <div className="absolute left-0 top-0 bottom-0 z-10">
-            {content}
-          </div>
+      {/* Mobile Off-Canvas Drawer with GPU slide transition */}
+      <div
+        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ease-in-out ${
+          mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden={!mobileOpen}
+      >
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+          onClick={onCloseMobile}
+        />
+        <div
+          className={`absolute left-0 top-0 bottom-0 z-10 w-72 max-w-[85vw] bg-sidebar shadow-2xl transition-transform duration-300 ease-out transform ${
+            mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          {content}
         </div>
-      )}
+      </div>
     </>
   );
 }

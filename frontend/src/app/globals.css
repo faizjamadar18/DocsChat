@@ -484,4 +484,130 @@ body {
 
 .animate-integrations-marquee:hover {
   animation-play-state: paused;
-}
+}
+
+@keyframes iconBlurIn {
+  0% {
+    opacity: 0;
+    filter: blur(14px);
+    -webkit-filter: blur(14px);
+    transform: scale(0.6);
+  }
+  38% {
+    opacity: 0.65;
+    filter: blur(7px);
+    -webkit-filter: blur(7px);
+    transform: scale(1.1);
+  }
+  75% {
+    opacity: 0.95;
+    filter: blur(1.5px);
+    -webkit-filter: blur(1.5px);
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    -webkit-filter: blur(0px);
+    transform: scale(1);
+  }
+}
+
+:root {
+  --bg-base: #8ebcca;
+  --bg-glow-tl: rgba(189, 212, 219, 0.91);
+  --bg-deep-bl: rgba(128, 179, 194, 1.00);
+  --bg-lift-br: rgba(166, 201, 211, 0.61);
+  --bg-tint-tr: rgba(113, 171, 189, 0.17);
+}
+
+.hero-bg {
+  background:
+    radial-gradient(45% 120% at 10% 5%,    rgba(189,212,219,0.95), rgba(189,212,219,0)),
+    radial-gradient(40% 70%  at 5% 95%,    rgba(128,179,194,1.00), rgba(128,179,194,0)),
+    radial-gradient(28% 120% at 95% 95%,   rgba(166,201,211,0.70), rgba(166,201,211,0)),
+    radial-gradient(45% 65%  at 95% 5%,    rgba(113,171,189,0.25), rgba(113,171,189,0)),
+    #8ebcca;
+}
+
+/* Progressive Fade Mask for Hero Mockup Frame */
+.mask-bottom-fade {
+  mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+/* Safe Area Insets for Mobile Screens (iOS Notch & Dynamic Island) */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* CTA Card Ambient Glow Breathing Animation */
+@keyframes ctaGlowBreath {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 1;
+  }
+}
+
+.animate-cta-glow {
+  animation: ctaGlowBreath 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cta-glow {
+    animation: none !important;
+  }
+}
+
+/* Agentwork Logo Pulse Ring Animation */
+@keyframes agentworkLogoPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.animate-agentwork-logo-pulse {
+  animation: agentworkLogoPulse 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes agentworkLogoGlow {
+  0% {
+    opacity: 0.8;
+    box-shadow: 0 0 18px rgba(255, 106, 0, 0.45);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 0 0 0px rgba(255, 106, 0, 0);
+  }
+}
+
+.animate-agentwork-logo-glow {
+  animation: agentworkLogoGlow 0.8s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-agentwork-logo-pulse,
+  .animate-agentwork-logo-glow {
+    animation: none !important;
+  }
+}
+
+

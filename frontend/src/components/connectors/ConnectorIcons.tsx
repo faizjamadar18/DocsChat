@@ -86,9 +86,9 @@ export function SlackIcon({ className = 'w-5 h-5' }: { className?: string }) {
   );
 }
 
-export function GitHubIcon({ className = 'w-5 h-5' }: { className?: string }) {
+export function GitHubIcon({ className = 'w-5 h-5 text-[#181717]' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className.includes('text-') ? className : `text-[#181717] ${className}`} aria-hidden="true">
       <path
         fillRule="evenodd"
         clipRule="evenodd"

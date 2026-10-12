@@ -44,26 +44,26 @@ function LoginForm() {
       <div className="hidden lg:flex lg:w-1/2 bg-foreground relative overflow-hidden select-none">
         <div className="relative z-10 flex flex-col justify-between py-12 px-10 xl:px-16 w-full h-full">
           {/* Logo */}
-          <Link className="flex items-center text-white gap-2" href="/">
-            <QuelloMark className="size-6" />
-            <span className="text-lg font-medium tracking-tight">Quello</span>
+          <Link className="flex items-center text-white" href="/">
+            <QuelloMark className="size-7" />
+            <span className="text-lg font-medium tracking-tight">uello.</span>
           </Link>
 
-          {/* Heading & Features */}
-          <div className="flex flex-col gap-8">
+          {/* Heading & Features - aligned to bottom */}
+          <div className="flex flex-col gap-8 mt-auto">
             <div>
               <h2 className="text-4xl xl:text-5xl font-medium text-white tracking-tight font-heading">
                 Your AI Workspace
               </h2>
               <p className="text-neutral-400 text-lg mt-2">
-                for creating content
+                grounded in your documents and knowledge
               </p>
             </div>
 
             {/* 4 Feature icon tiles */}
             <div className="grid grid-cols-4 place-items-start md:max-w-xs gap-4">
               <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center size-12 rounded-lg bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
+                <div className="flex items-center justify-center size-12 rounded-xl bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
                   <Image
                     alt="The Studio"
                     width={24}
@@ -76,7 +76,7 @@ function LoginForm() {
               </div>
 
               <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center size-12 rounded-lg bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
+                <div className="flex items-center justify-center size-12 rounded-xl bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
                   <Image
                     alt="AI Agents"
                     width={24}
@@ -89,7 +89,7 @@ function LoginForm() {
               </div>
 
               <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center size-12 rounded-lg bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
+                <div className="flex items-center justify-center size-12 rounded-xl bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
                   <Image
                     alt="Smart Memory"
                     width={24}
@@ -102,7 +102,7 @@ function LoginForm() {
               </div>
 
               <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center size-12 rounded-lg bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
+                <div className="flex items-center justify-center size-12 rounded-xl bg-white/5 border border-white/8 hover:border-primary/40 transition-colors">
                   <Image
                     alt="Voice Commands"
                     width={24}
@@ -115,8 +115,6 @@ function LoginForm() {
               </div>
             </div>
           </div>
-
-          <div />
         </div>
       </div>
 
@@ -140,17 +138,24 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Quello Google Button Container with GoogleLogin trigger */}
-          <div className="relative w-full mt-6">
+          {/* Quello Google Button Container with exact plura.in hover and click animations */}
+          <div className="relative w-full mt-6 group select-none">
             <button
               data-slot="button"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all active:scale-95 cursor-pointer select-none bg-foreground text-background hover:opacity-90 h-10 px-4 py-2 group overflow-hidden relative w-full gap-2 shadow-sm"
+              type="button"
+              tabIndex={-1}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none active:scale-95 group-active:scale-95 select-none bg-foreground text-background group-hover:opacity-80 hover:opacity-80 h-9 px-4 py-2 overflow-hidden relative w-full gap-2 cursor-pointer pointer-events-none shadow-sm"
             >
-              <div className="relative overflow-hidden w-full flex justify-center">
+              <div className="relative overflow-hidden">
                 <div className="transition-transform duration-300 ease-in-out group-hover:-translate-y-full">
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="size-4" viewBox="-0.5 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                      <g>
+                  <span className="flex items-center gap-2">
+                    {loading ? (
+                      <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      </svg>
+                    ) : (
+                      <svg className="size-4" viewBox="-0.5 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg">
                         <path
                           d="M9.82727273,24 C9.82727273,22.4757333 10.0804318,21.0144 10.5322727,19.6437333 L2.62345455,13.6042667 C1.08206818,16.7338667 0.213636364,20.2602667 0.213636364,24 C0.213636364,27.7365333 1.081,31.2608 2.62025,34.3882667 L10.5247955,28.3370667 C10.0772273,26.9728 9.82727273,25.5168 9.82727273,24"
                           fill="#FBBC05"
@@ -167,15 +172,20 @@ function LoginForm() {
                           d="M46.1454545,24 C46.1454545,22.6133333 45.9318182,21.12 45.6113636,19.7333333 L23.7136364,19.7333333 L23.7136364,28.8 L36.3181818,28.8 C35.6879545,31.8912 33.9724545,34.2677333 31.5177727,35.8144 L39.0249545,41.6181333 C43.3393409,37.6138667 46.1454545,31.6490667 46.1454545,24"
                           fill="#4285F4"
                         />
-                      </g>
-                    </svg>
+                      </svg>
+                    )}
                     Continue with Google
                   </span>
                 </div>
                 <div className="absolute inset-0 transition-transform duration-300 ease-in-out group-hover:translate-y-0 translate-y-full">
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="size-4" viewBox="-0.5 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                      <g>
+                  <span className="flex items-center gap-2">
+                    {loading ? (
+                      <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                      </svg>
+                    ) : (
+                      <svg className="size-4" viewBox="-0.5 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg">
                         <path
                           d="M9.82727273,24 C9.82727273,22.4757333 10.0804318,21.0144 10.5322727,19.6437333 L2.62345455,13.6042667 C1.08206818,16.7338667 0.213636364,20.2602667 0.213636364,24 C0.213636364,27.7365333 1.081,31.2608 2.62025,34.3882667 L10.5247955,28.3370667 C10.0772273,26.9728 9.82727273,25.5168 9.82727273,24"
                           fill="#FBBC05"
@@ -192,8 +202,8 @@ function LoginForm() {
                           d="M46.1454545,24 C46.1454545,22.6133333 45.9318182,21.12 45.6113636,19.7333333 L23.7136364,19.7333333 L23.7136364,28.8 L36.3181818,28.8 C35.6879545,31.8912 33.9724545,34.2677333 31.5177727,35.8144 L39.0249545,41.6181333 C43.3393409,37.6138667 46.1454545,31.6490667 46.1454545,24"
                           fill="#4285F4"
                         />
-                      </g>
-                    </svg>
+                      </svg>
+                    )}
                     Continue with Google
                   </span>
                 </div>

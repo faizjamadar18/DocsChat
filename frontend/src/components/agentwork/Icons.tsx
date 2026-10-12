@@ -1,37 +1,31 @@
 import React from 'react';
 
-// DocsChat Logo Mark (product mark)
+// Quello Logo Mark (from /icons/logo/Q-black.svg)
 export function QuelloMark({ className = 'size-5' }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 800 800"
-      fill="none"
+      viewBox="0 0 341.21 341.50"
+      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="DocsChat"
+      aria-label="Quello"
     >
-      <rect width="800" height="800" rx="168" fill="#000000" />
-      <g
-        transform="translate(400 400) scale(0.84) translate(-400 -400)"
-        fill="#FFFFFF"
-        stroke="#FFFFFF"
-        strokeWidth="6"
-        strokeLinejoin="round"
-      >
-        <path d="M502.6 681.9 A300 300 0 0 1 118.1 502.6 L242.1 457.5 A168 168 0 0 0 457.5 557.9 Z M106.6 462.4 A300 300 0 0 1 337.6 106.6 L365.1 235.7 A168 168 0 0 0 235.7 434.9 Z M379.1 100.7 A300 300 0 0 1 699.3 379.1 L567.6 388.3 A168 168 0 0 0 388.3 232.4 Z M409.9 475.0 L611.4 676.5 L676.5 611.4 L475.0 409.9 Z" />
-      </g>
+      <path d="M157.10 0.55A170.75 170.75 0 0 1 341.21 160.70L263.62 165.81A92.99 92.99 0 0 0 162.62 78.11Z" />
+      <path d="M4.08 207.87A170.75 170.75 0 0 1 136.89 3.39L153.03 79.46A92.99 92.99 0 0 0 80.12 191.59Z" />
+      <path d="M230.78 330.61A170.75 170.75 0 0 1 9.71 227.51L82.78 200.91A92.99 92.99 0 0 0 204.09 257.57Z" />
+      <path d="M173.83 213.06L213.01 174.02L329.11 289.93L289.90 328.99Z" />
     </svg>
   );
 }
 
 export function QuelloLogo({ className = 'h-6 w-auto', showName = true }: { className?: string; showName?: boolean }) {
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
-      <QuelloMark className="size-6 shrink-0" />
+    <div className={`flex items-center gap-0.5 ${className}`}>
+      <QuelloMark className="size-7 shrink-0" />
       {showName && (
-        <span className="font-semibold text-[18px] tracking-[-0.03em] leading-none text-current">
-          DocsChat
+        <span className="font-semibold text-lg tracking-[-0.03em] leading-none text-current">
+          uello
         </span>
       )}
     </div>

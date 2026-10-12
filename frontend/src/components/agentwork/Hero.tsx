@@ -2,37 +2,36 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import HeroMockup from './HeroMockup';
 
 export default function Hero() {
   return (
-    <section className="px-6 py-8 md:py-16 flex flex-col gap-10 items-center">
+    <section id="overview" className="px-4 sm:px-6 py-8 md:py-16 flex flex-col gap-8 sm:gap-10 items-center w-full max-w-full overflow-hidden">
       {/* Top Headline & CTAs Grid */}
       <div className="max-w-300 w-full flex flex-col gap-6 md:grid md:grid-cols-12 md:items-end">
         {/* Left Column: Heading and Subtitle */}
-        <div className="md:col-span-8 flex flex-col gap-4">
-          <h1 className="text-[34px] md:text-[50px] font-[550] tracking-[-0.03em] leading-[1.12] text-[#21201c] text-balance">
-            Your team&apos;s knowledge,
+        <div className="md:col-span-8 flex flex-col gap-3.5 sm:gap-4">
+          <h1 className="text-3xl sm:text-4xl md:text-[50px] font-[550] tracking-[-0.03em] leading-[1.12] text-[#21201c] text-balance">
+            Your second brain,
             <br />
-            ready to answer
+            backed by sources
           </h1>
-          <p className="text-base md:text-[19px] leading-relaxed tracking-[-0.01em] text-[#63635e] max-w-2xl text-pretty">
-            Bring your documents and connected tools into one workspace. Ask questions in plain English, get answers with citations, and draft what&apos;s next in Studio.
+          <p className="text-sm sm:text-base md:text-[19px] leading-relaxed tracking-[-0.01em] text-[#63635e] max-w-2xl text-pretty">
+            Unified workspace for every tool, document and your code, with the evidence behind every claim one click away. When the answer isn&apos;t written down, it asks the source who knows it. If your files don’t say it, neither does it.
           </p>
         </div>
 
         {/* Right Column: Stacked Action Buttons */}
-        <div className="flex flex-col gap-2.5 md:col-span-4 md:col-start-9 lg:col-span-4 lg:col-start-9 justify-end">
+        <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 w-full sm:w-auto md:col-span-4 md:col-start-9 lg:col-span-4 lg:col-start-9 justify-end md:items-end">
           <Link
             href="/register"
-            className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-accent-hover transition-colors shadow-xs"
+            className="w-full sm:w-[150px] h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-black transition-colors shadow-xs whitespace-nowrap text-center"
           >
             Start for free
           </Link>
           <Link
             href="#how-it-works"
-            className="w-full inline-flex items-center justify-center py-2.5 px-4 rounded-lg bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] transition-colors"
+            className="w-full sm:w-[150px] h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] transition-colors whitespace-nowrap text-center"
           >
             See how it works
           </Link>
@@ -40,37 +39,16 @@ export default function Hero() {
       </div>
 
       {/* Cloud & Mockup Banner Container */}
-      <div className="max-w-300 w-full">
-        <div className="relative aspect-9/18 md:aspect-1200/860 overflow-hidden rounded-2xl border border-[#e2e1de] shadow-sm">
-          {/* Base Sky Gradient */}
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(to bottom, #00759b, #378fa7)' }}
-          />
+      <div className="max-w-300 w-full relative">
+        {/* Subtle Ambient Drop Glow for Depth */}
+        <div className="absolute -inset-1 sm:-inset-2 bg-gradient-to-b from-[#8ebcca]/20 via-[#ffd7c0]/15 to-transparent blur-xl rounded-3xl -z-1 pointer-events-none" />
 
-          {/* SVG Fractal Noise Filter Overlay */}
-          <div className="pointer-events-none absolute inset-0 z-1 opacity-25 mix-blend-overlay">
-            <svg className="size-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <filter id="hero-grain">
-                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch" />
-              </filter>
-              <rect width="100%" height="100%" filter="url(#hero-grain)" />
-            </svg>
-          </div>
-
-          {/* Static Cloud Background Image (Zero WebGL lag, 60fps buttery-smooth) */}
-          <div className="absolute inset-0 z-2 pointer-events-none">
-            <Image
-              src="/images/hero-clouds.png"
-              alt="Clouds background"
-              fill
-              priority
-              className="object-cover object-center"
-            />
-          </div>
+        <div className="relative min-h-[500px] h-[580px] sm:h-[640px] md:h-auto md:aspect-1200/860 overflow-hidden rounded-2xl sm:rounded-3xl border border-[#e2e1de] shadow-sm">
+          {/* CSS-only Mesh Pastel Gradient Background */}
+          <div className="absolute inset-0 hero-bg pointer-events-none" />
 
           {/* Floating Hero UI Mockup */}
-          <div className="absolute inset-x-2 md:inset-x-34 inset-y-4 md:inset-y-26 z-3 flex items-center justify-center">
+          <div className="absolute inset-x-2 sm:inset-x-6 md:inset-x-14 lg:inset-x-20 inset-y-2.5 sm:inset-y-6 md:inset-y-12 lg:inset-y-16 z-3 flex items-center justify-center">
             <div className="w-full h-full max-h-190">
               <HeroMockup />
             </div>

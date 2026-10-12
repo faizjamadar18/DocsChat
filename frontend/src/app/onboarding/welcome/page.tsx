@@ -48,7 +48,7 @@ export default function WelcomePage() {
       </h1>
       <p className="mt-3.5 text-[14px] leading-[1.55] text-neutral-400 font-normal tracking-[-0.01em]">
         Quello is your AI workspace for content. Upload PDFs to Assets, write in Studio,
-        and ask Ora anything grounded in your own knowledge.
+        and ask Quello anything grounded in your own knowledge.
       </p>
       <button
         type="button"

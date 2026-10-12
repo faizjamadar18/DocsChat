@@ -446,7 +446,7 @@ export default function SettingsPage() {
   const userInitial = (firstName || user?.username || 'U').charAt(0).toUpperCase();
 
   return (
-    <div className="w-full px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
+    <div className="w-full px-3.5 sm:px-6 py-6 sm:py-8 space-y-6 animate-fade-in">
       {/* Hidden File Inputs */}
       <input
         ref={profileFileInputRef}
@@ -475,42 +475,44 @@ export default function SettingsPage() {
       </div>
 
       {/* Pill-Style Segmented Tab Switcher */}
-      <div className="inline-flex items-center p-1 rounded-full bg-sidebar border border-border gap-1 shadow-2xs">
-        <button
-          type="button"
-          onClick={() => setActiveTab('account')}
-          className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-            activeTab === 'account'
-              ? 'bg-neutral-900 text-white shadow-xs'
-              : 'text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          Account
-        </button>
+      <div className="flex items-center overflow-x-auto no-scrollbar max-w-full pb-1">
+        <div className="inline-flex items-center p-1 rounded-full bg-sidebar border border-border gap-1 shadow-2xs shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveTab('account')}
+            className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activeTab === 'account'
+                ? 'bg-neutral-900 text-white shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Account
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('workspace')}
-          className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-            activeTab === 'workspace'
-              ? 'bg-neutral-900 text-white shadow-xs'
-              : 'text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          Workspace
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('workspace')}
+            className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activeTab === 'workspace'
+                ? 'bg-neutral-900 text-white shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Workspace
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('voice')}
-          className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-            activeTab === 'voice'
-              ? 'bg-neutral-900 text-white shadow-xs'
-              : 'text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          Voice Logs
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('voice')}
+            className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activeTab === 'voice'
+                ? 'bg-neutral-900 text-white shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Voice Logs
+          </button>
+        </div>
       </div>
 
       {/* ========================================================================= */}

@@ -82,8 +82,13 @@ export default function AssetsPage() {
   // Row click narrows to single for preview parity; Ora header button resets to All.
   const [oraScopeIds, setOraScopeIds] = useState<string[] | null>(null);
 
-  // Ora sidebar drawer state (open by default in Assets workspace)
-  const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(true);
+  // Ora sidebar drawer state (open by default on desktop, closed on mobile)
+  const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
 
   const availableAssetScopes = sources.map((s) => ({
     id: s.id,
@@ -336,7 +341,7 @@ export default function AssetsPage() {
   return (
     <div className="flex h-full w-full overflow-hidden">
       {/* Scrollable Assets Column (matches 03-assets.png and 03-assets2.png) */}
-      <div className="flex-1 min-w-0 h-full overflow-y-auto px-6 py-8 space-y-6">
+      <div className="flex-1 min-w-0 h-full overflow-y-auto px-3.5 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6">
         {/* Top Action Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search input */}
@@ -379,7 +384,7 @@ export default function AssetsPage() {
               }`}
             >
               <OraLogoMark className="w-3.5 h-3.5" />
-              <span>Ora</span>
+              <span>Quello</span>
             </button>
 
             <button
@@ -440,7 +445,7 @@ export default function AssetsPage() {
                   </div>
                   <p className="text-[13px] font-medium text-text-primary">No assets yet</p>
                   <p className="text-xs text-text-muted mt-0.5 max-w-xs mx-auto">
-                    Upload a document or connect a source to query, summarize, and cite it with Ora.
+                    Upload a document or connect a source to query, summarize, and cite it with Quello.
                   </p>
                   <button
                     type="button"
@@ -482,7 +487,7 @@ export default function AssetsPage() {
                       setOraScopeIds([source.id]);
                       setIsOraDrawerOpen(true);
                     }}
-                    title="Click to ask Ora about this asset"
+                    title="Click to ask Quello about this asset"
                     className={`relative flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group active:cursor-grabbing ${
                       isSelected
                         ? 'bg-white border-border shadow-2xs'
@@ -520,7 +525,7 @@ export default function AssetsPage() {
                           setIsOraDrawerOpen(true);
                         }}
                         className="hidden sm:inline-flex px-2.5 py-1 text-[11px] font-medium rounded-lg bg-accent-subtle text-accent-hover hover:bg-accent hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                        title="Ask Ora about this asset"
+                        title="Ask Quello about this asset"
                       >
                         Ask
                       </button>

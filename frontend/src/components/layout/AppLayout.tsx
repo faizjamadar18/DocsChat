@@ -14,7 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ProtectedRoute>
       <WorkspaceProvider>
         <VoiceAgentProvider>
-          <div className="flex h-screen w-screen overflow-hidden bg-sidebar text-text-primary">
+          <div className="flex h-dvh w-screen overflow-hidden bg-sidebar text-text-primary">
             {/* Persistent Sidebar */}
             <Sidebar
               mobileOpen={mobileSidebarOpen}
@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Header onToggleMobileSidebar={() => setMobileSidebarOpen(true)} />
 
               {/* Scrollable Canvas / Workspace View */}
-              <main className="flex-1 min-h-0 flex flex-col overflow-y-auto bg-surface rounded-tl-xl sm:rounded-tl-[20px] border-t border-l border-border/80 shadow-2xs">
+              <main className="flex-1 min-h-0 flex flex-col overflow-y-auto bg-surface rounded-none lg:rounded-tl-[20px] border-0 lg:border-t lg:border-l border-border/80 shadow-none lg:shadow-2xs">
                 {children}
               </main>
             </div>

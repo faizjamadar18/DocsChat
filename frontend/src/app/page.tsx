@@ -26,7 +26,7 @@ export default function Home() {
           <AgentworkForAgents />
           {/* <SecurityCompliance /> */}
           <FAQSection />
-          <CTABanner />
+          {/* <CTABanner /> */}
         </main>
         <Footer />
       </div>

@@ -110,20 +110,61 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-accent-hover/30 backdrop-blur-sm md:hidden flex flex-col justify-end">
-          <div className="bg-[#ffffff] rounded-t-2xl p-6 flex flex-col gap-6 max-h-[85vh] overflow-y-auto border-t border-[#e2e1de]">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs md:hidden flex flex-col justify-end transition-opacity duration-300">
+          <div
+            className="fixed inset-0"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative bg-[#ffffff] rounded-t-3xl p-6 pb-safe flex flex-col gap-5 max-h-[85vh] overflow-y-auto border-t border-[#e2e1de] shadow-2xl animate-fade-in">
+            {/* Top Bar with Logo and Close */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#f1f0ef]">
               <AgentworkLogo />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2 text-[#63635e] hover:text-[#21201c]"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-[#63635e] hover:text-[#21201c] hover:bg-[#f1f0ef] transition-colors cursor-pointer"
+                aria-label="Close menu"
               >
                 ✕
               </button>
             </div>
-            <div className="flex flex-col gap-2 pt-2" onClick={() => setMobileMenuOpen(false)}>
-              {renderActionButton('default')}
+
+            {/* In-page navigation links */}
+            <nav className="flex flex-col gap-1 py-1">
+              {[
+                { label: 'Overview', href: '#overview' },
+                { label: 'How it works', href: '#how-it-works' },
+                { label: 'Traceability', href: '#traceability' },
+                { label: 'Connected AI Apps', href: '#connectors' },
+                { label: 'FAQ', href: '#faq' },
+              ].map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="py-3 px-3 rounded-xl text-base font-medium text-[#21201c] hover:bg-[#f9f9f8] transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+
+            {/* Action buttons */}
+            <div className="flex flex-col gap-2.5 pt-2 border-t border-[#f1f0ef]">
+              <Link
+                href="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full h-11 inline-flex items-center justify-center rounded-xl bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-black transition-colors shadow-xs"
+              >
+                Start for free
+              </Link>
+              <div
+                className="w-full flex items-center justify-center py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {renderActionButton('default')}
+              </div>
             </div>
           </div>
         </div>

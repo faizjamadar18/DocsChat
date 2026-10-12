@@ -385,7 +385,7 @@ function PlaygroundContent() {
           <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="min-h-full flex flex-col items-center justify-center px-4 py-12 max-w-2xl mx-auto w-full animate-fade-in">
             {/* Greeting Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-text-primary text-center">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-text-primary text-center">
               {getGreeting()}, {workspaceTitle}
             </h1>
 
@@ -425,7 +425,7 @@ function PlaygroundContent() {
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Ora anything across your workspace..."
+                placeholder="Ask Quello anything across your workspace..."
                 rows={2}
                 spellCheck={false}
                 autoCorrect="off"
@@ -626,7 +626,7 @@ function PlaygroundContent() {
                   >
                     {isUser ? (
                       /* User Message Bubble (Claude / ChatGPT style: subtle neutral #F4F4F6) */
-                      <div className="max-w-[85%] rounded-2xl px-4.5 py-3 bg-[#F4F4F6] border border-border/40 text-text-primary shadow-2xs">
+                      <div className="max-w-[92%] sm:max-w-[85%] rounded-2xl px-3.5 sm:px-4.5 py-2.5 sm:py-3 bg-[#F4F4F6] border border-border/40 text-text-primary shadow-2xs">
                         {(msg.attached_name || (msg.scope_ids && msg.scope_ids.length > 0)) && (
                           <div className="bg-white border border-border/80 text-text-secondary text-[11px] font-medium px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 mb-2 w-fit shadow-2xs">
                             <FilenameIcon
@@ -722,7 +722,7 @@ function PlaygroundContent() {
           </div>
 
             {/* Fixed Bottom Input Footer in Conversation Mode (sibling of scroll region) */}
-            <div className="shrink-0 bg-surface px-4 pt-2 pb-4">
+            <div className="shrink-0 bg-surface px-3 sm:px-4 pt-2 pb-3 sm:pb-4 pb-safe">
               <div className="max-w-3xl w-full mx-auto">
               <div className="bg-white border border-border rounded-2xl p-3 relative transition-all shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_-4px_rgba(16,24,40,0.06),0_16px_40px_-20px_rgba(16,24,40,0.16)] focus-within:ring-2 focus-within:ring-text-primary/10 focus-within:border-text-primary/40 text-text-primary scheme-light">
                 {attachedScope && (

@@ -29,7 +29,7 @@ export default function UseCases() {
     <section
       id="traceability"
       ref={rootRef}
-      className="relative z-2 overflow-hidden bg-[#fdfdfc] px-[5%] py-20 md:py-28 lg:py-36 text-[#21201c]"
+      className="relative z-2 overflow-hidden bg-[#fdfdfc] px-4 sm:px-[5%] py-12 sm:py-20 md:py-28 lg:py-36 text-[#21201c] w-full max-w-full"
     >
       {/* Background radial dot grid */}
       <div
@@ -38,10 +38,10 @@ export default function UseCases() {
       />
 
       <div className="container relative mx-auto max-w-[76rem]">
-        <div className="grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16">
           {/* Left Column: Heading, description, bullets, CTA */}
           <div className="max-w-xl">
-            <h2 className="text-balance text-4xl font-medium leading-[1.08] tracking-[-0.03em] text-[#1a1916] md:text-5xl lg:text-[56px]">
+            <h2 className="text-balance text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-medium leading-[1.08] tracking-[-0.03em] text-[#1a1916]">
               Every answer
               <br />
               shows its work
@@ -49,10 +49,10 @@ export default function UseCases() {
 
             <div className="mt-5 space-y-3 text-pretty text-base leading-relaxed text-[#6b665e]">
               <p>
-                Open any response and see the documents, pull requests, and passages behind it.
+                Open any response and see the documents, technical specs, and exact passages behind it.
               </p>
               <p>
-                Whether you&apos;re preparing a release, resolving a decision, or onboarding a teammate, you can check the source instead of guessing.
+                Whether you&apos;re preparing a release, resolving a decision, or referencing past work, you can check the source instead of guessing.
               </p>
             </div>
 
@@ -72,7 +72,7 @@ export default function UseCases() {
                     <path d="M20 6 9 17l-5-5" />
                   </svg>
                 </span>
-                <span>Inspect citations, page references, and linked pull requests in one click.</span>
+                <span>Inspect citations, page references, and repositories in one click.</span>
               </div>
 
               <div className="flex items-start gap-3 text-sm leading-relaxed text-[#2e2b26]">
@@ -145,21 +145,21 @@ export default function UseCases() {
 
                 {/* AI Assistant Message */}
                 <div className="max-w-[94%] rounded-2xl rounded-bl-md border border-[#e4e4e4] bg-white px-4 py-2.5 text-sm leading-snug text-[#2e2b26] shadow-2xs">
-                  v2 is on track for November 18th following QA sign-off. One blocker remains: OAuth session refresh handling in PR #142, assigned to Marcus with final review pending.
+                  v2 is on track for November 18th following QA sign-off. One blocker remains: OAuth session refresh configuration, documented in auth-specification.md pending production credentials.
                 </div>
               </div>
 
               {/* Trace Audit Card */}
-              <div className="mt-5 rounded-2xl border border-[#e4e4e4] bg-white px-5 py-5 sm:px-6 shadow-[0_18px_44px_-34px_rgba(20,20,45,0.22),0_10px_28px_-16px_rgba(0,0,0,0.06)]">
+              <div className="mt-5 rounded-2xl border border-[#e4e4e4] bg-white p-3.5 sm:p-5 md:px-6 shadow-[0_18px_44px_-34px_rgba(20,20,45,0.22),0_10px_28px_-16px_rgba(0,0,0,0.06)]">
                 {/* Top Divider & Grounded Trace badge */}
-                <div className="relative mb-6 mt-1 flex items-center justify-center">
+                <div className="relative mb-5 sm:mb-6 mt-1 flex items-center justify-center">
                   <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#e4e4e4]" />
                   <span
                     style={{
                       transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
                       transitionDelay: '0ms',
                     }}
-                    className={`relative inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ${
+                    className={`relative inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium text-emerald-700 ${
                       isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                     }`}
                   >
@@ -222,7 +222,7 @@ export default function UseCases() {
                       Reasoning
                     </p>
                     <p className="mt-1 text-sm text-[#2e2b26]">
-                      Cross-referenced Q4 Release Roadmap with latest QA audit and open pull requests
+                      Cross-referenced Q4 Product Roadmap with latest QA audit and repository architecture docs
                     </p>
                   </div>
 
@@ -267,10 +267,10 @@ export default function UseCases() {
                         }`}
                       >
                         <NotionIcon className="size-3.5 shrink-0 text-[#21201c]" />
-                        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-[#2e2b26]">
-                          Q4 Product Roadmap &amp; Milestones · § Release 2.0
+                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-medium leading-snug text-[#2e2b26] truncate sm:whitespace-normal">
+                          Q4 Product Roadmap &amp; Milestones · Release 2.0
                         </span>
-                        <span className="text-[11px] font-medium text-[#8d8d86] tabular-nums">98% match</span>
+                        <span className="text-[10px] sm:text-[11px] font-medium text-[#8d8d86] tabular-nums shrink-0">98% match</span>
                         <svg
                           style={{
                             transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
@@ -296,15 +296,15 @@ export default function UseCases() {
                           transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
                           transitionDelay: '720ms',
                         }}
-                        className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/[0.04] ${
+                        className={`flex items-center gap-2 sm:gap-2.5 rounded-lg bg-[#FAFAF8] px-2 sm:px-2.5 py-1.5 sm:py-2 ring-1 ring-black/[0.04] ${
                           isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                         }`}
                       >
                         <GitHubIcon className="size-3.5 shrink-0 text-[#21201c]" />
-                        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-[#2e2b26]">
-                          PR #142: Fix session refresh race condition
+                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-medium leading-snug text-[#2e2b26] truncate sm:whitespace-normal">
+                          docs/auth-specification.md · § Session Handling
                         </span>
-                        <span className="text-[11px] font-medium text-[#8d8d86] tabular-nums">96% match</span>
+                        <span className="text-[10px] sm:text-[11px] font-medium text-[#8d8d86] tabular-nums shrink-0">96% match</span>
                         <svg
                           style={{
                             transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
@@ -330,15 +330,15 @@ export default function UseCases() {
                           transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
                           transitionDelay: '920ms',
                         }}
-                        className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/[0.04] ${
+                        className={`flex items-center gap-2 sm:gap-2.5 rounded-lg bg-[#FAFAF8] px-2 sm:px-2.5 py-1.5 sm:py-2 ring-1 ring-black/[0.04] ${
                           isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                         }`}
                       >
                         <GoogleDriveIcon className="size-3.5 shrink-0" />
-                        <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-[#2e2b26]">
-                          QA Test Sign-Off &amp; Performance Report.pdf · pg 6
+                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-medium leading-snug text-[#2e2b26] truncate sm:whitespace-normal">
+                          QA Test Sign-Off &amp; Performance Report.pdf ·pg 6
                         </span>
-                        <span className="text-[11px] font-medium text-[#8d8d86] tabular-nums">93% match</span>
+                        <span className="text-[10px] sm:text-[11px] font-medium text-[#8d8d86] tabular-nums shrink-0">93% match</span>
                         <svg
                           style={{
                             transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',

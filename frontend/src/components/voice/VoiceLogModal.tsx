@@ -53,7 +53,7 @@ export default function VoiceLogModal({
 
   if (!log || !isMounted) return null;
 
-  const fullText = `You: ${log.user_text || '(no speech recorded)'}\n\nOra: ${
+  const fullText = `You: ${log.user_text || '(no speech recorded)'}\n\nQuello: ${
     log.ora_text || '(no reply recorded)'
   }`;
 
@@ -118,10 +118,10 @@ export default function VoiceLogModal({
           </div>
           <div>
             <div className="text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">
-              Ora replied
+              Quello replied
             </div>
             <div className="rounded-2xl px-4 py-3 border border-border/40 bg-transparent text-text-primary text-[13px] leading-relaxed whitespace-pre-wrap">
-              {log.ora_text || '(Ora didn’t get to reply before the call ended)'}
+              {log.ora_text || '(Quello didn’t get to reply before the call ended)'}
             </div>
           </div>
         </div>

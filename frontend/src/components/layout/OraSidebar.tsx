@@ -641,28 +641,38 @@ export default function OraSidebar({
   const olderThreads = threads.filter((t) => !isToday(t.updated_at || t.created_at));
 
   return (
-    <aside
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      className={`shrink-0 h-full bg-white flex flex-col select-none relative z-20 transition-all duration-300 ease-in-out overflow-hidden ${
-        isOpen
-          ? 'w-80 sm:w-96 opacity-100 border-l border-border'
-          : 'w-0 opacity-0 border-l-0 pointer-events-none'
-      }`}
-    >
-      {/* Drag & Drop Visual Target Overlay */}
-      {isDragOver && (
-        <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-xs border-2 border-dashed border-zinc-900 rounded-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in pointer-events-none">
-          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3">
-            <Layers className="w-6 h-6 text-text-primary" />
-          </div>
-          <span className="text-sm font-semibold text-text-primary">Drop to add to context</span>
-          <span className="text-xs text-text-secondary mt-1">{mode === 'assets' ? 'Ora adds it to the queried assets' : 'Ora will focus on this source'}</span>
-        </div>
-      )}
+    <>
+      {/* Mobile/Tablet Backdrop when Ora is open */}
+      <div
+        className={`fixed inset-0 bg-black/40 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      <div className="w-80 sm:w-96 h-full flex flex-col shrink-0">
+      <aside
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`fixed inset-y-0 right-0 z-50 w-full sm:w-96 max-w-[92vw] lg:max-w-none bg-white flex flex-col select-none transition-all duration-300 ease-in-out overflow-hidden shadow-2xl lg:shadow-none lg:static lg:h-full lg:shrink-0 lg:z-20 ${
+          isOpen
+            ? 'translate-x-0 lg:translate-x-0 lg:w-80 xl:w-96 opacity-100 lg:border-l border-border pointer-events-auto'
+            : 'translate-x-full lg:translate-x-0 lg:w-0 opacity-0 lg:border-l-0 pointer-events-none'
+        }`}
+      >
+        {/* Drag & Drop Visual Target Overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-xs border-2 border-dashed border-zinc-900 rounded-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in pointer-events-none">
+            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-3">
+              <Layers className="w-6 h-6 text-text-primary" />
+            </div>
+            <span className="text-sm font-semibold text-text-primary">Drop to add to context</span>
+            <span className="text-xs text-text-secondary mt-1">{mode === 'assets' ? 'Quello adds it to the queried assets' : 'Quello will focus on this source'}</span>
+          </div>
+        )}
+
+        <div className="w-full h-full flex flex-col shrink-0">
         {/* Top Header with Chat History Dropdown Trigger (matching Notion user image) */}
       <div className="h-14 px-4 flex items-center justify-between border-b border-border/80 shrink-0 bg-white relative">
         <div className="flex items-center gap-1.5 min-w-0 max-w-[65%]">
@@ -674,7 +684,7 @@ export default function OraSidebar({
             title="Conversation history"
           >
             <span className="text-sm font-semibold truncate tracking-tight">
-              {activeThread?.title || 'Ora'}
+              {activeThread?.title || 'Quello'}
             </span>
             <ChevronDown
               className={`w-3.5 h-3.5 text-text-muted group-hover:text-text-primary shrink-0 transition-transform duration-200 ${
@@ -704,7 +714,7 @@ export default function OraSidebar({
             type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
-            title="Close Ora"
+            title="Close Quello"
           >
             <X className="w-4 h-4" />
           </button>
@@ -944,7 +954,7 @@ export default function OraSidebar({
               <div className="w-10 h-10 rounded-xl bg-sidebar border border-border flex items-center justify-center mb-1">
                 <OraLogoMark className="w-5 h-5 text-text-secondary" />
               </div>
-              <h3 className="text-sm font-semibold text-text-primary">Ask Ora anything</h3>
+              <h3 className="text-sm font-semibold text-text-primary">Ask Quello anything</h3>
               <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
                 Type{' '}
                 <span className="bg-[#F3F4F6] text-text-primary px-1.5 py-0.5 rounded border border-border font-mono text-[11px]">
@@ -1224,7 +1234,7 @@ export default function OraSidebar({
                 ? (scopeCatalog.length === 0
                     ? 'Upload a document to get started...'
                     : (assetsScopeLabel ? `Ask across ${assetsScopeLabel}... or type @` : 'Ask across your assets... or type @'))
-                : 'Ask Ora... or type @'
+                : 'Ask Quello... or type @'
             }
             disabled={streaming}
             className="flex-1 bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
@@ -1255,5 +1265,6 @@ export default function OraSidebar({
       </form>
       </div>
     </aside>
+    </>
   );
 }

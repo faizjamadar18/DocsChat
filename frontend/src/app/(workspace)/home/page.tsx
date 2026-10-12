@@ -191,20 +191,20 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="w-full px-4 sm:px-6 py-8 space-y-6 animate-fade-in">
+    <div className="w-full px-3.5 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in max-w-full overflow-hidden">
       {/* Greeting Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
           {getGreeting()}, {displayName}
         </h1>
-        <p className="text-xs text-text-secondary mt-1 font-normal">
+        <p className="text-xs text-text-secondary mt-0.5 sm:mt-1 font-normal">
           Let&apos;s bring your ideas to life
         </p>
       </div>
 
-      {/* Ask Ora Input Bar */}
+      {/* Ask Quello Input Bar */}
       {mention.attachedScope && (
-        <div className="mb-2 flex items-center gap-1.5 w-fit bg-white border border-border text-text-primary px-3 py-1 rounded-full text-xs font-medium animate-fade-in shadow-2xs">
+        <div className="mb-2 flex items-center gap-1.5 w-fit bg-white border border-border text-text-primary px-3 py-1 rounded-full text-xs font-medium animate-fade-in shadow-2xs max-w-full">
           {mention.attachedScope.type === 'document' ? (
             <StudioDocIcon className="w-3.5 h-3.5 text-text-secondary shrink-0" />
           ) : (
@@ -214,18 +214,18 @@ export default function HomePage() {
               className="w-3.5 h-3.5 text-text-secondary shrink-0"
             />
           )}
-          <span className="truncate max-w-xs">{mention.attachedScope.title}</span>
+          <span className="truncate max-w-[180px] sm:max-w-xs">{mention.attachedScope.title}</span>
           <button
             type="button"
             onClick={() => mention.clearScope()}
-            className="cursor-pointer ml-0.5 text-text-muted hover:text-text-primary"
+            className="cursor-pointer ml-0.5 text-text-muted hover:text-text-primary shrink-0"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
-      <div className="relative rounded-2xl bg-sidebar border border-border p-2 flex items-center gap-3 shadow-2xs hover:border-[#D1D5DB] transition-all">
-        <div className="pl-3 flex items-center text-text-muted">
+      <div className="relative rounded-2xl bg-sidebar border border-border p-2 sm:p-2.5 flex items-center gap-2 sm:gap-3 shadow-2xs hover:border-[#D1D5DB] transition-all">
+        <div className="pl-2 sm:pl-3 flex items-center text-text-muted shrink-0">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-text-secondary">
             <path
               d="M6 4h8a4 4 0 0 1 4 4v1a4 4 0 0 1-4 4H8a4 4 0 0 0-4 4v1a4 4 0 0 0 4 4h10"
@@ -242,8 +242,8 @@ export default function HomePage() {
           value={askQuery}
           onChange={handleAskChange}
           onKeyDown={handleAskKeyDown}
-          placeholder="Ask Ora anything... type @ to reference"
-          className="flex-1 bg-transparent text-sm text-text-primary placeholder-text-muted focus:outline-none"
+          placeholder="Ask Quello anything... type @ to reference"
+          className="flex-1 bg-transparent text-xs sm:text-sm text-text-primary placeholder-text-muted focus:outline-none min-w-0"
         />
         <button
           type="button"
@@ -335,6 +335,42 @@ export default function HomePage() {
         })}
       </div>
 
+      {/* Recent Assets Section */}
+      <div className="space-y-2 pt-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-text-primary">Recent Assets</h2>
+          <Link
+            href="/assets"
+            className="text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
+          >
+            <span>View all</span>
+          </Link>
+        </div>
+
+        <div className="space-y-1">
+          {recentAssets.map((asset) => (
+            <Link
+              key={asset.id}
+              href="/assets"
+              className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
+                  <FilenameIcon filename={asset.title} sourceType={asset.sourceType} className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
+                    {asset.title}
+                  </h4>
+                  <p className="text-[11px] text-text-muted">{asset.subtitle}</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors" />
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Recent Documents Section */}
       <div className="space-y-2 pt-2">
         <div className="flex items-center justify-between">
@@ -371,41 +407,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Recent Assets Section */}
-      <div className="space-y-2 pt-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-text-primary">Recent Assets</h2>
-          <Link
-            href="/assets"
-            className="text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition-colors"
-          >
-            <span>View all</span>
-          </Link>
-        </div>
-
-        <div className="space-y-1">
-          {recentAssets.map((asset) => (
-            <Link
-              key={asset.id}
-              href="/assets"
-              className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
-                  <FilenameIcon filename={asset.title} sourceType={asset.sourceType} className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
-                    {asset.title}
-                  </h4>
-                  <p className="text-[11px] text-text-muted">{asset.subtitle}</p>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors" />
-            </Link>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

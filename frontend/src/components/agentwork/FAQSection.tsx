@@ -29,7 +29,7 @@ const FAQS = [
       'Yes. Quello gives each workspace a secure URL you can add to a connected AI app. That app can then search your workspace directly, with the same access controls. You can revoke access anytime.',
   },
   {
-    question: 'Is my team’s data kept private?',
+    question: 'Is my data kept private?',
     answer:
       'Yes. Each workspace is kept separate, access is protected by Google sign-in, and your documents are never used to train public models. Disconnect any source whenever you want.',
   },
@@ -43,10 +43,10 @@ export default function FAQSection() {
   };
 
   return (
-    <section className="flex flex-col items-center px-6 py-16 md:py-24">
-      <div className="flex w-full max-w-300 flex-col md:flex-row gap-10 md:gap-16 items-start">
+    <section id="faq" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-16 md:py-24 w-full max-w-full overflow-hidden">
+      <div className="flex w-full max-w-300 flex-col md:flex-row gap-8 md:gap-16 items-start">
         {/* Left Heading */}
-        <h2 className="text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c] md:w-1/3 shrink-0">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c] md:w-1/3 shrink-0">
           Frequently
           <br className="hidden md:block" /> Asked
           <br className="hidden md:block" /> Questions
