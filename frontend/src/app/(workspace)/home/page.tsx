@@ -64,9 +64,12 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!user?.active_workspace_id) return;
+      // Key on the live workspace context (not the stale session snapshot) so
+      // switching workspaces refills Home immediately, without a refresh.
+      const wsId = currentWorkspace?.id || user?.active_workspace_id;
+      if (!wsId) return;
       try {
-        const data = await api.get(`/workspaces/${user.active_workspace_id}/dashboard`);
+        const data = await api.get(`/workspaces/${wsId}/dashboard`);
         if (data) {
           const assets: RecentItem[] = (data.recent_assets || []).map((a: { id: string; filename: string; file_size: number; uploaded_at: string; source_type?: string }) => ({
             id: a.id,
@@ -90,7 +93,7 @@ export default function HomePage() {
       }
     }
     loadData();
-  }, [user?.active_workspace_id]);
+  }, [currentWorkspace?.id, user?.active_workspace_id]);
 
   // Full workspace source lists for the @ mention dropdown.
   useEffect(() => {
