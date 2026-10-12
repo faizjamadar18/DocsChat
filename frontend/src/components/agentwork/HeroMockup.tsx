@@ -71,11 +71,6 @@ export default function HeroMockup() {
       title: 'System Architecture & Unified Indexing Spec',
       subtitle: 'Edited today',
     },
-    {
-      id: 'doc-2',
-      title: 'Multi-Source RAG Synthesis & Context Guidelines',
-      subtitle: 'Edited 2 days ago',
-    },
   ];
 
   const chatHistory = [
@@ -299,13 +294,13 @@ export default function HeroMockup() {
           </div>
 
           {/* Recent Assets Section */}
-          <div className="space-y-1.5 pt-1">
+          <div className="pt-2">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold text-text-primary">Recent Assets</h2>
               <span className="text-[11px] text-text-secondary cursor-default">View all</span>
             </div>
 
-            <div className="space-y-1">
+            <div>
               {recentAssets.map((asset) => {
                 const Icon = asset.icon;
                 return (
@@ -332,13 +327,13 @@ export default function HeroMockup() {
           </div>
 
           {/* Recent Documents Section */}
-          <div className="space-y-1.5 pt-1">
+          <div>
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold text-text-primary">Recent Documents</h2>
               <span className="text-[11px] text-text-secondary cursor-default">View all</span>
             </div>
 
-            <div className="space-y-1">
+            <div>
               {recentDocs.map((doc) => (
                 <div
                   key={doc.id}
