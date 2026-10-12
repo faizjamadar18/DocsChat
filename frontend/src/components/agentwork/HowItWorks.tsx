@@ -81,7 +81,6 @@ export default function HowItWorks() {
   const [activeStep, setActiveStep] = useState<number>(0);
   const [cycleKey, setCycleKey] = useState<number>(0);
   const [typedText, setTypedText] = useState<string>('');
-  const [isTypingPhase, setIsTypingPhase] = useState<boolean>(false);
   const [manualOverride, setManualOverride] = useState<boolean>(false);
 
   // Stagger order for icons in Step 1
@@ -103,9 +102,8 @@ export default function HowItWorks() {
         setActiveStep(1);
       }, 4200);
     } else if (activeStep === 1) {
-      // Step 1: Prompt typing
-      setIsTypingPhase(true);
-      setTypedText('');
+      // Step 1: Prompt typing (reset + start inside the kickoff tick so the
+      // effect body itself never sets state synchronously)
       let charIndex = 0;
       let isDeleting = false;
       let typingInterval: NodeJS.Timeout;
@@ -129,7 +127,6 @@ export default function HowItWorks() {
           if (charIndex <= 0) {
             // Typing cycle finished, move to step 2 after brief pause
             typingInterval = setTimeout(() => {
-              setIsTypingPhase(false);
               setActiveStep(2);
             }, 500);
             return;
@@ -138,8 +135,11 @@ export default function HowItWorks() {
         }
       };
 
-      // Initial pause before typing starts
-      typingInterval = setTimeout(runTyping, 700);
+      // Initial pause before typing starts (reset here, inside the tick)
+      typingInterval = setTimeout(() => {
+        setTypedText('');
+        runTyping();
+      }, 700);
 
       return () => {
         clearTimeout(timeoutId);
@@ -173,7 +173,6 @@ export default function HowItWorks() {
       setCycleKey((k) => k + 1);
     } else if (index === 1) {
       setTypedText(fullPrompt);
-      setIsTypingPhase(true);
     }
     // Re-enable auto-cycling after 10 seconds of user inactivity
     setTimeout(() => {
