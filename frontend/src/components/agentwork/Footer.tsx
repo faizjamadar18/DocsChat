@@ -78,7 +78,7 @@ export default function Footer() {
               src="/images/footer-wordmark.svg"
               alt="Quello.dev"
               fill
-              priority
+              loading="lazy"
               className="object-contain object-bottom drop-shadow-[0_8px_20px_rgba(255,255,255,0.95)]"
             />
           </div>
