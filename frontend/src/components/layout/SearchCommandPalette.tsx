@@ -55,6 +55,16 @@ export default function SearchCommandPalette({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // Reset query/selection when the modal opens. Adjusted during render (not in
+  // an effect) so server and client renders stay consistent.
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setSearchQuery('');
+      setSelectedIndex(0);
+    }
+  }
 
   // Dynamic workspace items
   const [docs, setDocs] = useState<{ id: string; title: string; updated_at?: string }[]>([]);
@@ -94,16 +104,13 @@ export default function SearchCommandPalette({
     };
   }, [isOpen, currentWorkspace?.id]);
 
-  // Focus input and reset selection when modal opens
+  // Focus input when modal opens (no state sync here — reset happens above)
   useEffect(() => {
-    if (isOpen) {
-      setSearchQuery('');
-      setSelectedIndex(0);
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 30);
-      return () => clearTimeout(timer);
-    }
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 30);
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
   // Global keyboard shortcut to toggle Command Palette (Cmd+K / Ctrl+K)
@@ -331,22 +338,17 @@ export default function SearchCommandPalette({
     ...filteredSettings
   );
 
-  // Keep selectedIndex within bounds
-  useEffect(() => {
-    setSelectedIndex((prev) => {
-      if (allItems.length === 0) return 0;
-      if (prev >= allItems.length) return allItems.length - 1;
-      return prev;
-    });
-  }, [allItems.length]);
+  // Clamp the selection during render instead of syncing it in an effect.
+  const clampedIndex =
+    allItems.length === 0 ? 0 : Math.min(Math.max(selectedIndex, 0), allItems.length - 1);
 
   // Scroll active item into view
   useEffect(() => {
-    const activeEl = document.getElementById(`command-item-${selectedIndex}`);
+    const activeEl = document.getElementById(`command-item-${clampedIndex}`);
     if (activeEl) {
       activeEl.scrollIntoView({ block: 'nearest' });
     }
-  }, [selectedIndex]);
+  }, [clampedIndex]);
 
   // Keyboard navigation inside modal
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -358,7 +360,7 @@ export default function SearchCommandPalette({
       setSelectedIndex((prev) => (allItems.length ? (prev - 1 + allItems.length) % allItems.length : 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const current = allItems[selectedIndex];
+      const current = allItems[clampedIndex];
       if (current) {
         current.action();
         onClose();
@@ -439,7 +441,7 @@ export default function SearchCommandPalette({
                   <div className="space-y-0.5">
                     {categoryItems.map((item) => {
                       const itemIndex = globalItemIndex++;
-                      const isSelected = itemIndex === selectedIndex;
+                      const isSelected = itemIndex === clampedIndex;
 
                       return (
                         <div

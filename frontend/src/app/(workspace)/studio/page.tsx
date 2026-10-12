@@ -61,11 +61,11 @@ export default function StudioPage() {
           setTitleInput(toSelect.title);
           setActiveDocTitle(toSelect.title);
         } else {
-          // Provision default "Test" document if workspace is empty
+          // Provision a blank document if the workspace is empty
           const created = await api.post(
             '/documents',
             {
-              title: 'Test',
+              title: 'Untitled Document',
               content_text: '',
               content_json: {},
             },

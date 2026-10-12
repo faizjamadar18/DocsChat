@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
 import {
   LogOut,
   Trash2,
   Upload,
-  ChevronDown,
   Eye,
   EyeOff,
   Mic,
@@ -19,14 +17,11 @@ import {
   X,
   Plus,
   Building,
-  Globe,
-  Bell,
-  Palette,
   User as UserIcon,
   Loader2,
 } from 'lucide-react';
-import { useWorkspace, type Workspace } from '../../../context/WorkspaceContext';
-import { useAuth } from '../../../hooks/useAuth';
+import { useWorkspace } from '../../../context/WorkspaceContext';
+import { useAuth, notifyUserUpdated } from '../../../hooks/useAuth';
 import { api } from '../../../lib/api';
 import { useVapiKey } from '../../../hooks/useVapiKey';
 import { useVoiceLogs, type VoiceLog } from '../../../hooks/useVoiceLogs';
@@ -85,22 +80,10 @@ const sanitizeSlug = (val: string) => {
     .replace(/^-|-$/g, '');
 };
 
-const applyThemePreference = (mode: string) => {
-  if (typeof window === 'undefined') return;
-  if (mode === 'Dark') {
-    document.documentElement.classList.add('dark');
-  } else if (mode === 'Light') {
-    document.documentElement.classList.remove('dark');
-  } else {
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('dark', prefersDark);
-  }
-};
-
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'voice'>('account');
   const { currentWorkspace, refreshWorkspaces, workspaces, switchWorkspace } = useWorkspace();
-  const { user, logout, setUser, refreshUser } = useAuth();
+  const { user, logout, setUser } = useAuth();
   const { status: vapiStatus, saving: vapiSaving, error: vapiError, saveKey, deleteKey } = useVapiKey();
   const { logs: voiceLogs, loading: voiceLogsLoading, deleteLog: deleteVoiceLog } = useVoiceLogs(currentWorkspace?.id);
   const [selectedVoiceLog, setSelectedVoiceLog] = useState<VoiceLog | null>(null);
@@ -115,47 +98,15 @@ export default function SettingsPage() {
   const [vapiSavedFlash, setVapiSavedFlash] = useState(false);
 
   // Profile Form State
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSavedFlash, setProfileSavedFlash] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profilePicUploading, setProfilePicUploading] = useState(false);
   const [profilePicError, setProfilePicError] = useState('');
-  const [profilePicFlash, setProfilePicFlash] = useState(false);
-
-  // Synchronize Profile Name from user state
-  useEffect(() => {
-    if (user?.username) {
-      const parts = user.username.trim().split(' ');
-      setFirstName(parts[0] || '');
-      setLastName(parts.slice(1).join(' ') || '');
-    }
-  }, [user?.username]);
-
-  // Preferences Form State
-  const [language, setLanguage] = useState('English');
-  const [colorMode, setColorMode] = useState('System');
-  const [weeklySummary, setWeeklySummary] = useState(true);
-  const [dailySummary, setDailySummary] = useState(false);
-  const [productEmails, setProductEmails] = useState(true);
-  const [preferencesSaving, setPreferencesSaving] = useState(false);
-  const [preferencesSavedFlash, setPreferencesSavedFlash] = useState(false);
-  const [preferencesError, setPreferencesError] = useState('');
-
-  // Synchronize Preferences from user state
-  useEffect(() => {
-    if (user?.preferences) {
-      if (user.preferences.language) setLanguage(user.preferences.language);
-      if (user.preferences.colorMode) {
-        setColorMode(user.preferences.colorMode);
-        applyThemePreference(user.preferences.colorMode);
-      }
-      if (typeof user.preferences.weeklySummary === 'boolean') setWeeklySummary(user.preferences.weeklySummary);
-      if (typeof user.preferences.dailySummary === 'boolean') setDailySummary(user.preferences.dailySummary);
-      if (typeof user.preferences.productEmails === 'boolean') setProductEmails(user.preferences.productEmails);
-    }
-  }, [user?.preferences]);
+  // Staged (unsaved) picture changes: preview of a newly uploaded image, or a
+  // staged removal. Nothing persists until Save Profile is clicked.
+  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
+  const [profilePicRemoved, setProfilePicRemoved] = useState(false);
 
   // Workspace Form State
   const [workspaceName, setWorkspaceName] = useState(currentWorkspace?.name || 'My Workspace');
@@ -167,16 +118,21 @@ export default function SettingsPage() {
   const [workspaceError, setWorkspaceError] = useState('');
   const [workspaceLogoUploading, setWorkspaceLogoUploading] = useState(false);
 
-  // Keep the workspace form in sync when active workspace loads or switches
-  useEffect(() => {
-    if (currentWorkspace) {
-      setWorkspaceName(currentWorkspace.name || 'My Workspace');
-      setSlug(currentWorkspace.slug || 'workspace');
-      setDescription(currentWorkspace.description || '');
-      setWorkspaceLogo(currentWorkspace.logo_url || null);
-      setWorkspaceError('');
-    }
-  }, [currentWorkspace?.id, currentWorkspace?.updated_at]);
+  // Keep the workspace form in sync when the active workspace loads, switches,
+  // or refreshes after a save. State is adjusted during render (not in an
+  // effect) so server and client renders stay consistent.
+  const wsSyncKey = currentWorkspace
+    ? `${currentWorkspace.id}::${currentWorkspace.updated_at ?? ''}`
+    : 'none';
+  const [prevWsSyncKey, setPrevWsSyncKey] = useState(wsSyncKey);
+  if (wsSyncKey !== prevWsSyncKey) {
+    setPrevWsSyncKey(wsSyncKey);
+    setWorkspaceName(currentWorkspace?.name || 'My Workspace');
+    setSlug(currentWorkspace?.slug || 'workspace');
+    setDescription(currentWorkspace?.description || '');
+    setWorkspaceLogo(currentWorkspace?.logo_url || null);
+    setWorkspaceError('');
+  }
 
   // Create Workspace Modal State
   const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
@@ -197,35 +153,37 @@ export default function SettingsPage() {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteAccountError, setDeleteAccountError] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  // Client-only gate for createPortal targets. useSyncExternalStore keeps
+  // server (false) and client (true) renders consistent without an effect.
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   // Modal Close Handlers
-  const handleCloseDeleteAccount = () => {
+  const handleCloseDeleteAccount = useCallback(() => {
     if (deletingAccount) return;
     setShowDeleteAccount(false);
     setDeleteConfirmEmail('');
     setDeleteAccountError('');
-  };
+  }, [deletingAccount]);
 
-  const handleCloseDeleteWorkspace = () => {
+  const handleCloseDeleteWorkspace = useCallback(() => {
     if (deletingWorkspace) return;
     setShowDeleteWorkspace(false);
     setDeleteConfirmWsName('');
     setDeleteWorkspaceError('');
-  };
+  }, [deletingWorkspace]);
 
-  const handleCloseCreateWorkspace = () => {
+  const handleCloseCreateWorkspace = useCallback(() => {
     if (creatingWorkspace) return;
     setShowCreateWorkspace(false);
     setNewWsName('');
     setNewWsSlug('');
     setNewWsDescription('');
     setCreateWorkspaceError('');
-  };
+  }, [creatingWorkspace]);
 
   // Keyboard shortcut (Escape) to close modals
   useEffect(() => {
@@ -238,9 +196,10 @@ export default function SettingsPage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showDeleteAccount, deletingAccount, showDeleteWorkspace, deletingWorkspace, showCreateWorkspace, creatingWorkspace]);
+  }, [showDeleteAccount, deletingAccount, showDeleteWorkspace, deletingWorkspace, showCreateWorkspace, creatingWorkspace, handleCloseDeleteAccount, handleCloseDeleteWorkspace, handleCloseCreateWorkspace]);
 
-  // Profile Picture Upload Handler
+  // Profile Picture Upload Handler — stages a preview only. The image is
+  // persisted when Save Profile is clicked, so it renders site-wide at once.
   const handleProfilePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -248,10 +207,8 @@ export default function SettingsPage() {
       setProfilePicUploading(true);
       setProfilePicError('');
       const dataUrl = await resizeImage(file, 256, 256);
-      const updated = await api.patch('/auth/profile', { picture: dataUrl });
-      if (setUser) setUser(updated);
-      setProfilePicFlash(true);
-      setTimeout(() => setProfilePicFlash(false), 3000);
+      setProfilePicPreview(dataUrl);
+      setProfilePicRemoved(false);
     } catch (err: unknown) {
       setProfilePicError(err instanceof Error ? err.message : 'Failed to upload photo.');
     } finally {
@@ -260,32 +217,30 @@ export default function SettingsPage() {
     }
   };
 
-  // Profile Picture Remove Handler
-  const handleRemoveProfilePic = async () => {
-    try {
-      setProfilePicUploading(true);
-      setProfilePicError('');
-      const updated = await api.patch('/auth/profile', { picture: '' });
-      if (setUser) setUser(updated);
-    } catch (err: unknown) {
-      setProfilePicError(err instanceof Error ? err.message : 'Failed to remove photo.');
-    } finally {
-      setProfilePicUploading(false);
-    }
-  };
-
-  // Save Full Name Handler
-  const handleSaveProfile = async () => {
-    const full = `${firstName.trim()} ${lastName.trim()}`.trim();
-    if (!full) {
-      setProfileError('Name cannot be empty.');
+  // Profile Picture Remove Handler — stages the removal until Save Profile.
+  const handleRemoveProfilePic = () => {
+    if (profilePicPreview) {
+      setProfilePicPreview(null);
       return;
     }
+    setProfilePicRemoved(true);
+  };
+
+  // Save staged picture Handler — persists the previewed/removed photo so the
+  // avatar renders site-wide at once.
+  const handleSaveProfile = async () => {
+    if (!profilePicPreview && !profilePicRemoved) return;
     setProfileSaving(true);
     setProfileError('');
     try {
-      const updated = await api.patch('/auth/profile', { username: full });
+      const payload: { picture: string } = {
+        picture: profilePicPreview ?? '',
+      };
+      const updated = await api.patch('/auth/profile', payload);
       if (setUser) setUser(updated);
+      notifyUserUpdated();
+      setProfilePicPreview(null);
+      setProfilePicRemoved(false);
       setProfileSavedFlash(true);
       setTimeout(() => setProfileSavedFlash(false), 3000);
     } catch (err: unknown) {
@@ -295,32 +250,8 @@ export default function SettingsPage() {
     }
   };
 
-  // Save Preferences Handler
-  const handleSavePreferences = async () => {
-    setPreferencesSaving(true);
-    setPreferencesError('');
-    try {
-      const updated = await api.patch('/auth/profile', {
-        preferences: {
-          language,
-          colorMode,
-          weeklySummary,
-          dailySummary,
-          productEmails,
-        },
-      });
-      if (setUser) setUser(updated);
-      applyThemePreference(colorMode);
-      setPreferencesSavedFlash(true);
-      setTimeout(() => setPreferencesSavedFlash(false), 3000);
-    } catch (err: unknown) {
-      setPreferencesError(err instanceof Error ? err.message : 'Failed to save preferences.');
-    } finally {
-      setPreferencesSaving(false);
-    }
-  };
-
-  // Workspace Logo Upload Handler
+  // Workspace Logo Upload Handler — stages a preview only. The logo is
+  // persisted when Save Changes is clicked, so it renders site-wide at once.
   const handleWorkspaceLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -329,14 +260,6 @@ export default function SettingsPage() {
       setWorkspaceError('');
       const dataUrl = await resizeImage(file, 256, 256);
       setWorkspaceLogo(dataUrl);
-
-      // If active workspace exists, persist immediately
-      if (currentWorkspace && currentWorkspace.id !== 'default') {
-        await api.put(`/workspaces/${currentWorkspace.id}`, {
-          logo_url: dataUrl,
-        });
-        await refreshWorkspaces();
-      }
     } catch (err: unknown) {
       setWorkspaceError(err instanceof Error ? err.message : 'Failed to upload workspace logo.');
     } finally {
@@ -345,22 +268,9 @@ export default function SettingsPage() {
     }
   };
 
-  // Workspace Logo Remove Handler
-  const handleRemoveWorkspaceLogo = async () => {
-    try {
-      setWorkspaceLogoUploading(true);
-      setWorkspaceLogo(null);
-      if (currentWorkspace && currentWorkspace.id !== 'default') {
-        await api.put(`/workspaces/${currentWorkspace.id}`, {
-          logo_url: null,
-        });
-        await refreshWorkspaces();
-      }
-    } catch (err: unknown) {
-      setWorkspaceError(err instanceof Error ? err.message : 'Failed to remove workspace logo.');
-    } finally {
-      setWorkspaceLogoUploading(false);
-    }
+  // Workspace Logo Remove Handler — stages the removal until Save Changes.
+  const handleRemoveWorkspaceLogo = () => {
+    setWorkspaceLogo(null);
   };
 
   // Save Workspace Handler
@@ -443,7 +353,7 @@ export default function SettingsPage() {
       })
     : '8 Oct 2026';
 
-  const userInitial = (firstName || user?.username || 'U').charAt(0).toUpperCase();
+  const userInitial = (user?.username || 'U').charAt(0).toUpperCase();
 
   return (
     <div className="w-full px-3.5 sm:px-6 py-6 sm:py-8 space-y-6 animate-fade-in">
@@ -510,7 +420,7 @@ export default function SettingsPage() {
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            Voice Logs
+            Voice Settings
           </button>
         </div>
       </div>
@@ -552,10 +462,9 @@ export default function SettingsPage() {
                       )}
                       {profilePicUploading ? 'Uploading...' : 'Upload Image'}
                     </button>
-                    {user?.picture && (
+                    {(profilePicPreview || (user?.picture && !profilePicRemoved)) && (
                       <button
                         type="button"
-                        disabled={profilePicUploading}
                         onClick={handleRemoveProfilePic}
                         className="px-3 py-1.5 rounded-xl text-xs font-medium text-text-muted hover:text-red-600 transition-colors cursor-pointer"
                       >
@@ -563,24 +472,19 @@ export default function SettingsPage() {
                       </button>
                     )}
                   </div>
-                  {profilePicFlash && (
-                    <span className="text-xs text-emerald-600 font-medium inline-flex items-center gap-1 mt-2">
-                      <Check className="w-3.5 h-3.5" /> Profile photo updated
-                    </span>
-                  )}
                   {profilePicError && (
                     <span className="text-xs text-red-600 font-medium block mt-2">{profilePicError}</span>
                   )}
                 </div>
               </div>
 
-              {/* Avatar circle */}
+              {/* Avatar circle — shows staged preview first, then saved picture */}
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-neutral-800 text-white border-2 border-border flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-inner shrink-0 overflow-hidden self-start sm:self-auto relative group">
-                {user?.picture ? (
+                {(profilePicPreview || (!profilePicRemoved && user?.picture)) ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={user.picture}
-                    alt={user.username || 'Avatar'}
+                    src={profilePicPreview ?? user?.picture ?? ''}
+                    alt={user?.username || 'Avatar'}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -594,34 +498,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Editable Name Inputs */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-border/50">
-              <label className="text-xs sm:text-sm font-medium text-text-primary sm:w-48 shrink-0">
-                Full Name
-              </label>
-              <div className="w-full sm:max-w-xl lg:max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] text-text-muted mb-1 font-medium">First name</label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="First name"
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-text-muted mb-1 font-medium">Last name</label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="Last name"
-                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
-                  />
-                </div>
-              </div>
-            </div>
+
 
             {/* Readonly: Sign-in Email */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-6 py-4 border-b border-border/50">
@@ -653,7 +530,7 @@ export default function SettingsPage() {
             <div className="pt-2 flex items-center gap-3">
               <button
                 type="button"
-                disabled={profileSaving}
+                disabled={profileSaving || (!profilePicPreview && !profilePicRemoved)}
                 onClick={handleSaveProfile}
                 className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer disabled:opacity-60 shadow-xs inline-flex items-center gap-2"
               >
@@ -667,145 +544,6 @@ export default function SettingsPage() {
               )}
               {profileError && (
                 <span className="text-xs text-red-600 font-medium">{profileError}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Card 2: Preferences & Appearance */}
-          <div className="w-full bg-surface border border-border rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xs">
-            <div className="pb-4 border-b border-border/60">
-              <h2 className="text-base sm:text-lg font-semibold font-heading text-text-primary flex items-center gap-2">
-                <Palette className="w-4 h-4 text-text-primary" />
-                Preferences & Appearance
-              </h2>
-              <p className="text-xs sm:text-sm text-text-secondary mt-1">
-                Customize your interface language, appearance mode, and notification alerts.
-              </p>
-            </div>
-
-            {/* Language Selector */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-6 py-3 border-b border-border/50">
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-text-primary block">
-                  Interface Language
-                </label>
-                <p className="text-[11px] text-text-muted mt-0.5">Select preferred display language</p>
-              </div>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="w-full sm:max-w-xs px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-              >
-                <option value="English">English (United States)</option>
-                <option value="Spanish">Español (Spanish)</option>
-                <option value="French">Français (French)</option>
-                <option value="German">Deutsch (German)</option>
-                <option value="Japanese">日本語 (Japanese)</option>
-                <option value="Portuguese">Português (Portuguese)</option>
-                <option value="Hindi">हिन्दी (Hindi)</option>
-              </select>
-            </div>
-
-            {/* Theme / Appearance Mode */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-6 py-3 border-b border-border/50">
-              <div>
-                <label className="text-xs sm:text-sm font-medium text-text-primary block">
-                  Theme Appearance
-                </label>
-                <p className="text-[11px] text-text-muted mt-0.5">Choose between light, dark, or system preference</p>
-              </div>
-              <select
-                value={colorMode}
-                onChange={(e) => {
-                  setColorMode(e.target.value);
-                  applyThemePreference(e.target.value);
-                }}
-                className="w-full sm:max-w-xs px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-              >
-                <option value="System">System Default</option>
-                <option value="Light">Light Mode</option>
-                <option value="Dark">Dark Mode</option>
-              </select>
-            </div>
-
-            {/* Email Notifications */}
-            <div className="space-y-3 py-2">
-              <label className="text-xs sm:text-sm font-medium text-text-primary block">
-                Notification Preferences
-              </label>
-
-              <div className="space-y-3">
-                <label className="flex items-start gap-3 p-3 rounded-xl border border-border/60 hover:bg-sidebar/30 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={weeklySummary}
-                    onChange={(e) => setWeeklySummary(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-border text-neutral-900 focus:ring-primary cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-xs sm:text-sm font-medium text-text-primary block">
-                      Weekly Workspace Summary
-                    </span>
-                    <span className="text-xs text-text-muted block mt-0.5">
-                      Receive an executive summary of document updates, chat insights, and team activity once a week.
-                    </span>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-3 p-3 rounded-xl border border-border/60 hover:bg-sidebar/30 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dailySummary}
-                    onChange={(e) => setDailySummary(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-border text-neutral-900 focus:ring-primary cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-xs sm:text-sm font-medium text-text-primary block">
-                      Daily Activity Digest
-                    </span>
-                    <span className="text-xs text-text-muted block mt-0.5">
-                      Get daily digests whenever new documents, connectors, or vectors finish processing.
-                    </span>
-                  </div>
-                </label>
-
-                <label className="flex items-start gap-3 p-3 rounded-xl border border-border/60 hover:bg-sidebar/30 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={productEmails}
-                    onChange={(e) => setProductEmails(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-border text-neutral-900 focus:ring-primary cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-xs sm:text-sm font-medium text-text-primary block">
-                      Product News & Feature Announcements
-                    </span>
-                    <span className="text-xs text-text-muted block mt-0.5">
-                      Stay informed about major Quello capabilities, MCP integrations, and voice enhancements.
-                    </span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Save Preferences Button */}
-            <div className="pt-2 flex items-center gap-3">
-              <button
-                type="button"
-                disabled={preferencesSaving}
-                onClick={handleSavePreferences}
-                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer disabled:opacity-60 shadow-xs inline-flex items-center gap-2"
-              >
-                {preferencesSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {preferencesSaving ? 'Saving...' : 'Save Preferences'}
-              </button>
-              {preferencesSavedFlash && (
-                <span className="text-xs text-emerald-600 font-medium inline-flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> Preferences saved successfully
-                </span>
-              )}
-              {preferencesError && (
-                <span className="text-xs text-red-600 font-medium">{preferencesError}</span>
               )}
             </div>
           </div>
