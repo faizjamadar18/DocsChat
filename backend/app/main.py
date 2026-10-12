@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -45,12 +46,25 @@ fastapi_app = FastAPI(
 fastapi_app.middleware("http")(catch_unhandled_exceptions)
 
 
-# CORS origins used by health endpoint and middleware
-_cors_origins = [
+# CORS origins used by health endpoint and middleware.
+# Defaults cover local dev + production. Extra origins can be added via
+# the CORS_ORIGINS env var (comma-separated) without a code change.
+_default_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://docschats.vercel.app",
+    "https://quello.dev",
+    "https://www.quello.dev",
 ]
+
+_env_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+# Dedupe while preserving order: env origins first, then defaults.
+_cors_origins = list(dict.fromkeys(_env_origins + _default_origins))
 
 # Register all routes on the FastAPI instance before wrapping
 fastapi_app.include_router(auth.router)
