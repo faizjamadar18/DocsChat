@@ -239,7 +239,7 @@ export default function AgentworkForAgents() {
               width={56}
               height={56}
               className="size-full"
-              priority
+              loading="lazy"
             />
           </div>
 

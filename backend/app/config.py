@@ -52,7 +52,9 @@ class Settings(BaseSettings):
     MCP_ISSUER_URL: str = ""
 
     # Deployment
-    CORS_ORIGINS: str = "https://docschats.vercel.app"
+    # Comma-separated list of allowed frontend origins. Must include the
+    # production domain or browsers block cross-site auth calls (CORS preflight).
+    CORS_ORIGINS: str = "https://quello.dev,https://www.quello.dev,https://docschats.vercel.app"
 
     model_config = SettingsConfigDict(
         env_file=_env_path if os.path.isfile(_env_path) else None,

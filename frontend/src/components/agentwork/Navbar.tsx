@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AgentworkLogo } from './Icons';
 import { useAuth } from '../../hooks/useAuth';
-import { auth } from '../../lib/auth';
 
 export default function Navbar() {
   const [isSticky, setIsSticky] = useState(false);
@@ -21,9 +20,12 @@ export default function Navbar() {
   }, []);
 
   const renderActionButton = (size: 'default' | 'sm' = 'default') => {
-    // Render on first paint: token read is sync. useAuth confirms async —
-    // if the token turns out invalid it clears it and we fall back to sign in.
-    const showDashboard = isAuthenticated || (loading && auth.isAuthenticated());
+    // Hydration-safe: server and first client paint must match.
+    // useAuth starts with loading=true on both, so render nothing until
+    // the async user fetch resolves. Reading localStorage during render
+    // would diverge (null on server vs token on client).
+    if (loading) return null;
+    const showDashboard = isAuthenticated;
     const label = showDashboard ? 'dashboard' : 'sign in';
     const href = showDashboard ? '/home' : '/login';
     return (

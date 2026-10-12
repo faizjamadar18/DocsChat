@@ -2,14 +2,17 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { AgentworkLogo } from './Icons';
 
 export default function Footer() {
   const navLinks = [
-    { label: 'Overview', href: '#overview' },
-    { label: 'How it works', href: '#how-it-works' },
-    { label: 'Traceability', href: '#traceability' },
-    { label: 'Connected AI Apps', href: '#connectors' },
+    { label: 'Overview', href: '/#overview' },
+    { label: 'How it works', href: '/#how-it-works' },
+    { label: 'Traceability', href: '/#traceability' },
+    { label: 'Connected AI Apps', href: '/#connectors' },
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
   ];
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -40,16 +43,30 @@ export default function Footer() {
 
             {/* Single Row of Navigation Links */}
             <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-4 sm:gap-6 md:gap-8">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={(e) => handleSmoothScroll(e, link.href)}
-                  className="text-xs sm:text-sm font-medium text-[#63635e] hover:text-[#ff6a00] transition-colors whitespace-nowrap"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const isInternalPage = link.href.startsWith('/') && !link.href.includes('#');
+                if (isInternalPage) {
+                  return (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className="text-xs sm:text-sm font-medium text-[#63635e] hover:text-[#ff6a00] transition-colors whitespace-nowrap"
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                }
+                return (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    onClick={(e) => handleSmoothScroll(e, link.href)}
+                    className="text-xs sm:text-sm font-medium text-[#63635e] hover:text-[#ff6a00] transition-colors whitespace-nowrap"
+                  >
+                    {link.label}
+                  </a>
+                );
+              })}
             </nav>
           </div>
         </div>
@@ -61,7 +78,7 @@ export default function Footer() {
               src="/images/footer-wordmark.svg"
               alt="Quello.dev"
               fill
-              priority
+              loading="lazy"
               className="object-contain object-bottom drop-shadow-[0_8px_20px_rgba(255,255,255,0.95)]"
             />
           </div>
