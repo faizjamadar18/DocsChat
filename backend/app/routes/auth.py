@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from bson import ObjectId
 import app.database as database
 from app.database import check_db, slugify
-from app.models.user import GoogleAuthRequest, UserResponse, TokenResponse, OnboardingRequest
+from app.models.user import GoogleAuthRequest, UserResponse, TokenResponse, OnboardingRequest, ProfileUpdateRequest
 from app.services.auth_service import create_access_token
 from app.middleware.auth_middleware import get_current_user
 from app.services import vector_store as vs
@@ -221,6 +221,52 @@ async def get_current_user_profile(current_user: dict = Depends(get_current_user
         picture=current_user.get("picture"),
         active_workspace_id=current_user.get("active_workspace_id"),
         onboarding_completed=current_user.get("onboarding_completed", True),
+        preferences=current_user.get("preferences"),
+        created_at=current_user["created_at"],
+    )
+
+
+@router.patch("/profile", response_model=UserResponse)
+async def update_profile(
+    data: ProfileUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Update current user profile (name, avatar picture, preferences)."""
+    try:
+        check_db()
+    except database.DatabaseNotReadyError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+
+    user_id = current_user["id"]
+    updates = {}
+    if data.username is not None:
+        cleaned_name = data.username.strip()
+        if cleaned_name:
+            updates["username"] = cleaned_name
+    if data.picture is not None:
+        updates["picture"] = data.picture if data.picture.strip() else None
+    if data.preferences is not None:
+        existing_prefs = current_user.get("preferences") or {}
+        existing_prefs.update(data.preferences)
+        updates["preferences"] = existing_prefs
+
+    if updates:
+        updates["updated_at"] = datetime.now(timezone.utc)
+        await database.users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": updates}
+        )
+        current_user.update(updates)
+
+    return UserResponse(
+        id=user_id,
+        username=current_user.get("username", "User"),
+        email=current_user["email"],
+        auth_provider=current_user.get("auth_provider", "google"),
+        picture=current_user.get("picture"),
+        active_workspace_id=current_user.get("active_workspace_id"),
+        onboarding_completed=current_user.get("onboarding_completed", True),
+        preferences=current_user.get("preferences"),
         created_at=current_user["created_at"],
     )
 

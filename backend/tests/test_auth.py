@@ -82,3 +82,44 @@ def test_google_login_existing_user(mock_google_auth, mock_db):
     assert data["user"]["active_workspace_id"] == existing_ws_id
     
     mock_db["users"].insert_one.assert_not_called()
+
+
+def test_update_profile_and_preferences(mock_db):
+    from app.middleware.auth_middleware import get_current_user
+
+    user_id = str(ObjectId())
+    current_user_payload = {
+        "id": user_id,
+        "username": "Original Name",
+        "email": "user@example.com",
+        "auth_provider": "google",
+        "picture": None,
+        "active_workspace_id": str(ObjectId()),
+        "onboarding_completed": True,
+        "preferences": {"language": "English"},
+        "created_at": "2023-01-01T00:00:00Z",
+    }
+    app.dependency_overrides[get_current_user] = lambda: current_user_payload
+
+    try:
+        mock_db["users"].update_one = AsyncMock()
+
+        response = client.patch(
+            "/api/auth/profile",
+            json={
+                "username": "Updated Name",
+                "picture": "data:image/jpeg;base64,abc123",
+                "preferences": {"language": "Spanish", "colorMode": "Dark", "weeklySummary": True},
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "Updated Name"
+        assert data["picture"] == "data:image/jpeg;base64,abc123"
+        assert data["preferences"]["language"] == "Spanish"
+        assert data["preferences"]["colorMode"] == "Dark"
+        assert data["preferences"]["weeklySummary"] is True
+        mock_db["users"].update_one.assert_called_once()
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
