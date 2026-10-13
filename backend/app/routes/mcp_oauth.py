@@ -1,4 +1,4 @@
-"""OAuth 2.1 endpoints for the MCP sign-in flow Claude uses.
+"""OAuth 2.1 endpoints for MCP sign-in flows (Claude, ChatGPT, ...).
 
 Implements what Claude's custom-connector docs require:
 - RFC 9728 protected-resource metadata (pointer on 401s)
@@ -157,25 +157,52 @@ async def _resolve_client(client_id: str, redirect_uri: str) -> Optional[dict]:
     # CIMD path: client_id is an https URL Claude hosts.
     meta = await _fetch_cimd_metadata(client_id)
     if not meta:
+        print(f"CIMD: fetch failed for client_id={client_id}")
         return client if client else None
     allowed = meta.get("redirect_uris") or []
     if redirect_uri not in allowed:
+        print(
+            f"CIMD: redirect_uri not allowlisted "
+            f"for client_id={client_id}"
+        )
         return None
     # If the document declares grants/responses, require code flow + public client.
     grants = meta.get("grant_types")
     if isinstance(grants, list) and "authorization_code" not in grants:
+        print(
+            f"CIMD: authorization_code grant missing "
+            f"for client_id={client_id}"
+        )
         return None
     responses = meta.get("response_types")
     if isinstance(responses, list) and "code" not in responses:
+        print(
+            f"CIMD: code response type missing for client_id={client_id}"
+        )
         return None
-    auth_method = meta.get("token_endpoint_auth_method")
-    if auth_method is not None and auth_method != "none":
+    # Token auth method: intersect what the client offers with what we
+    # support. Prefer the plural field; fall back to the legacy singular
+    # (per OpenAI docs, ChatGPT picks a method from the intersection —
+    # e.g. it offers ["none", "private_key_jwt"] and uses "none" when
+    # that is the shared method).
+    offered = meta.get("token_endpoint_auth_methods_supported")
+    if not isinstance(offered, list):
+        legacy = meta.get("token_endpoint_auth_method")
+        offered = [legacy] if isinstance(legacy, str) else []
+    supported = ["none"]
+    usable = [m for m in offered if m in supported]
+    if not usable:
+        print(
+            f"CIMD: no shared token auth method "
+            f"for client_id={client_id} (offered={offered})"
+        )
         return None
     doc = {
         "client_id": client_id,
         "client_name": str(meta.get("client_name") or "Claude")[:100],
         "redirect_uris": allowed,
         "cimd": True,
+        "token_auth_method": usable[0],
         "created_at": utcnow(),
     }
     try:
@@ -226,6 +253,7 @@ async def _auth_server_doc(request: Request) -> dict:
         "code_challenge_methods_supported": ["S256"],
         # Public client (PKCE, no secret) + CIMD support for Claude.
         "token_endpoint_auth_methods_supported": ["none"],
+        "client_id_metadata_document_supported": True,
         "client_id_metadata_document_supported": True,
         "scopes_supported": [MCP_SCOPE, "offline_access"],
     }

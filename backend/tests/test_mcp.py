@@ -293,6 +293,7 @@ def test_oauth_authorization_server_metadata_shape():
     assert "registration_endpoint" in data
     assert "token_endpoint" in data
     assert "S256" in str(data.get("code_challenge_methods_supported", "S256"))
+    assert data.get("client_id_metadata_document_supported") is True
 
 
 def test_oauth_dcr_register_and_pkce_helpers():
@@ -498,6 +499,109 @@ def test_mcp_grok_unknown_tool_and_bad_key():
 # ---------------------------------------------------------------------------
 
 CHATGPT_CALLBACK = "https://chatgpt.com/connector/oauth/conn_abc123"
+
+
+def _chatgpt_cimd_doc():
+    """ChatGPT's real CIMD shape (fetched 2026-10-14).
+
+    Plural offers ["none", "private_key_jwt"], legacy singular prefers
+    private_key_jwt — intersection with our ["none"] must resolve.
+    """
+    return {
+        "client_id": "https://chatgpt.com/oauth/QuZ3GH02PS9a/client.json",
+        "client_uri": "https://chatgpt.com/",
+        "redirect_uris": [
+            "https://chatgpt.com/connector/oauth/QuZ3GH02PS9a"
+        ],
+        "token_endpoint_auth_method": "private_key_jwt",
+        "token_endpoint_auth_methods_supported": ["none", "private_key_jwt"],
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "client_name": "ChatGPT",
+        "token_endpoint_auth_signing_alg": "RS256",
+        "jwks_uri": "https://chatgpt.com/oauth/jwks.json",
+    }
+
+
+def _resolve_with_cimd(doc, redirect_uri):
+    """Run _resolve_client with a stubbed CIMD fetch (no network)."""
+    import asyncio
+    from app.routes import mcp_oauth as oauth_routes
+
+    class _Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return doc
+
+    class _Http:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def get(self, *args, **kwargs):
+            return _Resp()
+
+    with patch("app.routes.mcp_oauth.httpx.AsyncClient",
+               return_value=_Http()), \
+         patch("app.database.oauth_clients_collection") as mock_clients:
+        mock_clients.find_one = AsyncMock(return_value=None)
+        mock_clients.update_one = AsyncMock(
+            return_value=AsyncMock(upserted_id=ObjectId())
+        )
+        return asyncio.run(
+            oauth_routes._resolve_client(doc["client_id"], redirect_uri)
+        )
+
+
+def test_mcp_cimd_chatgpt_doc_resolves_via_intersection():
+    """ChatGPT's real doc resolves to shared method 'none'."""
+    doc = _chatgpt_cimd_doc()
+    resolved = _resolve_with_cimd(doc, doc["redirect_uris"][0])
+    assert resolved is not None
+    assert resolved["token_auth_method"] == "none"
+    assert resolved["client_name"] == "ChatGPT"
+
+
+def test_mcp_cimd_legacy_singular_none_still_resolves():
+    """Claude-style docs with only singular 'none' keep working."""
+    doc = {
+        "client_id": "https://client.example.com/meta.json",
+        "redirect_uris": ["https://client.example.com/cb"],
+        "token_endpoint_auth_method": "none",
+    }
+    resolved = _resolve_with_cimd(
+        doc, "https://client.example.com/cb"
+    )
+    assert resolved is not None
+    assert resolved["token_auth_method"] == "none"
+
+
+def test_mcp_cimd_secret_only_doc_is_rejected():
+    """A doc offering only methods we lack must not resolve."""
+    doc = {
+        "client_id": "https://client.example.com/meta.json",
+        "redirect_uris": ["https://client.example.com/cb"],
+        "token_endpoint_auth_methods_supported": ["client_secret_basic"],
+        "grant_types": ["authorization_code"],
+        "response_types": ["code"],
+    }
+    resolved = _resolve_with_cimd(
+        doc, "https://client.example.com/cb"
+    )
+    assert resolved is None
+
+
+def test_mcp_cimd_wrong_redirect_is_rejected():
+    """A callback outside the doc's allowlist must not resolve."""
+    doc = _chatgpt_cimd_doc()
+    resolved = _resolve_with_cimd(
+        doc, "https://evil.example.com/cb"
+    )
+    assert resolved is None
 
 
 def test_mcp_chatgpt_dcr_register_with_connector_callback():
