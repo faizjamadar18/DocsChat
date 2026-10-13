@@ -93,6 +93,10 @@ def _tools_list() -> dict:
             {
                 "name": "workspace_search",
                 "description": WORKSPACE_SEARCH_DESC,
+                "annotations": {
+                    "readOnlyHint": True,
+                    "idempotentHint": True,
+                },
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -122,6 +126,10 @@ def _tools_list() -> dict:
             {
                 "name": "document_fetch",
                 "description": DOCUMENT_FETCH_DESC,
+                "annotations": {
+                    "readOnlyHint": True,
+                    "idempotentHint": True,
+                },
                 "inputSchema": {
                     "type": "object",
                     "properties": {

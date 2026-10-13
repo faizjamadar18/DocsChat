@@ -48,7 +48,7 @@ export default function ChatMessageBubble({
               </svg>
             </button>
             {showModelPicker && (
-              <div className="absolute top-full left-0 mt-1.5 bg-surface border border-white/[0.08] rounded-xl p-1.5 min-w-[180px] z-50 shadow-xl">
+              <div className="absolute top-full left-0 mt-1.5 bg-surface border border-white/8 rounded-xl p-1.5 min-w-45 z-50 shadow-xl">
                 {MODELS.map(model => (
                   <button
                     key={model.id}
@@ -57,8 +57,8 @@ export default function ChatMessageBubble({
                       setShowModelPicker(false);
                     }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${model.id === currentModel
-                      ? 'bg-white/[0.08] text-white'
-                      : 'text-white/60 hover:bg-white/[0.04] hover:text-white/80'
+                      ? 'bg-white/8 text-white'
+                      : 'text-white/60 hover:bg-white/4 hover:text-white/80'
                       }`}
                   >
                     {model.name}
@@ -76,7 +76,7 @@ export default function ChatMessageBubble({
             {message.content}
           </div>
         ) : (
-          <div className="bg-card rounded-2xl px-5 py-4 border border-white/[0.06]">
+          <div className="bg-card rounded-2xl px-5 py-4 border border-white/6">
             <div className="markdown-content text-sm sm:text-[15px] text-white/90 leading-relaxed">
               {message.content ? (
                 <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -90,12 +90,12 @@ export default function ChatMessageBubble({
             </div>
 
             {message.sources && message.sources.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-white/[0.06] flex flex-wrap gap-1.5">
+              <div className="mt-4 pt-3 border-t border-white/6 flex flex-wrap gap-1.5">
                 {message.sources.map((source, index) => (
                   <span
                     key={`${source.source_id}-${source.page ?? index}`}
                     title={source.snippet}
-                    className="text-[11px] px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/40"
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-white/4 border border-white/6 text-white/40"
                   >
                     {source.filename}{source.page ? ` · p.${source.page}` : ''}
                   </span>

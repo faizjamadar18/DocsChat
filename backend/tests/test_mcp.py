@@ -364,7 +364,9 @@ def test_mcp_providers_lists_all_with_required_fields():
     assert by_id["grok"]["status"] == "ready"
     assert by_id["claude"]["status"] == "ready"
     assert by_id["grok"]["requires_key"] is True
-    assert by_id["chatgpt"]["status"] == "soon"
+    assert by_id["chatgpt"]["status"] == "ready"
+    assert by_id["chatgpt"]["requires_key"] is True
+    assert len(by_id["chatgpt"]["steps"]) >= 5
     for p in providers:
         for field in ("id", "name", "tagline", "about",
                       "needs", "steps", "status",
@@ -489,3 +491,107 @@ def test_mcp_grok_unknown_tool_and_bad_key():
         assert resp.status_code == 401
         assert "resource_metadata" in \
             resp.headers.get("WWW-Authenticate", "")
+
+
+# ---------------------------------------------------------------------------
+# ChatGPT (Developer Mode custom app: DCR + PKCE + read-only tools)
+# ---------------------------------------------------------------------------
+
+CHATGPT_CALLBACK = "https://chatgpt.com/connector/oauth/conn_abc123"
+
+
+def test_mcp_chatgpt_dcr_register_with_connector_callback():
+    """ChatGPT registers its per-connector callback URI via DCR."""
+    with patch("app.routes.mcp_oauth.check_db"), \
+         patch("app.database.oauth_clients_collection") as mock_clients:
+        mock_clients.update_one = AsyncMock(
+            return_value=AsyncMock(upserted_id=ObjectId())
+        )
+        resp = client.post("/oauth/register", json={
+            "redirect_uris": [CHATGPT_CALLBACK],
+            "client_name": "ChatGPT",
+        })
+        assert resp.status_code == 201, resp.text
+        data = resp.json()
+        assert data["token_endpoint_auth_method"] == "none"
+        assert "authorization_code" in data["grant_types"]
+        stored = mock_clients.update_one.call_args[0][1]["$set"]
+        assert CHATGPT_CALLBACK in stored["redirect_uris"]
+
+
+def test_mcp_chatgpt_oauth_flow_reaches_tools_list():
+    """ChatGPT flow: approve -> code exchange -> tools/list (read-only)."""
+    import base64
+    import hashlib as _hl
+    verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+    challenge = base64.urlsafe_b64encode(
+        _hl.sha256(verifier.encode()).digest()
+    ).decode().rstrip("=")
+    client_id = "mcpcli_chatgpt-test"
+    client_doc = {"client_id": client_id,
+                  "redirect_uris": [CHATGPT_CALLBACK]}
+
+    with patch("app.routes.mcp_oauth.check_db"), \
+         patch("app.middleware.auth_middleware.check_db"), \
+         patch("app.database.users_collection") as mock_users, \
+         patch("app.database.oauth_clients_collection") as mock_clients, \
+         patch("app.database.oauth_codes_collection") as mock_codes, \
+         patch("app.database.oauth_tokens_collection") as mock_tokens:
+        mock_users.find_one = AsyncMock(return_value=_user_doc())
+        mock_clients.find_one = AsyncMock(return_value=client_doc)
+        mock_codes.insert_one = AsyncMock(
+            return_value=AsyncMock(inserted_id=ObjectId())
+        )
+
+        resp = client.post(
+            "/api/mcp/oauth/approve",
+            headers=_auth_headers(),
+            json={
+                "client_id": client_id,
+                "redirect_uri": CHATGPT_CALLBACK,
+                "code_challenge": challenge,
+                "workspace_id": WORKSPACE_ID,
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        issued = resp.json()["redirect_url"].split("code=")[1].split("&")[0]
+        assert issued.startswith("mcpcode_")
+
+        mock_codes.find_one = AsyncMock(return_value={
+            "code": issued,
+            "user_id": USER_ID,
+            "email": USER_EMAIL,
+            "workspace_id": WORKSPACE_ID,
+            "client_id": client_id,
+            "redirect_uri": CHATGPT_CALLBACK,
+            "scope": "workspace:read",
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+        })
+        mock_codes.delete_one = AsyncMock(
+            return_value=AsyncMock(deleted_count=1)
+        )
+        mock_tokens.insert_one = AsyncMock(
+            return_value=AsyncMock(inserted_id=ObjectId())
+        )
+        resp = client.post("/oauth/token", data={
+            "grant_type": "authorization_code",
+            "code": issued,
+            "redirect_uri": CHATGPT_CALLBACK,
+            "client_id": client_id,
+            "code_verifier": verifier,
+        })
+        assert resp.status_code == 200, resp.text
+        access = resp.json()["access_token"]
+        assert resp.json()["token_type"] == "Bearer"
+
+        resp = client.post("/mcp", headers={
+            "Authorization": f"Bearer {access}",
+        }, json={
+            "jsonrpc": "2.0", "id": 10, "method": "tools/list",
+            "params": {},
+        })
+        assert resp.status_code == 200, resp.text
+        tools = {t["name"]: t for t in resp.json()["result"]["tools"]}
+        for name in ("workspace_search", "document_fetch"):
+            assert tools[name]["annotations"]["readOnlyHint"] is True
