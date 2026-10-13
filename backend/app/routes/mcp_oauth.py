@@ -30,6 +30,8 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse, RedirectResponse
 
+import httpx
+
 import app.database as database
 from app.database import check_db, DatabaseNotReadyError
 from app.config import get_settings
@@ -107,6 +109,82 @@ def _oauth_error(
         status_code=status_code,
         content={"error": error, "error_description": description},
     )
+
+
+def _is_cimd_client_id(client_id: str) -> bool:
+    """Client-ID Metadata Document URL (no fragment, https only)."""
+    if not isinstance(client_id, str):
+        return False
+    if not client_id.startswith("https://"):
+        return False
+    return "#" not in client_id
+
+
+async def _fetch_cimd_metadata(client_id: str) -> Optional[dict]:
+    """Fetch + minimally validate a CIMD document. None = invalid."""
+    if not _is_cimd_client_id(client_id):
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as http:
+            resp = await http.get(
+                client_id, headers={"Accept": "application/json"}
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    # The document must self-identify as the requested client_id.
+    if data.get("client_id") != client_id:
+        return None
+    return data
+
+
+async def _resolve_client(client_id: str, redirect_uri: str) -> Optional[dict]:
+    """DB lookup first, CIMD fetch-and-cache fallback for Claude.
+
+    Returns the client doc (with redirect_uris) or None.
+    """
+    try:
+        client = await database.oauth_clients_collection.find_one(
+            {"client_id": client_id}
+        )
+    except Exception:
+        client = None
+    if client and redirect_uri in (client.get("redirect_uris") or []):
+        return client
+    # CIMD path: client_id is an https URL Claude hosts.
+    meta = await _fetch_cimd_metadata(client_id)
+    if not meta:
+        return client if client else None
+    allowed = meta.get("redirect_uris") or []
+    if redirect_uri not in allowed:
+        return None
+    # If the document declares grants/responses, require code flow + public client.
+    grants = meta.get("grant_types")
+    if isinstance(grants, list) and "authorization_code" not in grants:
+        return None
+    responses = meta.get("response_types")
+    if isinstance(responses, list) and "code" not in responses:
+        return None
+    auth_method = meta.get("token_endpoint_auth_method")
+    if auth_method is not None and auth_method != "none":
+        return None
+    doc = {
+        "client_id": client_id,
+        "client_name": str(meta.get("client_name") or "Claude")[:100],
+        "redirect_uris": allowed,
+        "cimd": True,
+        "created_at": utcnow(),
+    }
+    try:
+        await database.oauth_clients_collection.update_one(
+            {"client_id": client_id}, {"$set": doc}, upsert=True
+        )
+    except Exception:
+        pass
+    return doc
 
 
 # ---------------------------------------------------------------------------
@@ -271,12 +349,8 @@ async def oauth_authorize(
             + (f"&state={state}" if state else ""),
             status_code=302,
         )
-    client = await database.oauth_clients_collection.find_one(
-        {"client_id": client_id}
-    )
-    if not client or redirect_uri not in (
-        client.get("redirect_uris") or []
-    ):
+    client = await _resolve_client(client_id, redirect_uri)
+    if not client:
         return _oauth_error(
             "invalid_request", "Unknown client or redirect_uri"
         )
@@ -307,12 +381,8 @@ async def oauth_approve(
 ):
     """Approved user -> mint a single-use authorization code."""
     _require_db()
-    client = await database.oauth_clients_collection.find_one(
-        {"client_id": body.client_id}
-    )
-    if not client or body.redirect_uri not in (
-        client.get("redirect_uris") or []
-    ):
+    client = await _resolve_client(body.client_id, body.redirect_uri)
+    if not client:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unknown client or redirect_uri",
