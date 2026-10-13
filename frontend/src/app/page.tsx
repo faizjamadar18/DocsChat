@@ -16,8 +16,8 @@ export default function Home() {
         <main>
           <Hero />
           <HowItWorks />
-          <UseCases />
           <AgentworkForAgents />
+          <UseCases />
           <FAQSection />
         </main>
         <Footer />
