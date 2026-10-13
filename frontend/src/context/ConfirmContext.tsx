@@ -238,7 +238,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       {children}
       {isMounted && dialogState.isOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             {/* Full-screen dark backdrop */}
             <div
               className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-fade-in"

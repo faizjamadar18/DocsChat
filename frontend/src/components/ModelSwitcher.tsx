@@ -65,7 +65,7 @@ export default function ModelSwitcher({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-surface border border-white/[0.08] rounded-xl p-1.5 min-w-[190px] z-50 shadow-xl">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-surface border border-white/8 rounded-xl p-1.5 min-w-47.5 z-50 shadow-xl">
           <div className="text-[11px] text-white/30 font-medium px-3 py-1.5 uppercase tracking-wider">Models</div>
           {models.map(model => (
             <button
@@ -76,8 +76,8 @@ export default function ModelSwitcher({
               }}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
                 model.id === selectedModel
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-white/60 hover:bg-white/[0.04] hover:text-white/80'
+                  ? 'bg-white/8 text-white'
+                  : 'text-white/60 hover:bg-white/4 hover:text-white/80'
               }`}
             >
               {model.name}
@@ -85,11 +85,11 @@ export default function ModelSwitcher({
           ))}
           {hasMessages && (
             <>
-              <div className="border-t border-white/[0.06] my-1" />
+              <div className="border-t border-white/6 my-1" />
               <button
                 onClick={handleNewChat}
                 disabled={streaming}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm text-white/60 hover:bg-white/[0.04] hover:text-white/80 transition-colors cursor-pointer disabled:opacity-30"
+                className="w-full text-left px-3 py-2 rounded-lg text-sm text-white/60 hover:bg-white/4 hover:text-white/80 transition-colors cursor-pointer disabled:opacity-30"
               >
                 New chat
               </button>
