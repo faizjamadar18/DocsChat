@@ -368,10 +368,14 @@ def test_mcp_providers_lists_all_with_required_fields():
     for p in providers:
         for field in ("id", "name", "tagline", "about",
                       "needs", "steps", "status",
-                      "auth_note", "requires_key"):
+                      "auth_note", "requires_key",
+                      "docs_url", "redirect_uris", "auth_modes"):
             assert field in p, (p.get("id"), field)
         assert isinstance(p["needs"], list)
         assert isinstance(p["steps"], list)
+        assert isinstance(p["redirect_uris"], list)
+        assert isinstance(p["auth_modes"], list) and len(p["auth_modes"]) >= 1
+        assert isinstance(p["docs_url"], str)
         assert p["status"] in ("ready", "soon")
         # Public endpoint: no secret material may ever leak.
         blob = json.dumps(p)

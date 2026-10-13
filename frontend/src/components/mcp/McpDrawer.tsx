@@ -113,6 +113,36 @@ export default function McpDrawer({
             </p>
           ) : null}
 
+          {provider.authModes.length > 0 ? (
+            <p className="text-[11px] text-text-muted leading-relaxed">
+              Auth: {provider.authModes.join(' · ')}
+            </p>
+          ) : null}
+
+          {provider.docsUrl ? (
+            <a
+              href={provider.docsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-text-secondary underline underline-offset-2 hover:text-text-primary"
+            >
+              Official {provider.name} connector docs
+            </a>
+          ) : null}
+
+          {provider.redirectUris.length > 0 ? (
+            <div className="rounded-xl border border-border bg-sidebar/30 px-3.5 py-2.5 space-y-1">
+              <p className="text-[11px] font-medium text-text-primary">
+                Allowlist these redirect URIs on your side if asked
+              </p>
+              {provider.redirectUris.map((u) => (
+                <p key={u} className="text-[11px] text-text-muted break-all font-mono">
+                  {u}
+                </p>
+              ))}
+            </div>
+          ) : null}
+
           {provider.requiresKey ? <McpKeys workspaceId={workspaceId} /> : null}
         </div>
 

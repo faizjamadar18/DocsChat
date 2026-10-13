@@ -28,6 +28,12 @@ export interface McpProvider {
   authNote: string;
   /** Show the Personal keys manager inside this provider's drawer. */
   requiresKey: boolean;
+  /** Official brand docs for their connector UI ("" = none found). */
+  docsUrl: string;
+  /** Exact OAuth callbacks the brand uses; [] = key/none only. */
+  redirectUris: string[];
+  /** e.g. ["oauth_dcr","oauth_cimd","api_key"]. Rendered, never branched on. */
+  authModes: string[];
   icon: ComponentType<{ className?: string }>;
 }
 
@@ -57,6 +63,9 @@ interface McpProviderPayload {
   paid_note?: string;
   auth_note: string;
   requires_key: boolean;
+  docs_url?: string;
+  redirect_uris?: string[];
+  auth_modes?: string[];
 }
 
 /**
@@ -87,6 +96,9 @@ export async function fetchMcpProviders(): Promise<McpProvider[]> {
       paidNote: p.paid_note,
       authNote: p.auth_note || '',
       requiresKey: p.requires_key,
+      docsUrl: p.docs_url || '',
+      redirectUris: p.redirect_uris || [],
+      authModes: p.auth_modes || [],
       icon,
     };
   });

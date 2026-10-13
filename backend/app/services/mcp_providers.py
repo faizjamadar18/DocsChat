@@ -5,6 +5,22 @@ talk to the SAME generic endpoint and tools. The only thing that
 differs per app is display copy + setup steps + status, which lives
 here. Adding provider #10 = one dict entry + one frontend icon.
 Served publicly via GET /api/mcp/providers (no secrets in here).
+
+Reusable contract (backend generic, per-brand data only):
+- Transport/auth on the server NEVER branches per provider.
+  /mcp (Streamable HTTP) + discovery + DCR + CIMD + PKCE + personal-key
+  Bearer fallback works for every brand below.
+- Per-brand differences (UI strings, plan gates, redirect URLs, doc
+  links) live ONLY in this catalog. Frontend renders generically.
+- To launch a "soon" provider: fill steps, set status to "ready",
+  keep redirect_uris/auth_modes accurate. No route changes needed.
+
+Field guide:
+- docs_url: official brand docs for THEIR connector UI ("" if none found).
+- redirect_uris: exact OAuth callbacks the brand uses; [] = key/none only.
+  Templates use {...} placeholders (e.g. ChatGPT per-connector callback id).
+- auth_modes: subset of ["oauth_dcr", "oauth_cimd", "oauth_static",
+  "oauth", "api_key", "custom_connector", "none"].
 """
 import copy
 
@@ -37,6 +53,13 @@ PROVIDERS: list[dict] = [
             "this panel and add it as an Authorization header."
         ),
         "requires_key": True,
+        "docs_url": "https://claude.com/docs/connectors/building/authentication",
+        "redirect_uris": [
+            "https://claude.ai/api/mcp/auth_callback",
+            "http://localhost/callback",
+            "http://127.0.0.1/callback",
+        ],
+        "auth_modes": ["oauth_dcr", "oauth_cimd", "api_key"],
     },
     {
         "id": "grok",
@@ -68,6 +91,9 @@ PROVIDERS: list[dict] = [
             "one in this panel and paste it as the token."
         ),
         "requires_key": True,
+        "docs_url": "https://docs.x.ai/grok/connector-management",
+        "redirect_uris": [],
+        "auth_modes": ["api_key", "oauth"],
     },
     {
         "id": "chatgpt",
@@ -90,6 +116,11 @@ PROVIDERS: list[dict] = [
         ),
         "auth_note": "",
         "requires_key": False,
+        "docs_url": "https://learn.chatgpt.com/apps-sdk/build/auth",
+        "redirect_uris": [
+            "https://chatgpt.com/connector/oauth/{callback_id}",
+        ],
+        "auth_modes": ["oauth_dcr", "oauth_cimd"],
     },
     {
         "id": "cursor",
@@ -108,6 +139,12 @@ PROVIDERS: list[dict] = [
         "status": "soon",
         "auth_note": "",
         "requires_key": False,
+        "docs_url": "https://cursor.com/docs/mcp",
+        "redirect_uris": [
+            "https://www.cursor.com/agents/mcp/oauth/callback",
+            "http://localhost:8787/callback",
+        ],
+        "auth_modes": ["oauth_dcr", "oauth_static", "api_key"],
     },
     {
         "id": "perplexity",
@@ -130,6 +167,11 @@ PROVIDERS: list[dict] = [
         ),
         "auth_note": "",
         "requires_key": False,
+        "docs_url": "https://www.perplexity.ai/help-center/en/articles/13915507-adding-custom-remote-connectors",
+        "redirect_uris": [
+            "https://www.perplexity.ai/rest/connections/oauth_callback",
+        ],
+        "auth_modes": ["oauth", "api_key", "none"],
     },
     {
         "id": "mistral",
@@ -145,6 +187,9 @@ PROVIDERS: list[dict] = [
         "status": "soon",
         "auth_note": "",
         "requires_key": False,
+        "docs_url": "https://docs.mistral.ai/vibe/work/connectors/mcp-connectors",
+        "redirect_uris": [],
+        "auth_modes": ["oauth", "api_key"],
     },
     {
         "id": "gemini",
@@ -160,6 +205,9 @@ PROVIDERS: list[dict] = [
         "status": "soon",
         "auth_note": "",
         "requires_key": False,
+        "docs_url": "https://docs.cloud.google.com/gemini/enterprise/docs/connectors/custom-mcp-server/set-up-custom-mcp-server",
+        "redirect_uris": [],
+        "auth_modes": ["oauth"],
     },
     {
         "id": "copilot",
@@ -182,6 +230,9 @@ PROVIDERS: list[dict] = [
         ),
         "auth_note": "",
         "requires_key": False,
+        "docs_url": "https://learn.microsoft.com/en-us/microsoft-copilot-studio/mcp-add-existing-server-to-agent",
+        "redirect_uris": [],
+        "auth_modes": ["oauth", "custom_connector"],
     },
     {
         "id": "manus",
@@ -200,6 +251,9 @@ PROVIDERS: list[dict] = [
         "status": "soon",
         "auth_note": "",
         "requires_key": False,
+        "docs_url": "",
+        "redirect_uris": [],
+        "auth_modes": ["api_key"],
     },
 ]
 
