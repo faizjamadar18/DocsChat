@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Mic, PhoneOff, ChevronDown } from 'lucide-react';
 import {
   PaperclipIcon,
@@ -75,6 +75,13 @@ const integrationIcons = [
   { name: 'Mistral', Icon: MistralIcon },
 ];
 
+const sourceIconsList = [
+  { id: 'notion', name: 'Notion', Icon: NotionIcon },
+  { id: 'github', name: 'GitHub', Icon: GitHubIcon, className: 'text-[#181717]' },
+  { id: 'drive', name: 'Google Drive', Icon: GoogleDriveIcon },
+  { id: 'docs', name: 'Google Docs', Icon: GoogleDocIcon },
+];
+
 const fullPrompt = "Catch me up on this doc?";
 
 export default function HowItWorks() {
@@ -82,6 +89,13 @@ export default function HowItWorks() {
   const [cycleKey, setCycleKey] = useState<number>(0);
   const [typedText, setTypedText] = useState<string>('');
   const [manualOverride, setManualOverride] = useState<boolean>(false);
+
+  // Card 3 sources animation states
+  const [sourcesStepActive, setSourcesStepActive] = useState<boolean>(false);
+  const [visibleSourceCount, setVisibleSourceCount] = useState<number>(0);
+  const [sourcesDone, setSourcesDone] = useState<boolean>(false);
+  const [sourcesExpanded, setSourcesExpanded] = useState<boolean>(false);
+  const sourcesTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // Stagger order for icons in Step 1
   const iconDelays = useMemo(() => {
@@ -146,15 +160,61 @@ export default function HowItWorks() {
         clearTimeout(typingInterval);
       };
     } else if (activeStep === 2) {
-      // Step 2: Improves (spin sources for 4.5s, then cycle back to Step 0)
+      // Step 2: Verify sources (3.25s animation sequence + ~1.75s done state, then cycle back to Step 0)
       timeoutId = setTimeout(() => {
         setCycleKey((k) => k + 1);
         setActiveStep(0);
-      }, 4500);
+      }, 5000);
     }
 
     return () => clearTimeout(timeoutId);
   }, [activeStep, cycleKey, manualOverride]);
+
+  // Card 3: Timeline sequence (triggered when activeStep === 2)
+  useEffect(() => {
+    // Clear any pending timers on deactivate and on unmount
+    sourcesTimersRef.current.forEach(clearTimeout);
+    sourcesTimersRef.current = [];
+
+    if (activeStep !== 2) {
+      const resetTimer = setTimeout(() => {
+        setSourcesStepActive(false);
+        setVisibleSourceCount(0);
+        setSourcesDone(false);
+        setSourcesExpanded(false);
+      }, 0);
+      sourcesTimersRef.current = [resetTimer];
+      return;
+    }
+
+    // Card 3 activates inside kickoff tick
+    const t0 = setTimeout(() => {
+      setSourcesStepActive(true);
+      setVisibleSourceCount(0);
+      setSourcesDone(false);
+      setSourcesExpanded(false);
+    }, 0);
+
+    // Sequence timeline:
+    // t = 0: LOADING state. Label reads "Searching sources…" with shimmer. No icons. Chevron hidden.
+    // t = 900ms: Notion icon pops in.
+    // t = 1550ms: GitHub icon pops in.
+    // t = 2200ms: Google Drive icon pops in.
+    // t = 2850ms: Google Docs icon pops in.
+    // t = 3250ms (last icon + 400ms): switch to DONE state.
+    const t1 = setTimeout(() => setVisibleSourceCount(1), 900);
+    const t2 = setTimeout(() => setVisibleSourceCount(2), 1550);
+    const t3 = setTimeout(() => setVisibleSourceCount(3), 2200);
+    const t4 = setTimeout(() => setVisibleSourceCount(4), 2850);
+    const t5 = setTimeout(() => setSourcesDone(true), 3250);
+
+    sourcesTimersRef.current = [t0, t1, t2, t3, t4, t5];
+
+    return () => {
+      sourcesTimersRef.current.forEach(clearTimeout);
+      sourcesTimersRef.current = [];
+    };
+  }, [activeStep]);
 
   // Re-trigger icon pop animation periodically if user stays on Card 1
   useEffect(() => {
@@ -173,6 +233,8 @@ export default function HowItWorks() {
       setCycleKey((k) => k + 1);
     } else if (index === 1) {
       setTypedText(fullPrompt);
+    } else if (index === 2) {
+      setSourcesExpanded(false);
     }
     // Re-enable auto-cycling after 10 seconds of user inactivity
     setTimeout(() => {
@@ -407,20 +469,127 @@ export default function HowItWorks() {
                     : 'group-hover:border-[#cfceca]'
                 }`}
               >
-                {/* Source Footer Visual Box (Matching chat footer) */}
-                <div className="flex size-full flex-col items-center justify-center px-6 py-8 select-none">
-                  <div className="flex items-center gap-3 text-sm md:text-[15px] text-[#63635e] select-none pointer-events-none">
-                    <span className="shrink-0 font-normal">
-                      4 sources used
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <NotionIcon className="w-5 h-5 shrink-0" />
-                      <GitHubIcon className="w-5 h-5 shrink-0 text-[#181717]" />
-                      <GoogleDriveIcon className="w-5 h-5 shrink-0" />
-                      <GoogleDocIcon className="w-5 h-5 shrink-0" />
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-[#8d8d86] shrink-0" />
+                {/* Source Footer Visual Box with scripted loading sequence */}
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex size-full flex-col items-center justify-center px-6 py-8 select-none"
+                >
+                  <div
+                    onClick={(e) => {
+                      if (!sourcesDone) return;
+                      e.stopPropagation();
+                      setSourcesExpanded((prev) => !prev);
+                    }}
+                    className={`flex items-center text-sm md:text-[15px] select-none transition-colors ${
+                      sourcesDone
+                        ? 'cursor-pointer group/sources'
+                        : 'cursor-default pointer-events-none'
+                    }`}
+                  >
+                    {/* Label Container (snug width, seamless crossfade) */}
+                    <div className="relative inline-flex items-center">
+                      {/* Done state text (in-flow when sourcesDone) */}
+                      <span
+                        className={`shrink-0 font-normal transition-all duration-350 ease-out ${
+                          sourcesDone
+                            ? 'opacity-100 translate-y-0 text-[#21201c]'
+                            : 'opacity-0 translate-y-1.5 absolute left-0 pointer-events-none'
+                        }`}
+                      >
+                        4 sources used
+                      </span>
+
+                      {/* Loading state text with shimmer (in-flow when !sourcesDone) */}
+                      <span
+                        className={`shrink-0 font-normal transition-all duration-350 ease-out ${
+                          !sourcesDone
+                            ? sourcesStepActive
+                              ? 'opacity-100 translate-y-0 source-shimmer-active'
+                              : 'opacity-100 translate-y-0 text-[#8d8d86]'
+                            : 'opacity-0 -translate-y-1.5 absolute left-0 pointer-events-none'
+                        }`}
+                      >
+                        Searching sources…
+                      </span>
+                    </div>
+
+                    {/* Icons & Probe Dot Container */}
+                    <div className="flex items-center">
+                      {sourceIconsList.map(({ id, name, Icon, className }, index) => {
+                        const isRevealed = sourcesDone || visibleSourceCount > index;
+                        const isPopping =
+                          sourcesStepActive && !sourcesDone && visibleSourceCount === index + 1;
+
+                        if (!isRevealed) return null;
+
+                        return (
+                          <div
+                            key={id}
+                            title={name}
+                            className={`inline-flex items-center justify-center shrink-0 size-6.5 ${
+                              index === 0 ? 'ml-2 sm:ml-2.5' : 'ml-1.5 sm:ml-2'
+                            }`}
+                          >
+                            <div
+                              className={`size-6.5 shrink-0 flex items-center justify-center ${
+                                isPopping
+                                  ? 'source-icon-pop'
+                                  : 'opacity-100 scale-100'
+                              }`}
+                            >
+                              <Icon className={`size-6.5 shrink-0 ${className || ''}`} />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* 6px Muted Circle Probe Dot */}
+                      {!sourcesDone && (
+                        <div
+                          className="inline-flex items-center justify-center shrink-0 ml-2"
+                          aria-hidden="true"
+                        >
+                          <span
+                            className={`size-1.5 rounded-full bg-[#8d8d86] shrink-0 ${
+                              sourcesStepActive ? 'source-probe-pulse' : 'opacity-50'
+                            }`}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chevron: hidden when loading, fades and slides in when done */}
+                    <div
+                      className={`inline-flex items-center shrink-0 transition-all duration-300 ease-out ml-2.5 ${
+                        sourcesDone
+                          ? 'opacity-100 translate-x-0 delay-100'
+                          : 'opacity-0 -translate-x-1 pointer-events-none'
+                      }`}
+                      aria-hidden={!sourcesDone}
+                    >
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#8d8d86] transition-transform duration-200 group-hover/sources:text-[#21201c] ${
+                          sourcesExpanded ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </div>
                   </div>
+
+                  {/* Expandable sources preview */}
+                  {sourcesDone && sourcesExpanded && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-4 animate-fadeIn">
+                      {sourceIconsList.map(({ id, name, Icon, className }) => (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#f4f4f2] text-xs font-normal text-[#63635e] border border-[#e2e1de]"
+                        >
+                          <Icon className={`size-3.5 shrink-0 ${className || ''}`} />
+                          <span>{name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Subtle bottom fade */}

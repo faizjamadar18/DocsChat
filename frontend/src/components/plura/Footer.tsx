@@ -46,18 +46,6 @@ export default function Footer() {
             <div className="flex items-center justify-center space-x-6 pt-2">
               <Link
                 className="text-white/50 text-sm font-medium hover:text-white transition-colors"
-                href="/privacy"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                className="text-white/50 text-sm font-medium hover:text-white transition-colors"
-                href="/terms"
-              >
-                Terms of Use
-              </Link>
-              <Link
-                className="text-white/50 text-sm font-medium hover:text-white transition-colors"
                 href="/cookies"
               >
                 Cookies

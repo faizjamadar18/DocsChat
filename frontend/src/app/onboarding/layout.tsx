@@ -38,12 +38,6 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
         {/* Footer, strictly left-aligned with column */}
         <div className="pb-2 flex items-center gap-5 text-[13px] text-neutral-400 font-normal">
-          <Link href="/privacy" className="hover:text-neutral-200 transition-colors">
-            Privacy
-          </Link>
-          <Link href="/terms" className="hover:text-neutral-200 transition-colors">
-            Terms
-          </Link>
           <Link href="mailto:support@quello.dev" className="hover:text-neutral-200 transition-colors">
             Support
           </Link>

@@ -11,8 +11,6 @@ export default function Footer() {
     { label: 'How it works', href: '/#how-it-works' },
     { label: 'Traceability', href: '/#traceability' },
     { label: 'Connected AI Apps', href: '/#connectors' },
-    { label: 'Privacy Policy', href: '/privacy' },
-    { label: 'Terms of Service', href: '/terms' },
   ];
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {

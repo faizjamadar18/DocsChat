@@ -513,6 +513,92 @@ body {
   }
 }
 
+/* How it works - Card 3: Sources Row Animation */
+:root {
+  --source-shimmer-base: #8d8d86;
+  --source-shimmer-highlight: #21201c;
+}
+
+.dark {
+  --source-shimmer-base: #71717a;
+  --source-shimmer-highlight: #f4f4f5;
+}
+
+@keyframes sourceShimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.source-shimmer-active {
+  background: linear-gradient(
+    100deg,
+    var(--source-shimmer-base, #8d8d86) 35%,
+    var(--source-shimmer-highlight, #21201c) 50%,
+    var(--source-shimmer-base, #8d8d86) 65%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: sourceShimmer 1.6s linear infinite;
+}
+
+@keyframes sourceIconPop {
+  0% {
+    transform: scale(0) translateY(8px);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.25) translateY(-2px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.source-icon-pop {
+  animation: sourceIconPop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes sourceProbePulse {
+  0%, 100% {
+    transform: scale(0.6);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+}
+
+.source-probe-pulse {
+  animation: sourceProbePulse 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source-shimmer-active {
+    animation: none !important;
+    background: none !important;
+    -webkit-text-fill-color: var(--source-shimmer-base, #8d8d86) !important;
+    color: var(--source-shimmer-base, #8d8d86) !important;
+  }
+  .source-icon-pop {
+    animation: none !important;
+    transform: none !important;
+  }
+  .source-probe-pulse {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 :root {
   --bg-base: #8ebcca;
   --bg-glow-tl: rgba(189, 212, 219, 0.91);
