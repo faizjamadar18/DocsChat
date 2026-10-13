@@ -58,7 +58,7 @@ export default function DeleteDocModal({
                 Are you sure you want to delete <span className="font-semibold break-all">&quot;{title}&quot;</span>?
               </p>
               <p className="text-xs text-text-muted leading-relaxed">
-                This document and all its indexed vector chunks in Qdrant will be permanently removed from this workspace. This action cannot be undone.
+                This document and all its indexed content will be permanently removed from this workspace. This action cannot be undone.
               </p>
             </div>
           </div>

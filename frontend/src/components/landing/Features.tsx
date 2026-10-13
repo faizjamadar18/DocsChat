@@ -109,7 +109,7 @@ export default function Features() {
                 <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
                   <div className="h-full w-full rounded-full bg-white/20" />
                 </div>
-                <p className="text-xs text-white/40 mt-1">Indexed · 24 chunks</p>
+                <p className="text-xs text-white/40 mt-1">Indexed</p>
               </div>
               <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3.5">
                 <div className="flex items-center gap-3 mb-2.5">

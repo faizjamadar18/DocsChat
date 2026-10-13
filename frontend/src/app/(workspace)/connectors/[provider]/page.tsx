@@ -375,10 +375,9 @@ export default function ConnectorDetailPage() {
             <div className="space-y-3">
               <h2 className="text-sm font-semibold text-text-primary">Sources</h2>
               <div className="rounded-xl border border-border bg-white overflow-hidden">
-                <div className="hidden sm:grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                <div className="hidden sm:grid grid-cols-[1fr_90px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
                   <span>Source</span>
                   <span>Status</span>
-                  <span>Chunks</span>
                   <span>Synced</span>
                   <span className="text-right">Actions</span>
                 </div>
@@ -389,7 +388,7 @@ export default function ConnectorDetailPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {driveSources.map((s) => (
-                      <div key={s.id} className="grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 items-center px-4 py-3">
+                      <div key={s.id} className="grid grid-cols-[1fr_90px_90px_96px] gap-2 items-center px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
                           <GoogleDriveIcon className="w-4 h-4 shrink-0" />
                           <div className="min-w-0">
@@ -398,7 +397,6 @@ export default function ConnectorDetailPage() {
                           </div>
                         </div>
                         <StatusPill status={s.status} />
-                        <span className="text-[11px] text-text-secondary">{s.chunk_count}</span>
                         <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
                         <span className="flex items-center justify-end gap-0.5">
                           {s.remote_url ? (
@@ -523,10 +521,9 @@ export default function ConnectorDetailPage() {
             <div className="space-y-3">
               <h2 className="text-sm font-semibold text-text-primary">Sources</h2>
               <div className="rounded-xl border border-border bg-white overflow-hidden">
-                <div className="hidden sm:grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                <div className="hidden sm:grid grid-cols-[1fr_90px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
                   <span>Source</span>
                   <span>Status</span>
-                  <span>Chunks</span>
                   <span>Synced</span>
                   <span className="text-right">Actions</span>
                 </div>
@@ -537,7 +534,7 @@ export default function ConnectorDetailPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {githubSources.map((s) => (
-                      <div key={s.id} className="grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 items-center px-4 py-3">
+                      <div key={s.id} className="grid grid-cols-[1fr_90px_90px_96px] gap-2 items-center px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
                           <GitHubIcon className="w-4 h-4 shrink-0" />
                           <div className="min-w-0">
@@ -546,7 +543,6 @@ export default function ConnectorDetailPage() {
                           </div>
                         </div>
                         <StatusPill status={s.status} />
-                        <span className="text-[11px] text-text-secondary">{s.chunk_count}</span>
                         <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
                         <span className="flex items-center justify-end gap-0.5">
                           {s.remote_url ? (
@@ -671,10 +667,9 @@ export default function ConnectorDetailPage() {
             <div className="space-y-3">
               <h2 className="text-sm font-semibold text-text-primary">Sources</h2>
               <div className="rounded-xl border border-border bg-white overflow-hidden">
-                <div className="hidden sm:grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
+                <div className="hidden sm:grid grid-cols-[1fr_90px_90px_96px] gap-2 px-4 py-2 border-b border-border text-[10px] font-medium uppercase tracking-wider text-text-muted">
                   <span>Source</span>
                   <span>Status</span>
-                  <span>Chunks</span>
                   <span>Synced</span>
                   <span className="text-right">Actions</span>
                 </div>
@@ -685,7 +680,7 @@ export default function ConnectorDetailPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {notionSources.map((s) => (
-                      <div key={s.id} className="grid grid-cols-[1fr_90px_70px_90px_96px] gap-2 items-center px-4 py-3">
+                      <div key={s.id} className="grid grid-cols-[1fr_90px_90px_96px] gap-2 items-center px-4 py-3">
                         <div className="flex items-center gap-2 min-w-0">
                           <NotionIcon className="w-4 h-4 shrink-0" />
                           <div className="min-w-0">
@@ -694,7 +689,6 @@ export default function ConnectorDetailPage() {
                           </div>
                         </div>
                         <StatusPill status={s.status} />
-                        <span className="text-[11px] text-text-secondary">{s.chunk_count}</span>
                         <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
                         <span className="flex items-center justify-end gap-0.5">
                           {s.remote_url ? (
