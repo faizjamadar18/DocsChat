@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import AuthProvider from "../components/AuthProvider";
 import { AuthSessionProvider } from "../context/AuthContext";
+import { ConfirmProvider } from "../context/ConfirmContext";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://quello.dev"),
@@ -50,7 +51,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
         <AuthProvider>
-          <AuthSessionProvider>{children}</AuthSessionProvider>
+          <AuthSessionProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </AuthSessionProvider>
         </AuthProvider>
       </body>
     </html>

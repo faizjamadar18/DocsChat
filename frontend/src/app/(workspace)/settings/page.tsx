@@ -21,6 +21,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
+import { useConfirm } from '../../../context/ConfirmContext';
 import { useAuth, notifyUserUpdated } from '../../../hooks/useAuth';
 import { api } from '../../../lib/api';
 import { useVapiKey } from '../../../hooks/useVapiKey';
@@ -87,6 +88,7 @@ export default function SettingsPage() {
   const { status: vapiStatus, saving: vapiSaving, error: vapiError, saveKey, deleteKey } = useVapiKey();
   const { logs: voiceLogs, loading: voiceLogsLoading, deleteLog: deleteVoiceLog } = useVoiceLogs(currentWorkspace?.id);
   const [selectedVoiceLog, setSelectedVoiceLog] = useState<VoiceLog | null>(null);
+  const { confirm } = useConfirm();
 
   // File Input Refs
   const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -1275,8 +1277,14 @@ export default function SettingsPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (confirm('Delete this voice log?')) {
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: 'Delete Voice Log',
+                            description: 'Delete this voice log? The transcript and call summary will be permanently removed.',
+                            confirmLabel: 'Delete',
+                            variant: 'danger',
+                          });
+                          if (ok) {
                             void deleteVoiceLog(log.id);
                           }
                         }}

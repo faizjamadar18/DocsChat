@@ -7,6 +7,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { Editor } from '@tiptap/react';
+import { usePrompt, type PromptOptions } from '@/context/ConfirmContext';
 
 export interface CommandItem {
   id: string;
@@ -14,7 +15,10 @@ export interface CommandItem {
   label: string;
   icon: React.ReactNode;
   isActive: (editor: Editor) => boolean;
-  action: (editor: Editor) => void;
+  action: (
+    editor: Editor,
+    promptFn?: (optionsOrMessage: string | PromptOptions) => Promise<string | null>,
+  ) => unknown;
 }
 
 const COMMAND_ITEMS: CommandItem[] = [
@@ -173,8 +177,15 @@ const COMMAND_ITEMS: CommandItem[] = [
     label: 'Link',
     icon: <LinkIcon className="w-4 h-4 text-[#18181B]" />,
     isActive: (editor) => editor.isActive('link'),
-    action: (editor) => {
-      const url = window.prompt('Enter URL:');
+    action: async (editor, promptFn) => {
+      const url = promptFn
+        ? await promptFn({
+            title: 'Insert Link',
+            description: 'Enter the destination URL for the link:',
+            placeholder: 'https://example.com',
+            confirmLabel: 'Insert Link',
+          })
+        : null;
       if (url) {
         editor.chain().focus().setLink({ href: url }).run();
       }
@@ -205,6 +216,7 @@ export function SlashCommandMenu({
   query,
   position,
 }: SlashCommandMenuProps) {
+  const prompt = usePrompt();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [prevQuery, setPrevQuery] = useState(query);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -241,10 +253,10 @@ export function SlashCommandMenu({
         editor.commands.deleteRange({ from: start, to: from });
       }
 
-      item.action(editor);
+      void item.action(editor, prompt);
       onClose();
     },
-    [editor, onClose]
+    [editor, onClose, prompt]
   );
 
   useEffect(() => {

@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '../hooks/useChat';
 import ChatMessageBubble from './ChatMessage';
+import { useConfirm } from '@/context/ConfirmContext';
 
 const MODELS = [
   { id: 'gemini', name: 'Gemini 3.5 Flash' },
@@ -17,6 +18,7 @@ export default function ChatPanel({
   onLogout?: () => void;
   onToggleSidebar?: () => void;
 }) {
+  const { confirm } = useConfirm();
   const { messages, loading, streaming, error, askQuestion, clearHistory } = useChat();
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState('gemini');
@@ -53,9 +55,15 @@ export default function ChatPanel({
     setInput('');
   };
 
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
     if (messages.length === 0) return;
-    if (window.confirm('Clear all chat history? This cannot be undone.')) {
+    const ok = await confirm({
+      title: 'Clear Chat History',
+      description: 'Clear all chat history? This cannot be undone.',
+      confirmLabel: 'Clear All',
+      variant: 'danger',
+    });
+    if (ok) {
       clearHistory();
     }
   };

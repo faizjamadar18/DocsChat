@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Copy, Check, Plus, Trash2, Ban } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useConfirm } from '@/context/ConfirmContext';
 
 interface McpKey {
   id: string;
@@ -12,6 +13,7 @@ interface McpKey {
 
 /** Compact personal-key manager sized to fit inside the provider drawer. */
 export default function McpKeys({ workspaceId }: { workspaceId?: string }) {
+  const { confirm } = useConfirm();
   const [keys, setKeys] = useState<McpKey[]>([]);
   const [keyName, setKeyName] = useState('');
   const [freshKey, setFreshKey] = useState<string | null>(null);
@@ -77,7 +79,13 @@ export default function McpKeys({ workspaceId }: { workspaceId?: string }) {
 
   const revokeKey = useCallback(
     async (id: string) => {
-      if (!confirm('Revoke this key? Apps using it will stop working.')) return;
+      const ok = await confirm({
+        title: 'Revoke Personal Key',
+        description: 'Revoke this key? Apps using it will stop working immediately.',
+        confirmLabel: 'Revoke Key',
+        variant: 'warning',
+      });
+      if (!ok) return;
       try {
         await api.delete(`/mcp-keys/${id}`);
         await refresh();
@@ -85,12 +93,18 @@ export default function McpKeys({ workspaceId }: { workspaceId?: string }) {
         setError(e instanceof Error ? e.message : 'Failed to revoke key');
       }
     },
-    [refresh],
+    [refresh, confirm],
   );
 
   const deleteKey = useCallback(
     async (id: string) => {
-      if (!confirm('Permanently delete this key? This cannot be undone.')) return;
+      const ok = await confirm({
+        title: 'Delete Personal Key',
+        description: 'Permanently delete this key? This cannot be undone.',
+        confirmLabel: 'Delete Key',
+        variant: 'danger',
+      });
+      if (!ok) return;
       try {
         await api.delete(`/mcp-keys/${id}?permanent=true`);
         await refresh();
@@ -98,7 +112,7 @@ export default function McpKeys({ workspaceId }: { workspaceId?: string }) {
         setError(e instanceof Error ? e.message : 'Failed to delete key');
       }
     },
-    [refresh],
+    [refresh, confirm],
   );
 
   return (
