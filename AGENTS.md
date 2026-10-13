@@ -78,6 +78,6 @@ When multiple agents work in parallel, they must respect these boundaries:
 
 1. **NEVER** edit `.env` files — they contain secrets. Only edit `.env.example`.
 2. **NEVER** delete user data, MongoDB collections, or Qdrant collections.
-3. Work directly on the `main` branch with atomic Conventional Commits per task. The build phase is done — only small tweaks remain. Historical branches exist on the remote for the record only; do not create new branches and do not commit to them. Commit and push all new work to `main` directly.
+3. Work directly on the `main` branch with atomic Conventional Commits per task. The build phase is done — only small tweaks remain. Historical branches exist on the remote for the record only; do not create new branches and do not commit to them. For every task: implement, hand to the user for verification on their side, and commit + push to `main` only after the user's explicit YES. Never auto-commit or auto-push.
 4. **NEVER** hardcode API keys, secrets, or credentials in source code.
 5. **NEVER** ask the user to manually test APIs or act as a QA tester. You must autonomously verify your own code using terminal scripts, `curl`, or `pytest` before declaring a task complete. No manual intervention by the user should be required.

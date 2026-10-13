@@ -17,7 +17,7 @@ When instructed to add a new feature or implement a task described by the user, 
 - Work directly on the `main` branch. The build phase is done — only small tweaks remain. Historical branches exist on the remote for the record only; do not create new branches and do not commit to them.
 - Each task must be committed with suitable, atomic Conventional Commits (e.g., `feat(chat): ...`, `test(chat): ...`, `fix(auth): ...`).
 - Commit types: `feat:` (new features), `fix:` (bug fixes), `refactor:` (restructuring without behavior change), `docs:` (documentation), `test:` (tests), `chore:` (dependencies, linting, etc.).
-- Commit and push to `main` directly.
+- User-gated workflow (applies to EVERY task, even small tweaks): implement the change, then STOP and hand it to the user to verify on their side. NEVER commit or push on your own — only commit and push to `main` after the user gives an explicit YES.
 
 ## 3. Test-Driven Development (TDD) - Write Tests FIRST
 - **CRITICAL**: Before writing any implementation code for the backend, you MUST write the `pytest` file in `backend/tests/`.
@@ -33,7 +33,7 @@ When instructed to add a new feature or implement a task described by the user, 
 - The user verifies from their side. Wait for their signal.
 
 ## 5. User-Confirmed Verification Gate (ONLY AFTER EXPLICIT USER YES)
-Ask first: "Code is ready. Shall I run lint/tests and commit?" Run NOTHING until the user replies YES.
+After implementing, STOP and tell the user the change is ready for them to verify on their side. Ask: "Code is ready. Please verify on your side — shall I run lint/tests, commit, and push to main?" Run NOTHING until the user replies YES.
 Only after explicit user YES, execute the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):
 1. **Frontend Verification** (only if `frontend/` changed):
    - Run `npm run lint` in `frontend/` — must pass with 0 errors.
@@ -47,12 +47,13 @@ Only after explicit user YES, execute the gates for the stack you touched (backe
    - Resolve all errors and warnings reported by the IDE or `current_problems` tooling before committing. (Tool-neutral: use whatever diagnostics the current harness surfaces.)
 4. **Edge Case Walkthrough**:
    - Perform a quick sanity check for minute edge cases (empty/null states, boundary inputs, layout clipping/overflow, overlay positioning) so the user does not need to babysit.
-5. **Zero-Tolerance Commit Rule**:
-    - Never commit without explicit user YES, even if all checks would pass.
+5. **Zero-Tolerance Commit & Push Rule**:
+    - Never commit or push without explicit user YES, even if all checks would pass.
     - Never commit code with failing tests, broken imports, compiler errors, unaddressed linter errors, IDE problem warnings, or unverified edge cases.
     - Only execute `git commit` after user said YES and all gates above passed cleanly.
+    - Only execute `git push origin main` after committing — pushing without an explicit user YES is forbidden.
 
 ## 6. Review & Hand Off
 - Call the `review-changes` skill to audit your work after each task.
 - Keep commits on the `main` branch.
-- Push to `main` directly when done — no Pull Request workflow.
+- Push to `main` directly only after the user's explicit YES — no Pull Request workflow, and never push unapproved.
