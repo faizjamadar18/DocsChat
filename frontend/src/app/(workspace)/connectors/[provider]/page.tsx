@@ -7,6 +7,7 @@ import { ArrowLeft, RefreshCw, Trash2, ExternalLink, X } from 'lucide-react';
 import { useConnectors, type NotionPage, type DriveFile, type GitHubRepo } from '@/hooks/useConnectors';
 import { NotionIcon, GoogleDriveIcon, GitHubIcon } from '@/components/connectors/ConnectorIcons';
 import { StatusPill, isSyncing } from '@/components/connectors/StatusPill';
+import { useConfirm } from '@/context/ConfirmContext';
 
 const PICKER_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 const PICKER_APP_ID = process.env.NEXT_PUBLIC_GOOGLE_APP_ID || '';
@@ -99,6 +100,7 @@ export default function ConnectorDetailPage() {
     connectGithub, listGithubRepos, importGithubRepos,
     resyncSource, disconnectProvider, deleteSource,
   } = useConnectors();
+  const { confirm } = useConfirm();
 
   const [showImport, setShowImport] = useState(false);
   const [pages, setPages] = useState<NotionPage[]>([]);
@@ -417,8 +419,14 @@ export default function ConnectorDetailPage() {
                           <button
                             type="button"
                             title="Delete"
-                            onClick={() => {
-                              if (confirm('Delete this imported source?')) void deleteSource(s.id);
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Delete Imported Source',
+                                description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
+                                confirmLabel: 'Delete',
+                                variant: 'danger',
+                              });
+                              if (ok) void deleteSource(s.id);
                             }}
                             className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
                           >
@@ -453,7 +461,13 @@ export default function ConnectorDetailPage() {
                 type="button"
                 disabled={busy}
                 onClick={async () => {
-                  if (!confirm('Disconnect Google Drive?')) return;
+                  const ok = await confirm({
+                    title: 'Disconnect Google Drive',
+                    description: 'Disconnect Google Drive? Access will be revoked.',
+                    confirmLabel: 'Disconnect',
+                    variant: 'warning',
+                  });
+                  if (!ok) return;
                   setBusy(true);
                   try {
                     await disconnectProvider('drive', deleteOnDisconnect);
@@ -565,8 +579,14 @@ export default function ConnectorDetailPage() {
                           <button
                             type="button"
                             title="Delete"
-                            onClick={() => {
-                              if (confirm('Delete this imported source?')) void deleteSource(s.id);
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Delete Imported Source',
+                                description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
+                                confirmLabel: 'Delete',
+                                variant: 'danger',
+                              });
+                              if (ok) void deleteSource(s.id);
                             }}
                             className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
                           >
@@ -601,7 +621,13 @@ export default function ConnectorDetailPage() {
                 type="button"
                 disabled={busy}
                 onClick={async () => {
-                  if (!confirm('Disconnect GitHub?')) return;
+                  const ok = await confirm({
+                    title: 'Disconnect GitHub',
+                    description: 'Disconnect GitHub? Access will be revoked.',
+                    confirmLabel: 'Disconnect',
+                    variant: 'warning',
+                  });
+                  if (!ok) return;
                   setBusy(true);
                   try {
                     await disconnectProvider('github', deleteOnDisconnect);
@@ -713,8 +739,14 @@ export default function ConnectorDetailPage() {
                           <button
                             type="button"
                             title="Delete"
-                            onClick={() => {
-                              if (confirm('Delete this imported source?')) void deleteSource(s.id);
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: 'Delete Imported Source',
+                                description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
+                                confirmLabel: 'Delete',
+                                variant: 'danger',
+                              });
+                              if (ok) void deleteSource(s.id);
                             }}
                             className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
                           >
@@ -749,7 +781,13 @@ export default function ConnectorDetailPage() {
                 type="button"
                 disabled={busy}
                 onClick={async () => {
-                  if (!confirm('Disconnect Notion?')) return;
+                  const ok = await confirm({
+                    title: 'Disconnect Notion',
+                    description: 'Disconnect Notion? Access will be revoked.',
+                    confirmLabel: 'Disconnect',
+                    variant: 'warning',
+                  });
+                  if (!ok) return;
                   setBusy(true);
                   try {
                     await disconnectProvider('notion', deleteOnDisconnect);

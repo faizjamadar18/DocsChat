@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useConfirm } from '@/context/ConfirmContext';
 
 export default function ModelSwitcher({
   selectedModel,
@@ -13,6 +14,7 @@ export default function ModelSwitcher({
   hasMessages?: boolean,
   streaming?: boolean
 }) {
+  const { confirm } = useConfirm();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -35,9 +37,15 @@ export default function ModelSwitcher({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
     if (onNewChat && hasMessages && !streaming) {
-      if (window.confirm('Clear all chat history? This cannot be undone.')) {
+      const ok = await confirm({
+        title: 'Clear Chat History',
+        description: 'Clear all chat history? This cannot be undone.',
+        confirmLabel: 'Clear All',
+        variant: 'danger',
+      });
+      if (ok) {
         onNewChat();
       }
     }

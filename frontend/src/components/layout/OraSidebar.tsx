@@ -21,6 +21,7 @@ import { useChat, AskQuestionOptions } from '../../hooks/useChat';
 import Markdown from '../Markdown';
 import { useChatThreads, ChatThread } from '../../hooks/useChatThreads';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { api } from '../../lib/api';
 
 function isToday(dateStr: string): boolean {
@@ -114,6 +115,7 @@ export default function OraSidebar({
   onScopeChange,
 }: OraSidebarProps) {
   const { currentWorkspace } = useWorkspace();
+  const { confirm } = useConfirm();
   const {
     messages,
     loading,
@@ -625,12 +627,24 @@ export default function OraSidebar({
 
   const handleClearHistory = async () => {
     if (currentThreadId) {
-      if (confirm('Delete this conversation?')) {
+      const ok = await confirm({
+        title: 'Delete Conversation',
+        description: 'Delete this conversation? All associated messages and context will be permanently removed.',
+        confirmLabel: 'Delete',
+        variant: 'danger',
+      });
+      if (ok) {
         await deleteThread(currentThreadId);
         switchThread(null);
       }
     } else if (messages.length > 0) {
-      if (confirm('Clear current messages?')) {
+      const ok = await confirm({
+        title: 'Clear Current Messages',
+        description: 'Clear current messages in this workspace? This cannot be undone.',
+        confirmLabel: 'Clear Messages',
+        variant: 'warning',
+      });
+      if (ok) {
         await clearHistory(currentWorkspace?.id);
       }
     }

@@ -21,6 +21,7 @@ import { usePathname as useSwitcherPathname, useRouter as useSwitcherRouter } fr
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useChatThreads } from '../../hooks/useChatThreads';
+import { useConfirm } from '../../context/ConfirmContext';
 
 function WorkspaceTile({ name, logoUrl, size = 'md' }: { name: string; logoUrl?: string | null; size?: 'md' | 'sm' }) {
   const dims = size === 'sm' ? 'w-6 h-6 rounded-md' : 'w-7 h-7 rounded-lg';
@@ -212,6 +213,7 @@ export default function Sidebar({
   const { currentWorkspace, sidebarCollapsed } = useWorkspace();
   const { user, logout } = useAuth();
   const { threads, deleteThread } = useChatThreads(currentWorkspace?.id, 'universal');
+  const { confirm } = useConfirm();
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   // The sidebar body renders twice (desktop + hidden mobile drawer), so each
@@ -350,9 +352,15 @@ export default function Sidebar({
                       )}
                       <button
                         type="button"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          if (confirm('Delete this conversation?')) {
+                          const ok = await confirm({
+                            title: 'Delete Conversation',
+                            description: 'Delete this conversation? All associated messages and context will be permanently removed.',
+                            confirmLabel: 'Delete',
+                            variant: 'danger',
+                          });
+                          if (ok) {
                             void deleteThread(thread.id);
                             if (currentThreadId === thread.id) {
                               router.push('/playground');
