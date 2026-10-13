@@ -46,7 +46,7 @@ function LoginForm() {
           {/* Logo */}
           <Link className="flex items-center text-white" href="/">
             <QuelloMark className="size-7" />
-            <span className="text-lg font-medium tracking-tight">uello.</span>
+            <span className="text-lg font-medium tracking-tight">uello</span>
           </Link>
 
           {/* Heading & Features - aligned to bottom */}
