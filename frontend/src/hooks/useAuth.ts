@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { auth } from '../lib/auth';
-import { api } from '../lib/api';
-import { useRouter } from 'next/navigation';
+'use client';
+
+import { useAuthSession } from '../context/AuthContext';
 
 export interface User {
   id: string;
@@ -16,8 +15,7 @@ export interface User {
 }
 
 // Broadcast when the user profile changes (e.g. avatar saved in Settings).
-// Each useAuth instance owns independent state, so listeners refetch to stay
-// in sync without a page refresh.
+// The AuthSessionProvider listens and refetches without a page refresh.
 export const USER_UPDATED_EVENT = 'quello:user-updated';
 
 export function notifyUserUpdated() {
@@ -26,43 +24,23 @@ export function notifyUserUpdated() {
   }
 }
 
+/**
+ * Shared session hook backed by AuthSessionProvider (single /auth/me
+ * request per page load, sync token read on mount).
+ *
+ * Backwards-compatible return shape; adds `hasSession` (optimistic,
+ * network-independent) and `mounted` for hydration-safe nav CTAs.
+ */
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  const fetchUser = useCallback(async () => {
-    try {
-      if (!auth.isAuthenticated()) return null;
-      try {
-        const userData = await api.get('/auth/me');
-        setUser(userData);
-        return userData;
-      } catch (error) {
-        console.error("Failed to fetch user", error);
-        auth.removeToken();
-        setUser(null);
-        return null;
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchUser();
-    const handleUserUpdated = () => {
-      void fetchUser();
-    };
-    window.addEventListener(USER_UPDATED_EVENT, handleUserUpdated);
-    return () => window.removeEventListener(USER_UPDATED_EVENT, handleUserUpdated);
-  }, [fetchUser]);
-
-  const logout = () => {
-    auth.removeToken();
-    setUser(null);
-    router.push('/login');
+  const session = useAuthSession();
+  return {
+    user: session.user,
+    loading: session.loading,
+    logout: session.logout,
+    isAuthenticated: session.isAuthenticated,
+    refreshUser: session.refreshUser,
+    setUser: session.setUser,
+    hasSession: session.hasSession,
+    mounted: session.mounted,
   };
-
-  return { user, loading, logout, isAuthenticated: !!user, refreshUser: fetchUser, setUser };
 }

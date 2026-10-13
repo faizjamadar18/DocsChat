@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 export default function Navbar() {
   const [isSticky, setIsSticky] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAuthenticated, loading } = useAuth();
+  const { hasSession, mounted } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,12 +20,20 @@ export default function Navbar() {
   }, []);
 
   const renderActionButton = (size: 'default' | 'sm' = 'default') => {
-    // Hydration-safe: server and first client paint must match.
-    // useAuth starts with loading=true on both, so render nothing until
-    // the async user fetch resolves. Reading localStorage during render
-    // would diverge (null on server vs token on client).
-    if (loading) return null;
-    const showDashboard = isAuthenticated;
+    // Hydration-safe: server and first client paint render the skeleton.
+    // After mount, decide from the sync token read (hasSession) — never wait
+    // for the /auth/me round-trip, so the CTA is there on first paint.
+    if (!mounted) {
+      return (
+        <span
+          aria-hidden="true"
+          className={`inline-block rounded bg-[#e9e8e6] animate-pulse ${
+            size === 'sm' ? 'h-4 w-16' : 'h-5 w-20'
+          }`}
+        />
+      );
+    }
+    const showDashboard = hasSession;
     const label = showDashboard ? 'dashboard' : 'sign in';
     const href = showDashboard ? '/home' : '/login';
     return (

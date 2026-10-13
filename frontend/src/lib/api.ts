@@ -11,16 +11,26 @@ function parseErrorDetail(detail: unknown): string {
   return 'API Request Failed';
 }
 
+export interface ApiRequestOptions extends RequestInit {
+  /**
+   * Set for background auth probes (e.g. session verification on the
+   * landing page). A 401 there just means "signed out" — it must not
+   * force-navigate the whole page to /login.
+   */
+  skipAuthRedirect?: boolean;
+}
+
 export const api = {
-  async request(endpoint: string, options: RequestInit = {}) {
+  async request(endpoint: string, options: ApiRequestOptions = {}) {
+    const { skipAuthRedirect, ...fetchOptions } = options;
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...((options.headers as Record<string, string>) || {}),
+      ...((fetchOptions.headers as Record<string, string>) || {}),
     };
 
-    if (options.body instanceof FormData) {
+    if (fetchOptions.body instanceof FormData) {
       delete headers['Content-Type'];
     }
 
@@ -30,14 +40,14 @@ export const api = {
     }
 
     const response = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       headers,
     });
 
     if (!response.ok) {
       if (response.status === 401) {
         auth.removeToken();
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+        if (!skipAuthRedirect && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
           window.location.href = '/login';
         }
       }
@@ -52,11 +62,11 @@ export const api = {
     return response.json();
   },
 
-  get(endpoint: string, options?: RequestInit) {
+  get(endpoint: string, options?: ApiRequestOptions) {
     return this.request(endpoint, { ...options, method: 'GET' });
   },
 
-  post(endpoint: string, body: unknown, options?: RequestInit) {
+  post(endpoint: string, body: unknown, options?: ApiRequestOptions) {
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,
@@ -65,7 +75,7 @@ export const api = {
     });
   },
 
-  put(endpoint: string, body: unknown, options?: RequestInit) {
+  put(endpoint: string, body: unknown, options?: ApiRequestOptions) {
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,
@@ -74,7 +84,7 @@ export const api = {
     });
   },
 
-  patch(endpoint: string, body: unknown, options?: RequestInit) {
+  patch(endpoint: string, body: unknown, options?: ApiRequestOptions) {
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,
@@ -83,7 +93,7 @@ export const api = {
     });
   },
 
-  delete(endpoint: string, options?: RequestInit) {
+  delete(endpoint: string, options?: ApiRequestOptions) {
     return this.request(endpoint, { ...options, method: 'DELETE' });
   },
 
