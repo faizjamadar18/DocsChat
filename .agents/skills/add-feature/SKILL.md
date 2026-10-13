@@ -14,11 +14,10 @@ When instructed to add a new feature or implement a task described by the user, 
 
 ## 2. Branch & Git Strategy
 - **DO NOT** create a new branch for each individual task.
-- Maintain **one single `staging` branch** across all tasks.
-- Build each task cumulatively on this unified branch.
+- Work directly on the `main` branch. The build phase is done — only small tweaks remain, so there is no `staging` branch and no feature branches.
 - Each task must be committed with suitable, atomic Conventional Commits (e.g., `feat(chat): ...`, `test(chat): ...`, `fix(auth): ...`).
 - Commit types: `feat:` (new features), `fix:` (bug fixes), `refactor:` (restructuring without behavior change), `docs:` (documentation), `test:` (tests), `chore:` (dependencies, linting, etc.).
-- **NEVER** push or merge directly into `main`. `main` remains untouched; the user verifies the unified branch and opens the single PR into `main` when ready.
+- Commit and push to `main` directly.
 
 ## 3. Test-Driven Development (TDD) - Write Tests FIRST
 - **CRITICAL**: Before writing any implementation code for the backend, you MUST write the `pytest` file in `backend/tests/`.
@@ -55,5 +54,5 @@ Only after explicit user YES, execute the gates for the stack you touched (backe
 
 ## 6. Review & Hand Off
 - Call the `review-changes` skill to audit your work after each task.
-- Keep commits on the `staging` branch.
-- **NEVER open a Pull Request.** The user verifies the unified branch and opens the single PR into `main` themselves when ready. If asked, provide a ready-to-paste PR title and description summarizing the branch — but do not submit anything.
+- Keep commits on the `main` branch.
+- Push to `main` directly when done — no Pull Request workflow.

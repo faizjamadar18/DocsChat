@@ -38,7 +38,7 @@ PROVIDERS: list[dict] = [
         ),
         "needs": [
             "At least one document or PDF in your workspace",
-            "A Claude account (free plan works — one connector)",
+            "A Claude account",
         ],
         "steps": [
             "In Claude, open Settings, then Connectors.",
@@ -82,10 +82,6 @@ PROVIDERS: list[dict] = [
             "Ask Grok about your documents to test it.",
         ],
         "status": "ready",
-        "paid_note": (
-            "Free Grok accounts can add custom connectors "
-            "within usage limits. Heavy use may need paid."
-        ),
         "auth_note": (
             "Grok authenticates with a personal key. Create "
             "one in this panel and paste it as the token."
@@ -104,16 +100,9 @@ PROVIDERS: list[dict] = [
             "— searching PDFs and Studio documents, answering "
             "with citations, like Claude does today. Read-only."
         ),
-        "needs": [
-            "A paid ChatGPT plan (Plus or higher)",
-            "At least one document or PDF in your workspace",
-        ],
+        "needs": ["At least one document or PDF in your workspace"],
         "steps": [],
         "status": "soon",
-        "paid_note": (
-            "Custom connectors in ChatGPT need a paid plan "
-            "(Plus or higher) on your side."
-        ),
         "auth_note": "",
         "requires_key": False,
         "docs_url": "https://learn.chatgpt.com/apps-sdk/build/auth",
@@ -155,16 +144,9 @@ PROVIDERS: list[dict] = [
             "workspace alongside web search — answering from "
             "your PDFs and Studio documents. Read-only."
         ),
-        "needs": [
-            "A paid Perplexity plan (Pro or higher)",
-            "At least one document or PDF in your workspace",
-        ],
+        "needs": ["At least one document or PDF in your workspace"],
         "steps": [],
         "status": "soon",
-        "paid_note": (
-            "Custom connectors in Perplexity need a paid plan "
-            "(Pro or higher) on your side."
-        ),
         "auth_note": "",
         "requires_key": False,
         "docs_url": "https://www.perplexity.ai/help-center/en/articles/13915507-adding-custom-remote-connectors",
@@ -218,16 +200,9 @@ PROVIDERS: list[dict] = [
             "workspace — retrieving PDFs, Studio documents and "
             "sources to answer with citations. Read-only."
         ),
-        "needs": [
-            "A Microsoft Copilot license on your side",
-            "At least one document or PDF in your workspace",
-        ],
+        "needs": ["At least one document or PDF in your workspace"],
         "steps": [],
         "status": "soon",
-        "paid_note": (
-            "Custom MCP connectors in Copilot may need an "
-            "active Microsoft 365 Copilot license."
-        ),
         "auth_note": "",
         "requires_key": False,
         "docs_url": "https://learn.microsoft.com/en-us/microsoft-copilot-studio/mcp-add-existing-server-to-agent",
