@@ -14,7 +14,7 @@ When instructed to add a new feature or implement a task described by the user, 
 
 ## 2. Branch & Git Strategy
 - **DO NOT** create a new branch for each individual task.
-- Work directly on the `main` branch. The build phase is done — only small tweaks remain, so there is no `staging` branch and no feature branches.
+- Work directly on the `main` branch. The build phase is done — only small tweaks remain. Historical branches exist on the remote for the record only; do not create new branches and do not commit to them.
 - Each task must be committed with suitable, atomic Conventional Commits (e.g., `feat(chat): ...`, `test(chat): ...`, `fix(auth): ...`).
 - Commit types: `feat:` (new features), `fix:` (bug fixes), `refactor:` (restructuring without behavior change), `docs:` (documentation), `test:` (tests), `chore:` (dependencies, linting, etc.).
 - Commit and push to `main` directly.
