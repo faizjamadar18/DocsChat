@@ -38,7 +38,7 @@ function NotchEyes({ status }: { status: string }) {
         {bars.map((b, i) => (
           <span
             key={i}
-            className={`w-[5px] ${b.h} rounded-full bg-white animate-eq-bar ora-eyes-glow`}
+            className={`w-1.25 ${b.h} rounded-full bg-white animate-eq-bar ora-eyes-glow`}
             style={{ animationDelay: b.delay, animationDuration: b.dur }}
           />
         ))}
