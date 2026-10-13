@@ -21,32 +21,27 @@ When instructed to add a new feature or implement a task described by the user, 
 
 ## 3. Test-Driven Development (TDD) - Write Tests FIRST
 - **CRITICAL**: Before writing any implementation code for the backend, you MUST write the `pytest` file in `backend/tests/`.
-- Do NOT run `pytest`, `npm run lint`, `npx tsc --noEmit`, or any verification command on your own.
-- After writing code, STOP and ask the user for confirmation: "Code is ready. Shall I run lint/tests and commit?"
-- Only if the user says YES, run verifications and commit. If the user says NO or stays silent, leave code uncommitted.
+- NEVER run any verification command before the user's green signal — not even once, not even "just a quick check."
+- After writing code, STOP and ask the user to verify the change. Only on their explicit YES (green signal), run verifications, then commit and push. If the user says NO or stays silent, leave code uncommitted.
 - DO NOT start implementing the feature until the tests are written and clearly define the expected success and error responses.
 
-## 4. Implement (No Auto-Verify, No Auto-Commit)
+## 4. Implement (No Verify, No Commit — User Runs All Checks)
+## 4. Implement (No Verify Before Green Signal, No Commit)
 - Write the application code to fulfill the requirement.
-- Do NOT run `pytest`, linters, or TypeScript checks autonomously.
-- Do NOT self-test via terminal scripts unless the user explicitly asked.
-- The user verifies from their side. Wait for their signal.
+- Run NOTHING after writing code — no `pytest`, no linters, no TypeScript checks, no terminal test scripts.
+- Ask the user to verify the change and wait for their explicit YES (green signal).
 
-## 5. User-Confirmed Verification Gate (ONLY AFTER EXPLICIT USER YES)
-After implementing, STOP and tell the user the change is ready for them to verify on their side. Ask: "Code is ready. Please verify on your side — shall I run lint/tests, commit, and push to main?" Run NOTHING until the user replies YES.
-Only after explicit user YES, execute the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):
-1. **Frontend Verification** (only if `frontend/` changed):
-   - Run `npm run lint` in `frontend/` — must pass with 0 errors.
-   - Run `npx tsc --noEmit` in `frontend/` — all module imports, types, and paths must resolve without errors.
-   - Check the terminal logs of any running dev servers (e.g., Next.js dev server) to confirm zero compilation or module resolution errors.
-2. **Backend Verification** (only if `backend/` changed):
-   - Ensure dev dependencies are installed (`pip install -r requirements-dev.txt` in `backend/`).
-   - Run `pytest` in `backend/` using the virtual environment (`.\venv\Scripts\pytest` or `$env:PYTHONPATH="."; .\venv\Scripts\pytest`) — must achieve a 100% pass rate.
-   - Run backend linter (`flake8 app/` or equivalent) with zero syntax or import errors.
-3. **Reported Diagnostics**:
-   - Resolve all errors and warnings reported by the IDE or `current_problems` tooling before committing. (Tool-neutral: use whatever diagnostics the current harness surfaces.)
-4. **Edge Case Walkthrough**:
-   - Perform a quick sanity check for minute edge cases (empty/null states, boundary inputs, layout clipping/overflow, overlay positioning) so the user does not need to babysit.
+## 5. Green-Signal Gate (VERIFY → COMMIT → PUSH, ONLY AFTER EXPLICIT USER YES)
+After implementing, STOP and ask the user to verify the change. NOTHING runs until the user replies YES.
+Only after the green signal, in this order:
+1. Run the gates for the stack touched (backend-only changes skip frontend gates and vice versa):
+   - **Frontend** (only if `frontend/` changed): `npm run lint` (0 errors), `npx tsc --noEmit` (clean), dev-server logs clean.
+   - **Backend** (only if `backend/` changed): dev deps installed, `pytest` 100% pass, backend linter clean.
+   - **Reported Diagnostics**: resolve all IDE/`current_problems` errors and warnings.
+   - **Edge Case Walkthrough**: sanity-check empty/null states, boundaries, clipping/overflow.
+2. If anything fails: fix it, re-run until green — then proceed. Do not commit failing code.
+3. Commit with an atomic Conventional Commit, then `git push origin main`.
+The single user YES authorizes the whole verify → commit → push chain for that task. Never start the chain without it.
 5. **Zero-Tolerance Commit & Push Rule**:
     - Never commit or push without explicit user YES, even if all checks would pass.
     - Never commit code with failing tests, broken imports, compiler errors, unaddressed linter errors, IDE problem warnings, or unverified edge cases.
