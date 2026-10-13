@@ -109,7 +109,7 @@ export default function VoiceNotch() {
         <div className="bg-white rounded-2xl shadow-xl border border-border p-4 w-80 text-center">
           <p className="text-sm font-semibold text-text-primary">Add your free Vapi key</p>
           <p className="text-xs text-text-secondary mt-1 leading-relaxed">
-            Voice uses your own free key so the owner pays nothing. Takes 2 minutes.
+            Voice uses your own free VAPI key Takes 2 minutes.
           </p>
           <div className="flex items-center gap-2 mt-3">
             <Link
@@ -128,7 +128,7 @@ export default function VoiceNotch() {
             </button>
           </div>
           <p className="text-[11px] text-text-muted mt-2">
-            Dashboard: dashboard.vapi.ai -&gt; API Keys -&gt; copy Public key
+            Dashboard: vapi.ai -&gt; API Keys -&gt; copy Public key
           </p>
         </div>
       </div>
