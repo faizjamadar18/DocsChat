@@ -24,7 +24,6 @@ export interface McpProvider {
   needs: string[];
   steps: string[];
   status: McpProviderStatus;
-  paidNote?: string;
   authNote: string;
   /** Show the Personal keys manager inside this provider's drawer. */
   requiresKey: boolean;
@@ -54,7 +53,6 @@ interface McpProviderPayload {
   needs: string[];
   steps: string[];
   status: McpProviderStatus;
-  paid_note?: string;
   auth_note: string;
   requires_key: boolean;
 }
@@ -84,7 +82,6 @@ export async function fetchMcpProviders(): Promise<McpProvider[]> {
       needs: p.needs || [],
       steps: p.steps || [],
       status: p.status,
-      paidNote: p.paid_note,
       authNote: p.auth_note || '',
       requiresKey: p.requires_key,
       icon,

@@ -107,12 +107,6 @@ export default function McpDrawer({
             </ul>
           </div>
 
-          {provider.paidNote ? (
-            <p className="text-xs text-text-muted leading-relaxed rounded-xl border border-border bg-sidebar/30 px-3.5 py-2.5">
-              {provider.paidNote}
-            </p>
-          ) : null}
-
           {provider.requiresKey ? <McpKeys workspaceId={workspaceId} /> : null}
         </div>
 
