@@ -25,7 +25,42 @@ Field guide:
 import copy
 
 # status: "ready" (Connect works) or "soon" (drawer shows notice).
+# List order = card order on the /mcp page (ready first).
 PROVIDERS: list[dict] = [
+    {
+        "id": "chatgpt",
+        "name": "ChatGPT",
+        "tagline": "Use your workspace as a ChatGPT tool",
+        "about": (
+            "ChatGPT uses your Quello workspace as a tool "
+            "— searching PDFs and Studio documents, answering "
+            "with citations, like Claude does today. Read-only."
+        ),
+        "needs": [
+            "At least one document or PDF in your workspace",
+            "Developer Mode enabled in ChatGPT settings",
+        ],
+        "steps": [
+            "In ChatGPT web, open Settings, then Apps & Connectors.",
+            "Open Advanced settings and enable Developer Mode.",
+            "Click Create and paste your server URL as the app URL.",
+            "Choose OAuth, then Scan Tools and sign in with Quello.",
+            "Click Create, then pick the app from the composer menu.",
+            "Ask ChatGPT about your documents to test it.",
+        ],
+        "status": "ready",
+        "auth_note": (
+            "ChatGPT signs in with Quello via OAuth when the app "
+            "is added. If OAuth is not offered, create a personal "
+            "key in this panel and paste it as the bearer token."
+        ),
+        "requires_key": True,
+        "docs_url": "https://learn.chatgpt.com/apps-sdk/build/auth",
+        "redirect_uris": [
+            "https://chatgpt.com/connector/oauth/{callback_id}",
+        ],
+        "auth_modes": ["oauth_dcr", "oauth_cimd"],
+    },
     {
         "id": "claude",
         "name": "Claude",
@@ -90,40 +125,6 @@ PROVIDERS: list[dict] = [
         "docs_url": "https://docs.x.ai/grok/connector-management",
         "redirect_uris": [],
         "auth_modes": ["api_key", "oauth"],
-    },
-    {
-        "id": "chatgpt",
-        "name": "ChatGPT",
-        "tagline": "Use your workspace as a ChatGPT tool",
-        "about": (
-            "ChatGPT uses your Quello workspace as a tool "
-            "— searching PDFs and Studio documents, answering "
-            "with citations, like Claude does today. Read-only."
-        ),
-        "needs": [
-            "At least one document or PDF in your workspace",
-            "Developer Mode enabled in ChatGPT settings",
-        ],
-        "steps": [
-            "In ChatGPT web, open Settings, then Apps & Connectors.",
-            "Open Advanced settings and enable Developer Mode.",
-            "Click Create and paste your server URL as the app URL.",
-            "Choose OAuth, then Scan Tools and sign in with Quello.",
-            "Click Create, then pick the app from the composer menu.",
-            "Ask ChatGPT about your documents to test it.",
-        ],
-        "status": "ready",
-        "auth_note": (
-            "ChatGPT signs in with Quello via OAuth when the app "
-            "is added. If OAuth is not offered, create a personal "
-            "key in this panel and paste it as the bearer token."
-        ),
-        "requires_key": True,
-        "docs_url": "https://learn.chatgpt.com/apps-sdk/build/auth",
-        "redirect_uris": [
-            "https://chatgpt.com/connector/oauth/{callback_id}",
-        ],
-        "auth_modes": ["oauth_dcr", "oauth_cimd"],
     },
     {
         "id": "cursor",
