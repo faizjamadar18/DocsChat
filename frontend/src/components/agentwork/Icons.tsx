@@ -23,8 +23,10 @@ export function QuelloLogo({ className = 'h-6 w-auto', showName = true }: { clas
   return (
     <div className={`flex items-center gap-0.5 ${className}`}>
       <QuelloMark className="size-7 shrink-0" />
+      {/* Screen-reader / crawler brand name. Visually hidden, zero UI change. */}
+      <span className="sr-only">Quello</span>
       {showName && (
-        <span className="font-semibold text-lg tracking-[-0.03em] leading-none text-current">
+        <span aria-hidden="true" className="font-semibold text-lg tracking-[-0.03em] leading-none text-current">
           uello
         </span>
       )}

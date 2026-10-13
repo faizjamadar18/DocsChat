@@ -76,7 +76,7 @@ export default function Footer() {
           <div className="relative w-full aspect-1585/415 max-h-36 sm:max-h-56 md:max-h-88 lg:max-h-55 -mb-1 sm:-mb-3 md:-mb-6">
             <Image
               src="/images/footer-wordmark.svg"
-              alt="Quello.dev"
+              alt="Quello"
               fill
               loading="lazy"
               className="object-contain object-bottom drop-shadow-[0_8px_20px_rgba(255,255,255,0.95)]"
