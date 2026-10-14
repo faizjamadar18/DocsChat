@@ -83,11 +83,11 @@ async def resolve_workspace(
     requested: str | None = None,
     fallback: str | None = None,
 ) -> str:
-    """Pick the workspace for an MCP call, checking ownership.
+    """Pick the workspace for an MCP call, checking membership (shared-room).
 
-    A named workspace must be a valid id owned by the user.
-    Otherwise the key's workspace (or the user's active one)
-    is used. Raises 400 when none can be determined.
+    A named workspace must be owned OR shared with the user.
+    Otherwise the key's workspace (or the user's active one, if accessible)
+    is used. Raises 400/404 when none can be determined.
     """
     if requested:
         if not ObjectId.is_valid(requested):
@@ -95,18 +95,20 @@ async def resolve_workspace(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid workspace ID",
             )
-        ws = await database.workspaces_collection.find_one(
-            {"_id": ObjectId(requested), "owner_id": user_id}
-        )
-        if not ws:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Workspace not found",
-            )
+        try:
+            from app.services.workspace_access import get_workspace_with_access
+            await get_workspace_with_access(requested, user_id)
+        except HTTPException as exc:
+            raise exc
         return requested
 
     if fallback:
-        return fallback
+        try:
+            from app.services.workspace_access import get_workspace_with_access
+            await get_workspace_with_access(fallback, user_id)
+            return fallback
+        except HTTPException:
+            pass
 
     user = await database.users_collection.find_one(
         {"_id": ObjectId(user_id)}
@@ -116,5 +118,13 @@ async def resolve_workspace(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No workspace found. Create one first.",
+        )
+    try:
+        from app.services.workspace_access import get_workspace_with_access
+        await get_workspace_with_access(active, user_id)
+    except HTTPException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workspace not found",
         )
     return active

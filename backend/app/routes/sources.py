@@ -9,6 +9,7 @@ import app.database as database
 from app.database import check_db, DatabaseNotReadyError
 from app.models.source import SourceResponse, SourceListResponse
 from app.middleware.auth_middleware import get_current_user
+from app.services.workspace_access import get_workspace_with_access, require_role
 from app.services.rag_service import process_pdf, UPLOADS_DIR
 from app.services import vector_store as vs
 from app.config import get_settings
@@ -23,16 +24,18 @@ async def list_sources(
     x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
     current_user: dict = Depends(get_current_user),
 ):
-    """List all uploaded PDF sources for current user and active workspace."""
+    """List shared sources for a workspace (all members see same corpus)."""
     try:
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
 
     target_ws = workspace_id or x_workspace_id or current_user.get("active_workspace_id")
-    filter_query: dict = {"user_id": current_user["id"]}
     if target_ws:
-        filter_query["workspace_id"] = target_ws
+        await get_workspace_with_access(target_ws, current_user["id"])
+        filter_query: dict = {"workspace_id": target_ws}
+    else:
+        filter_query = {"user_id": current_user["id"]}
 
     cursor = database.sources_collection.find(filter_query).sort("uploaded_at", -1)
     sources = []
@@ -102,6 +105,9 @@ async def upload_pdf(
         )
 
     target_ws = workspace_id or x_workspace_id or current_user.get("active_workspace_id")
+    if target_ws:
+        _ws, _role = await get_workspace_with_access(target_ws, current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot upload. Ask the owner for editor access.")
 
     user_upload_dir = os.path.join(UPLOADS_DIR, current_user["id"])
     os.makedirs(user_upload_dir, exist_ok=True)
@@ -155,7 +161,7 @@ async def upload_pdf(
 
 @router.get("/{source_id}", response_model=SourceResponse)
 async def get_source(source_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a specific source's details."""
+    """Get a specific source's details (shared room)."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -166,10 +172,13 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
 
     source = await database.sources_collection.find_one({
         "_id": ObjectId(source_id),
-        "user_id": current_user["id"],
     })
 
     if not source:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+    if source.get("workspace_id"):
+        await get_workspace_with_access(source["workspace_id"], current_user["id"])
+    elif str(source.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
 
     uploaded_at = source.get("uploaded_at")
@@ -199,7 +208,7 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
 
 @router.get("/{source_id}/download")
 async def download_source(source_id: str, current_user: dict = Depends(get_current_user)):
-    """Download a source PDF file."""
+    """Download a source PDF file (shared room)."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -210,10 +219,13 @@ async def download_source(source_id: str, current_user: dict = Depends(get_curre
 
     source = await database.sources_collection.find_one({
         "_id": ObjectId(source_id),
-        "user_id": current_user["id"],
     })
 
     if not source:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+    if source.get("workspace_id"):
+        await get_workspace_with_access(source["workspace_id"], current_user["id"])
+    elif str(source.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
 
     file_path = source.get("file_path")
@@ -229,7 +241,7 @@ async def download_source(source_id: str, current_user: dict = Depends(get_curre
 
 @router.delete("/{source_id}", status_code=status.HTTP_200_OK)
 async def delete_source(source_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete a source: remove vectors from Qdrant, file from disk, and record from MongoDB."""
+    """Delete a source: owner can delete any, editor only own uploads, viewer none."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -240,10 +252,21 @@ async def delete_source(source_id: str, current_user: dict = Depends(get_current
 
     source = await database.sources_collection.find_one({
         "_id": ObjectId(source_id),
-        "user_id": current_user["id"],
     })
 
     if not source:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+    ws_id = source.get("workspace_id")
+    if ws_id:
+        _ws, _role = await get_workspace_with_access(ws_id, current_user["id"])
+        is_uploader = str(source.get("user_id")) == current_user["id"]
+        if _role == "owner":
+            pass
+        elif _role == "editor" and is_uploader:
+            pass
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only owner or uploader can delete")
+    elif str(source.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
 
     deleted_vectors = await asyncio.to_thread(

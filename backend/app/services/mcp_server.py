@@ -10,9 +10,9 @@ Two layers:
    Inspector. Without the SDK the FastAPI route keeps
    working on its own.
 
-Per-call isolation: every function filters by
-(user_id, workspace_id). No path reads another user's
-documents or vectors.
+Shared-room isolation: every function checks workspace membership
+(owner OR member) then filters by workspace_id only. One member's
+key can never reach a workspace they are not in.
 """
 import asyncio
 from typing import Optional
@@ -61,12 +61,15 @@ async def search_workspace_for_user(
     query: str,
     top_k: int = 5,
 ) -> list[dict]:
-    """Search one workspace. Passages carry source + page."""
+    """Search one shared workspace. Caller must be member. Passages carry source + page."""
     _require_db()
     query = (query or "").strip()
     if not query:
         raise ValueError("query must not be empty")
     top_k = max(1, min(int(top_k or 5), 10))
+
+    from app.services.workspace_access import get_workspace_with_access
+    await get_workspace_with_access(workspace_id, user_id)
 
     _, citations = await retrieve_workspace_knowledge(
         user_id=user_id,
@@ -94,19 +97,21 @@ async def fetch_document_for_user(
     workspace_id: str,
     source_id: str,
 ) -> dict:
-    """Fetch one owned document. 400 bad id, 404 missing."""
+    """Fetch one shared-workspace document. 400 bad id, 404 missing/no access."""
     _require_db()
     if not ObjectId.is_valid(source_id or ""):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid source ID",
         )
+    from app.services.workspace_access import get_workspace_with_access
+    await get_workspace_with_access(workspace_id, user_id)
 
-    # Studio document first (full text lives in MongoDB).
+    # Studio document first (full text lives in MongoDB, shared by workspace).
     studio_doc = None
     try:
         studio_doc = await database.documents_collection.find_one(
-            {"_id": ObjectId(source_id), "user_id": user_id}
+            {"_id": ObjectId(source_id), "workspace_id": workspace_id}
         )
     except Exception:
         studio_doc = None
@@ -121,11 +126,11 @@ async def fetch_document_for_user(
             "truncated": truncated,
         }
 
-    # Uploaded / connector source (content lives as chunks in Qdrant).
+    # Uploaded / connector source (content lives as chunks in Qdrant, shared).
     source = None
     try:
         source = await database.sources_collection.find_one(
-            {"_id": ObjectId(source_id), "user_id": user_id}
+            {"_id": ObjectId(source_id), "workspace_id": workspace_id}
         )
     except Exception:
         source = None

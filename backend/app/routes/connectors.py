@@ -308,6 +308,10 @@ async def drive_import_files(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Pick at least one file to import")
     target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    if target_ws:
+        from app.services.workspace_access import get_workspace_with_access, require_role
+        _ws, _role = await get_workspace_with_access(target_ws, current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot import. Ask the owner for editor access.")
     acct = await database.connector_accounts_collection.find_one(
         {"user_id": current_user["id"], "provider": "drive"}
     )
@@ -425,6 +429,10 @@ async def notion_import_pages(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Pick at least one page to import")
     target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    if target_ws:
+        from app.services.workspace_access import get_workspace_with_access, require_role
+        _ws, _role = await get_workspace_with_access(target_ws, current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot import. Ask the owner for editor access.")
     acct = await database.connector_accounts_collection.find_one(
         {"user_id": current_user["id"], "provider": "notion"}
     )
@@ -612,6 +620,10 @@ async def github_import_repos(
     from app.services.github_sync_service import MAX_REPOS_PER_USER, sync_github_repo
 
     target_ws = _workspace_of(current_user, workspace_id, x_workspace_id)
+    if target_ws:
+        from app.services.workspace_access import get_workspace_with_access, require_role
+        _ws, _role = await get_workspace_with_access(target_ws, current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot import. Ask the owner for editor access.")
     acct = await database.connector_accounts_collection.find_one(
         {"user_id": current_user["id"], "provider": "github"}
     )
@@ -676,25 +688,39 @@ async def resync_source(
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
-    """Re-fetch remote content and re-index (replaces old vectors)."""
+    """Re-fetch remote content. Shared room: only importer or workspace owner (uses importer's token)."""
     _require_db()
     if not ObjectId.is_valid(source_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid source ID")
     source = await database.sources_collection.find_one({
-        "_id": ObjectId(source_id), "user_id": current_user["id"],
+        "_id": ObjectId(source_id),
     })
     if not source:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
-    if source.get("source_type") not in ("notion", "drive"):
+    ws_id = source.get("workspace_id")
+    caller_role = None
+    if ws_id:
+        from app.services.workspace_access import get_workspace_with_access
+        _ws, caller_role = await get_workspace_with_access(ws_id, current_user["id"])
+    elif str(source.get("user_id")) != current_user["id"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+    importer_id = str(source.get("user_id"))
+    is_importer = importer_id == current_user["id"]
+    is_owner = caller_role == "owner" or (not ws_id and is_importer)
+    if not (is_importer or is_owner):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Only the importer or workspace owner can re-sync")
+    token_owner_id = importer_id
+    if source.get("source_type") not in ("notion", "drive", "github"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Only imported connector sources can be re-synced")
     provider = source.get("source_type")
     acct = await database.connector_accounts_collection.find_one(
-        {"user_id": current_user["id"], "provider": provider}
+        {"user_id": token_owner_id, "provider": provider}
     )
     if not acct:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"{provider} not connected. Please reconnect.")
+                            detail=f"{provider} not connected. Ask the importer to reconnect.")
 
     if provider == "notion":
         try:
@@ -704,7 +730,7 @@ async def resync_source(
                                 detail="Stored token invalid. Please reconnect.")
         from app.services.notion_sync_service import sync_notion_page
         background_tasks.add_task(
-            sync_notion_page, current_user["id"], source.get("workspace_id"),
+            sync_notion_page, token_owner_id, source.get("workspace_id"),
             source_id, source.get("remote_id"), token,
             (source.get("filename") or "").replace("[Notion] ", ""),
             source.get("remote_url"),
@@ -712,7 +738,7 @@ async def resync_source(
     elif provider == "drive":
         from app.services.drive_sync_service import sync_drive_file
         background_tasks.add_task(
-            sync_drive_file, current_user["id"], source.get("workspace_id"),
+            sync_drive_file, token_owner_id, source.get("workspace_id"),
             source_id, source.get("remote_id"),
             (source.get("filename") or "").replace("[Drive] ", ""),
             source.get("remote_mime"),
@@ -720,7 +746,7 @@ async def resync_source(
     elif provider == "github":
         from app.services.github_sync_service import sync_github_repo
         background_tasks.add_task(
-            sync_github_repo, current_user["id"], source.get("workspace_id"),
+            sync_github_repo, token_owner_id, source.get("workspace_id"),
             source_id, source.get("remote_id"), source.get("remote_url"),
         )
     else:

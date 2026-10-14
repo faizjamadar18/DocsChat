@@ -17,6 +17,7 @@ from app.models.chat import (
 )
 from app.middleware.auth_middleware import get_current_user
 from app.services.rag_service import ask_question, retrieve_for_query
+from app.services.workspace_access import get_workspace_with_access
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
@@ -306,6 +307,10 @@ async def ask(
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
+
+    if target_workspace_id:
+        # Shared-room: any member can query shared corpus with private threads
+        await get_workspace_with_access(target_workspace_id, user_id)
 
     # Resolve or create thread
     active_thread_id = request.thread_id

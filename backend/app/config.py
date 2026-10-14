@@ -45,6 +45,11 @@ class Settings(BaseSettings):
     GITHUB_APP_CLIENT_SECRET: str = ""
     GITHUB_APP_REDIRECT_URI: str = ""
 
+    # Team invites via Resend (free tier: 3000/mo, 100/day). Empty = log-only mode.
+    RESEND_API_KEY: str = ""
+    INVITE_FROM_EMAIL: str = "Quello <invite@quello.dev>"
+    INVITE_TOKEN_DAYS: int = 7
+
     # MCP Server (remote, Streamable HTTP — free, official MCP SDK)
     # Public URL of this backend, e.g. https://docschat-api.onrender.com
     # Used for OAuth discovery metadata. Empty = derived from the request.

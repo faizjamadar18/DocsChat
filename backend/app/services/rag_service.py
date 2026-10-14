@@ -157,9 +157,9 @@ async def retrieve_workspace_knowledge(
     top_k: int = 5,
 ) -> tuple[str | None, list[dict]]:
     """
-    Unified retrieval logic shared by both Text Agent and Voice Agent.
-    Strictly isolates by user_id and workspace_id.
-    Filters by scope_ids if @-mentions were provided.
+    Unified retrieval shared by Text + Voice + MCP.
+    Shared-room: corpus isolated by workspace_id only (all members same).
+    user_id kept for audit compat only.
     """
     results = await asyncio.to_thread(
         vs.query_workspace_documents,
@@ -214,11 +214,15 @@ async def get_workspace_catalog(user_id: str, workspace_id: Optional[str] = None
     if database.documents_collection is None or database.sources_collection is None:
         return "Workspace catalog is currently unavailable.", 0, 0
 
-    doc_filter: dict = {"user_id": user_id}
-    source_filter: dict = {"user_id": user_id, "status": "ready"}
+    doc_filter: dict = {}
+    source_filter: dict = {"status": "ready"}
     if workspace_id:
         doc_filter["workspace_id"] = workspace_id
         source_filter["workspace_id"] = workspace_id
+    else:
+        # Legacy fallback: scope to user when no workspace
+        doc_filter["user_id"] = user_id
+        source_filter["user_id"] = user_id
 
     # Fetch Studio documents
     doc_titles = []

@@ -5,6 +5,7 @@ from typing import Optional, Dict, Any
 
 class GoogleAuthRequest(BaseModel):
     credential: str = Field(..., description="Google ID Token")
+    invite_token: Optional[str] = Field(None, description="Team invite token (skips solo room)")
 
 
 class UserInDB(BaseModel):
@@ -38,7 +39,8 @@ class ProfileUpdateRequest(BaseModel):
 
 
 class OnboardingRequest(BaseModel):
-    workspace_name: str = Field(..., min_length=1, max_length=100)
+    workspace_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    invite_token: Optional[str] = Field(None, description="Team invite token (skips solo room)")
 
 
 class TokenResponse(BaseModel):

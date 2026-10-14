@@ -13,6 +13,7 @@ from app.models.document import (
 from app.middleware.auth_middleware import get_current_user
 from app.services.rag_service import process_document_content
 from app.services import vector_store as vs
+from app.services.workspace_access import get_workspace_with_access, require_role
 
 router = APIRouter(prefix="/api/documents", tags=["Documents"])
 
@@ -54,6 +55,8 @@ async def create_document(
     target_ws = workspace_id or x_workspace_id or current_user.get("active_workspace_id")
     if not target_ws:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active workspace found")
+    _ws, _role = await get_workspace_with_access(target_ws, current_user["id"])
+    require_role(_role, ("owner", "editor"), "Viewers cannot create documents.")
 
     now = datetime.now(timezone.utc)
     doc_dict = {
@@ -91,16 +94,18 @@ async def list_documents(
     x_workspace_id: Optional[str] = Header(None, alias="X-Workspace-Id"),
     current_user: dict = Depends(get_current_user),
 ):
-    """List documents for the active or specified workspace, with optional title search."""
+    """List documents for a shared workspace (all members see same)."""
     try:
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
 
     target_ws = workspace_id or x_workspace_id or current_user.get("active_workspace_id")
-    filter_query: dict = {"user_id": current_user["id"]}
     if target_ws:
-        filter_query["workspace_id"] = target_ws
+        await get_workspace_with_access(target_ws, current_user["id"])
+        filter_query: dict = {"workspace_id": target_ws}
+    else:
+        filter_query = {"user_id": current_user["id"]}
 
     if search and search.strip():
         import re
@@ -119,7 +124,7 @@ async def get_document(
     document_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Get single document by ID."""
+    """Get single document by ID (shared room)."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -130,9 +135,12 @@ async def get_document(
 
     doc = await database.documents_collection.find_one({
         "_id": ObjectId(document_id),
-        "user_id": current_user["id"],
     })
     if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    if doc.get("workspace_id"):
+        await get_workspace_with_access(doc["workspace_id"], current_user["id"])
+    elif str(doc.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     return _doc_to_response(doc)
@@ -146,7 +154,7 @@ async def update_document(
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
-    """Update document title, content_json, and/or content_text with auto-indexing."""
+    """Update document (owner+editor)."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -157,9 +165,13 @@ async def update_document(
 
     doc = await database.documents_collection.find_one({
         "_id": ObjectId(document_id),
-        "user_id": current_user["id"],
     })
     if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    if doc.get("workspace_id"):
+        _ws, _role = await get_workspace_with_access(doc["workspace_id"], current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot edit documents")
+    elif str(doc.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     now = datetime.now(timezone.utc)
@@ -201,7 +213,7 @@ async def delete_document(
     document_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Delete a document from MongoDB and purge its vector chunks from Qdrant."""
+    """Delete a document (owner any, editor own uploads). Vectors purged workspace-wide."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -212,9 +224,19 @@ async def delete_document(
 
     doc = await database.documents_collection.find_one({
         "_id": ObjectId(document_id),
-        "user_id": current_user["id"],
     })
     if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    if doc.get("workspace_id"):
+        _ws, _role = await get_workspace_with_access(doc["workspace_id"], current_user["id"])
+        is_own = str(doc.get("user_id")) == current_user["id"]
+        if _role == "owner":
+            pass
+        elif _role == "editor" and is_own:
+            pass
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only owner or creator can delete")
+    elif str(doc.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     await database.documents_collection.delete_one({"_id": ObjectId(document_id)})
@@ -234,7 +256,7 @@ async def reindex_document(
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
-    """Explicitly trigger re-indexing of a Studio document to Qdrant."""
+    """Explicitly trigger re-indexing (shared room, editor+)."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -245,9 +267,13 @@ async def reindex_document(
 
     doc = await database.documents_collection.find_one({
         "_id": ObjectId(document_id),
-        "user_id": current_user["id"],
     })
     if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    if doc.get("workspace_id"):
+        _ws, _role = await get_workspace_with_access(doc["workspace_id"], current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot reindex")
+    elif str(doc.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
     background_tasks.add_task(

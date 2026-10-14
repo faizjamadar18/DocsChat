@@ -116,7 +116,9 @@ def query_workspace_documents(
     top_k: int = 5,
 ) -> list[dict]:
     """
-    Unified query isolated by user_id and workspace_id.
+    Shared-room query isolated by workspace_id only.
+    user_id kept for signature compat + audit, NOT for filtering, so all
+    members query the same corpus regardless of uploader.
     Optionally filters by scope_ids (@-mentions).
     """
     _ensure_collection_exists()
@@ -126,7 +128,6 @@ def query_workspace_documents(
     query_embedding = generate_single_embedding(query)
 
     must_conditions = [
-        models.FieldCondition(key="user_id", match=models.MatchValue(value=user_id)),
         models.FieldCondition(key="workspace_id", match=models.MatchValue(value=workspace_id)),
     ]
 
@@ -202,7 +203,7 @@ def query_documents(
 
 
 def delete_source_vectors(user_id: str, source_id: str):
-    """Delete all vectors belonging to a specific source for a user."""
+    """Delete all vectors belonging to a specific source (workspace-shared)."""
     _ensure_collection_exists()
     if not _qdrant_client:
         return 0
@@ -213,10 +214,6 @@ def delete_source_vectors(user_id: str, source_id: str):
             points_selector=models.FilterSelector(
                 filter=models.Filter(
                     must=[
-                        models.FieldCondition(
-                            key="user_id",
-                            match=models.MatchValue(value=user_id),
-                        ),
                         models.FieldCondition(
                             key="source_id",
                             match=models.MatchValue(value=source_id),
@@ -232,7 +229,7 @@ def delete_source_vectors(user_id: str, source_id: str):
 
 
 def delete_workspace_vectors(user_id: str, workspace_id: str):
-    """Delete all vectors belonging to a specific workspace for a user."""
+    """Delete all vectors belonging to a specific workspace (all members' corpus)."""
     _ensure_collection_exists()
     if not _qdrant_client:
         return 0
@@ -243,10 +240,6 @@ def delete_workspace_vectors(user_id: str, workspace_id: str):
             points_selector=models.FilterSelector(
                 filter=models.Filter(
                     must=[
-                        models.FieldCondition(
-                            key="user_id",
-                            match=models.MatchValue(value=user_id),
-                        ),
                         models.FieldCondition(
                             key="workspace_id",
                             match=models.MatchValue(value=workspace_id),

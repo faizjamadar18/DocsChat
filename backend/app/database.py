@@ -25,6 +25,7 @@ mcp_keys_collection: AsyncIOMotorCollection | None = None
 oauth_clients_collection: AsyncIOMotorCollection | None = None
 oauth_codes_collection: AsyncIOMotorCollection | None = None
 oauth_tokens_collection: AsyncIOMotorCollection | None = None
+workspace_invites_collection: AsyncIOMotorCollection | None = None
 
 
 def slugify(text: str) -> str:
@@ -83,7 +84,44 @@ async def run_migrations():
             {"$set": update_fields}
         )
 
-    # 2. Backfill onboarding flag: pre-onboarding users skip onboarding.
+    # 2. Backfill workspace members: owner becomes first member.
+    # Shared-room model: members[] governs access, owner_id stays source of truth.
+    try:
+        member_cursor = workspaces_collection.find({
+            "$or": [
+                {"members": None},
+                {"members": {"$exists": False}},
+                {"members": []},
+            ]
+        })
+        async for ws in member_cursor:
+            owner = ws.get("owner_id")
+            if not owner:
+                continue
+            owner_str = str(owner)
+            owner_email = None
+            try:
+                from bson import ObjectId as _OID
+                if _OID.is_valid(owner_str):
+                    _u = await users_collection.find_one({"_id": _OID(owner_str)})
+                    if _u:
+                        owner_email = _u.get("email")
+            except Exception:
+                pass
+            await workspaces_collection.update_one(
+                {"_id": ws["_id"]},
+                {"$set": {"members": [{
+                    "user_id": owner_str,
+                    "email": owner_email,
+                    "role": "owner",
+                    "added_by": owner_str,
+                    "added_at": ws.get("created_at") or datetime.now(timezone.utc),
+                }]}},
+            )
+    except Exception as e:
+        print(f"Warning: workspace members backfill: {e}")
+
+    # 2b. Backfill onboarding flag: pre-onboarding users skip onboarding.
     await users_collection.update_many(
         {"onboarding_completed": {"$exists": False}},
         {"$set": {"onboarding_completed": True}},
@@ -164,6 +202,7 @@ async def init_db():
     global voice_logs_collection, connector_accounts_collection, sync_jobs_collection
     global mcp_keys_collection, oauth_clients_collection
     global oauth_codes_collection, oauth_tokens_collection
+    global workspace_invites_collection
 
     client = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client[settings.DB_NAME]
@@ -181,6 +220,7 @@ async def init_db():
     oauth_clients_collection = db["oauth_clients"]
     oauth_codes_collection = db["oauth_codes"]
     oauth_tokens_collection = db["oauth_tokens"]
+    workspace_invites_collection = db["workspace_invites"]
 
     # Run auto-migration hook for existing records BEFORE index creation
     await run_migrations()
@@ -195,6 +235,18 @@ async def init_db():
         await workspaces_collection.create_index([("owner_id", 1), ("slug", 1)], unique=True, sparse=True)
     except Exception as e:
         print(f"Warning: workspaces index creation: {e}")
+
+    try:
+        await workspaces_collection.create_index("members.user_id", sparse=True)
+    except Exception as e:
+        print(f"Warning: workspace members index: {e}")
+
+    try:
+        await workspace_invites_collection.create_index("token", unique=True, sparse=True)
+        await workspace_invites_collection.create_index([("workspace_id", 1), ("email", 1)])
+        await workspace_invites_collection.create_index("expires_at", expireAfterSeconds=0)
+    except Exception as e:
+        print(f"Warning: workspace invites index creation: {e}")
 
     try:
         await documents_collection.create_index([("workspace_id", 1), ("updated_at", -1)])

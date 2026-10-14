@@ -15,6 +15,29 @@ settings = get_settings()
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 
+async def _valid_invite_for_email(token: str | None, email: str) -> dict | None:
+    """Return pending, unexpired invite for this email, else None (never raises)."""
+    if not token or not email:
+        return None
+    invites = getattr(database, "workspace_invites_collection", None)
+    if invites is None:
+        return None
+    try:
+        inv = await invites.find_one({"token": token, "status": "pending"})
+    except Exception:
+        return None
+    if not inv:
+        return None
+    if (inv.get("email") or "").lower() != (email or "").lower():
+        return None
+    exp = inv.get("expires_at")
+    if exp:
+        aware = exp if getattr(exp, "tzinfo", None) else exp.replace(tzinfo=timezone.utc)
+        if aware < datetime.now(timezone.utc):
+            return None
+    return inv
+
+
 @router.post("/google", response_model=TokenResponse)
 async def google_login(request: GoogleAuthRequest):
     """Login or Register with Google OAuth"""
@@ -60,28 +83,45 @@ async def google_login(request: GoogleAuthRequest):
         result = await database.users_collection.insert_one(user_doc)
         user_id = str(result.inserted_id)
 
-        # Auto-provision default workspace
-        base_slug = slugify(username or "my-hq")
-        ws_doc = {
-            "owner_id": user_id,
-            "name": f"{username or 'My'} HQ",
-            "slug": base_slug,
-            "description": "Default workspace",
-            "logo_url": None,
-            "created_at": now,
-            "updated_at": now,
-        }
-        ws_result = await database.workspaces_collection.insert_one(ws_doc)
-        active_ws_id = str(ws_result.inserted_id)
+        # Invite path: valid team invite -> NO solo room and NO onboarding
+        # detour. Google already gave us the name; the Join click is the
+        # consent moment. Abandoned invites fall back to solo provision on
+        # next login (existing-users branch below).
+        invite = await _valid_invite_for_email(request.invite_token, email)
+        active_ws_id = None
+        auto_completed = False
+        if invite is None:
+            # Auto-provision default workspace (solo signup)
+            base_slug = slugify(username or "my-hq")
+            ws_doc = {
+                "owner_id": user_id,
+                "name": f"{username or 'My'} HQ",
+                "slug": base_slug,
+                "description": "Default workspace",
+                "logo_url": None,
+                "members": [{"user_id": user_id, "email": email, "role": "owner",
+                             "added_by": user_id, "added_at": now}],
+                "created_at": now,
+                "updated_at": now,
+            }
+            ws_result = await database.workspaces_collection.insert_one(ws_doc)
+            active_ws_id = str(ws_result.inserted_id)
 
-        await database.users_collection.update_one(
-            {"_id": result.inserted_id},
-            {"$set": {"active_workspace_id": active_ws_id}}
-        )
+            await database.users_collection.update_one(
+                {"_id": result.inserted_id},
+                {"$set": {"active_workspace_id": active_ws_id}}
+            )
+        else:
+            # Valid invite: skip solo room AND onboarding screens entirely.
+            auto_completed = True
+            await database.users_collection.update_one(
+                {"_id": result.inserted_id},
+                {"$set": {"onboarding_completed": True}}
+            )
         user = user_doc
         user["active_workspace_id"] = active_ws_id
-        user["onboarding_completed"] = False
-        is_new_user = True
+        user["onboarding_completed"] = auto_completed
+        is_new_user = not auto_completed
     else:
         # Existing user
         user_id = str(user["_id"])
@@ -107,6 +147,8 @@ async def google_login(request: GoogleAuthRequest):
                     "slug": slugify(user.get("username") or username or "my-hq"),
                     "description": "Default workspace",
                     "logo_url": None,
+                    "members": [{"user_id": user_id, "email": user.get("email") or email,
+                                 "role": "owner", "added_by": user_id, "added_at": now}],
                     "created_at": now,
                     "updated_at": now,
                 }
@@ -157,7 +199,29 @@ async def complete_onboarding(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
 
     user_id = current_user["id"]
-    workspace_name = data.workspace_name.strip()
+
+    # Invite path: valid team invite -> complete onboarding WITHOUT a solo
+    # room. Frontend routes back to /join/{token}; Join accept activates
+    # the team room. No rename, no provision.
+    if data.invite_token:
+        invite = await _valid_invite_for_email(data.invite_token, current_user.get("email", ""))
+        if invite is not None:
+            await database.users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"onboarding_completed": True}},
+            )
+            return UserResponse(
+                id=user_id,
+                username=current_user["username"],
+                email=current_user["email"],
+                auth_provider=current_user.get("auth_provider", "google"),
+                picture=current_user.get("picture"),
+                active_workspace_id=current_user.get("active_workspace_id"),
+                onboarding_completed=True,
+                created_at=current_user["created_at"],
+            )
+
+    workspace_name = (data.workspace_name or "").strip()
     if not workspace_name:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -174,7 +238,36 @@ async def complete_onboarding(
     if not workspace:
         workspace = await database.workspaces_collection.find_one({"owner_id": user_id})
     if not workspace:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
+        # Room-less user (e.g. expired invite link): provision a solo room
+        # instead of stranding them with onboarding incomplete.
+        now = datetime.now(timezone.utc)
+        fallback = {
+            "owner_id": user_id,
+            "name": workspace_name,
+            "slug": slugify(workspace_name),
+            "description": "Default workspace",
+            "logo_url": None,
+            "members": [{"user_id": user_id, "email": current_user.get("email"),
+                         "role": "owner", "added_by": user_id, "added_at": now}],
+            "created_at": now,
+            "updated_at": now,
+        }
+        res = await database.workspaces_collection.insert_one(fallback)
+        fallback["_id"] = res.inserted_id
+        await database.users_collection.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"active_workspace_id": str(res.inserted_id), "onboarding_completed": True}},
+        )
+        return UserResponse(
+            id=user_id,
+            username=current_user["username"],
+            email=current_user["email"],
+            auth_provider=current_user.get("auth_provider", "google"),
+            picture=current_user.get("picture"),
+            active_workspace_id=str(res.inserted_id),
+            onboarding_completed=True,
+            created_at=current_user["created_at"],
+        )
 
     workspace_id = workspace["_id"]
     base_slug = slugify(workspace_name)
