@@ -153,7 +153,14 @@ def test_workspace_search_returns_passages_with_source_and_location():
     with patch.object(
         mcp_svc, "retrieve_workspace_knowledge",
         new=AsyncMock(return_value=("Sick leaves: 12 per year", citations)),
-    ), patch.object(mcp_svc, "check_db", return_value=None):
+    ), patch.object(mcp_svc, "check_db", return_value=None), \
+         patch("app.database.workspaces_collection") as mock_ws, \
+         patch("app.database.check_db"):
+        # Shared-room contract: caller is owner-member of the workspace.
+        mock_ws.find_one = AsyncMock(return_value={
+            "_id": ObjectId(WORKSPACE_ID), "owner_id": USER_ID,
+            "name": "HQ", "members": [{"user_id": USER_ID, "role": "owner"}],
+        })
         passages = _aio.new_event_loop().run_until_complete(
             mcp_svc.search_workspace_for_user(
                 USER_ID, WORKSPACE_ID, "sick leaves", top_k=5
@@ -189,8 +196,14 @@ def test_document_fetch_studio_doc_and_pdf_source():
 
     studio_id = str(ObjectId())
     with patch("app.services.mcp_server.check_db"), \
+         patch("app.database.check_db"), \
+         patch("app.database.workspaces_collection") as mock_ws, \
          patch("app.database.documents_collection") as mock_docs, \
          patch("app.database.sources_collection") as mock_sources:
+        mock_ws.find_one = AsyncMock(return_value={
+            "_id": ObjectId(WORKSPACE_ID), "owner_id": USER_ID,
+            "name": "HQ", "members": [{"user_id": USER_ID, "role": "owner"}],
+        })
         mock_docs.find_one = AsyncMock(return_value={
             "_id": ObjectId(studio_id),
             "user_id": USER_ID,
@@ -207,9 +220,15 @@ def test_document_fetch_studio_doc_and_pdf_source():
 
     pdf_id = str(ObjectId())
     with patch("app.services.mcp_server.check_db"), \
+         patch("app.database.check_db"), \
+         patch("app.database.workspaces_collection") as mock_ws, \
          patch("app.database.documents_collection") as mock_docs, \
          patch("app.database.sources_collection") as mock_sources, \
          patch("app.services.mcp_server.vs") as mock_vs:
+        mock_ws.find_one = AsyncMock(return_value={
+            "_id": ObjectId(WORKSPACE_ID), "owner_id": USER_ID,
+            "name": "HQ", "members": [{"user_id": USER_ID, "role": "owner"}],
+        })
         mock_docs.find_one = AsyncMock(return_value=None)
         mock_sources.find_one = AsyncMock(return_value={
             "_id": ObjectId(pdf_id),
@@ -232,14 +251,22 @@ def test_document_fetch_studio_doc_and_pdf_source():
         assert "chunk one" in doc["text"]
 
 
-def test_document_fetch_other_user_doc_is_404():
+def test_document_fetch_non_member_is_404():
+    # Shared-room contract (migrated): same-workspace docs are shared, so
+    # isolation is by membership, not uploader. A non-member gets 404.
     from app.services import mcp_server as mcp_svc
     from fastapi import HTTPException
     import asyncio as _aio
     loop = _aio.new_event_loop()
     with patch("app.services.mcp_server.check_db"), \
+         patch("app.database.check_db"), \
+         patch("app.database.workspaces_collection") as mock_ws, \
          patch("app.database.documents_collection") as mock_docs, \
          patch("app.database.sources_collection") as mock_sources:
+        mock_ws.find_one = AsyncMock(return_value={
+            "_id": ObjectId(WORKSPACE_ID), "owner_id": str(ObjectId()),
+            "name": "HQ", "members": [],
+        })
         mock_docs.find_one = AsyncMock(return_value=None)
         mock_sources.find_one = AsyncMock(return_value=None)
         try:
@@ -251,7 +278,7 @@ def test_document_fetch_other_user_doc_is_404():
         except HTTPException as e:
             assert e.status_code == 404
             return
-        raise AssertionError("other-user doc must 404")
+        raise AssertionError("non-member fetch must 404")
 
 
 def test_document_fetch_invalid_id_is_400():
@@ -444,10 +471,17 @@ def test_mcp_grok_workspace_search_is_scoped_to_key_owner():
         "score": 0.91,
     }]
     with patch("app.services.mcp_auth.check_db"), \
+         patch("app.database.check_db"), \
+         patch("app.database.workspaces_collection") as mock_ws, \
          patch("app.database.mcp_keys_collection") as mock_keys, \
          patch("app.routes.mcp.search_workspace_for_user",
                new=AsyncMock(return_value=passages)) as mock_search:
         mock_keys.find_one = AsyncMock(return_value=key_doc)
+        # Shared-room contract: key owner is a member of the key's workspace.
+        mock_ws.find_one = AsyncMock(return_value={
+            "_id": ObjectId(WORKSPACE_ID), "owner_id": OTHER_USER_ID,
+            "name": "HQ", "members": [{"user_id": OTHER_USER_ID, "role": "owner"}],
+        })
         resp = client.post("/mcp", headers={
             "Authorization": f"Bearer {presented}",
         }, json={

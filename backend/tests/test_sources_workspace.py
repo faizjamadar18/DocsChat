@@ -20,6 +20,14 @@ def mock_db():
          patch("app.database.sources_collection") as mock_sources, \
          patch("app.database.workspaces_collection") as mock_workspaces:
         with patch("app.routes.sources.check_db"):
+            # Shared-room contract: caller is owner-member of the workspace.
+            mock_workspaces.find_one = AsyncMock(return_value={
+                "_id": ObjectId(WORKSPACE_1),
+                "owner_id": USER_ID,
+                "name": "HQ",
+                "slug": "hq",
+                "members": [{"user_id": USER_ID, "email": USER_EMAIL, "role": "owner"}],
+            })
             yield {"users": mock_users, "sources": mock_sources, "workspaces": mock_workspaces}
 
 def test_list_sources_scoped_to_active_workspace(mock_db):

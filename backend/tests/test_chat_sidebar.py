@@ -18,10 +18,19 @@ DOC_ID = str(ObjectId())
 def mock_db():
     with patch("app.database.users_collection") as mock_users, \
          patch("app.database.messages_collection") as mock_messages, \
+         patch("app.database.workspaces_collection") as mock_workspaces, \
          patch("app.database.chat_threads_collection") as mock_threads:
         with patch("app.routes.chat.check_db"):
             mock_threads.find_one = AsyncMock(return_value=None)
             mock_threads.insert_one = AsyncMock(return_value=AsyncMock(inserted_id=ObjectId()))
+            # Shared-room contract: asker is owner-member of the workspace.
+            mock_workspaces.find_one = AsyncMock(return_value={
+                "_id": ObjectId(WORKSPACE_ID),
+                "owner_id": USER_ID,
+                "name": "HQ",
+                "slug": "hq",
+                "members": [{"user_id": USER_ID, "email": USER_EMAIL, "role": "owner"}],
+            })
             yield {"users": mock_users, "messages": mock_messages, "threads": mock_threads}
 
 

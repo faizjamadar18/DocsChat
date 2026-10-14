@@ -21,6 +21,14 @@ def mock_db():
          patch("app.database.documents_collection") as mock_documents, \
          patch("app.database.workspaces_collection") as mock_workspaces:
         with patch("app.routes.documents.check_db") if hasattr(app, "routes") else patch("app.database.check_db"):
+            # Shared-room contract: caller is owner-member of the workspace.
+            mock_workspaces.find_one = AsyncMock(return_value={
+                "_id": ObjectId(WORKSPACE_ID),
+                "owner_id": USER_ID,
+                "name": "Studio HQ",
+                "slug": "studio-hq",
+                "members": [{"user_id": USER_ID, "email": USER_EMAIL, "role": "owner"}],
+            })
             yield {
                 "users": mock_users,
                 "documents": mock_documents,
