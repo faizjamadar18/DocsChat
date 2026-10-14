@@ -1,26 +1,23 @@
 ---
 name: review-changes
-description: Checklist for auditing code before committing.
+description: Checklist for auditing code before handover and commit.
 ---
 
 # Review Changes & Pre-Commit Verification Checklist
 
-User-confirmation gate: do NOT run any check or commit on your own.
-First ask: "Code is ready. Shall I run lint/tests and commit?" Only if the user says YES, review and execute this checklist:
+Run this audit yourself after implementing and going green — before handing over to the user.
 
-## 1. Pre-Commit Quality & Verification Gate (only after explicit user YES)
-
-## 1. Pre-Commit Quality & Verification Gate
+## 1. Verification Gate (agent-run, before handover)
 Run ONLY the gates for the stack you touched (backend-only changes skip frontend gates and vice versa):
-- [ ] Backend: All `pytest` tests pass with a 100% pass rate (`pytest` executed in virtual environment with `requirements-dev.txt` installed).
-- [ ] Backend: Code passes `flake8 app/` with no syntax or unhandled import errors.
+- [ ] Backend: All `pytest` tests pass with a 100% pass rate (`pytest` executed in virtual environment with `requirements-dev.txt` installed). Warnings raised inside third-party packages are left as they are.
+- [ ] Backend: Code passes `flake8 app/ --select=F,E9` with no syntax or unhandled import errors.
 - [ ] Frontend: `npm run lint` passes with 0 errors and 0 warnings.
 - [ ] Frontend: `npx tsc --noEmit` passes with 0 errors and 0 warnings (all imports and path aliases resolve).
+- [ ] Theme gate: no banned classes in touched frontend scope (per `DESIGN.md`).
 - [ ] Terminal: Running dev servers (Next.js, FastAPI) show zero 500 runtime or module resolution errors.
-- [ ] **Reported Diagnostics**: All errors and warnings surfaced by the IDE or `current_problems` tooling are resolved before committing.
-- [ ] **Edge Case Walkthrough**: Briefly review subtle edge cases (null/empty states, boundary inputs, layout clipping/overflow, modal/overlay behavior) before committing.
-- [ ] Under NO circumstance should code be committed before the user said YES and all checks above are green.
-- [ ] Never run `pytest`, `flake8`, `npm run lint`, or `npx tsc --noEmit` without explicit user YES.
+- [ ] **Reported Diagnostics**: All errors and warnings surfaced by the IDE or `current_problems` tooling are resolved.
+- [ ] **Edge Case Walkthrough**: Briefly review subtle edge cases (null/empty states, boundary inputs, layout clipping/overflow, modal/overlay behavior).
+- [ ] Obsolete old tests were migrated to the newly approved behavior (not deleted silently) and the migration is documented in the handover.
 
 ## 2. Security Audit
 - [ ] No API keys, passwords, or secrets are hardcoded in the source code.
@@ -35,4 +32,14 @@ Run ONLY the gates for the stack you touched (backend-only changes skip frontend
 - [ ] No leftover `TODO` or `FIXME` comments unless explicitly deferred by the user.
 - [ ] No unused imports, broken paths, or dead code.
 
-If any of these fail, STOP, fix the code, and wait for the next user YES before re-verifying or committing. Never auto-verify or auto-commit.
+## 5. Handover Package (NO commit, NO push yet)
+Hand over with:
+- [ ] What changed (files + behavior).
+- [ ] Test results (new + full suite numbers, lint/tsc status).
+- [ ] ALL user-side configuration: local `.env` values, third-party setup (keys, domains, quotas), local verification steps, production notes.
+- [ ] Explicit request for confirmation to push to `main`.
+
+## 6. Push Gate (ONLY AFTER EXPLICIT USER CONFIRMATION)
+- [ ] User confirmed. Commit with an atomic Conventional Commit, then `git push origin main`.
+- [ ] Never commit or push without that confirmation. Never commit failing code.
+- [ ] If the user reports a production/live failure with an error, fix it and re-run the gates.
