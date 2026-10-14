@@ -27,9 +27,10 @@ interface RecentItem {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const { currentWorkspace } = useWorkspace();
+  const { currentWorkspace, refreshWorkspaces } = useWorkspace();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const healedRef = useRef(false);
 
   const [askQuery, setAskQuery] = useState('');
   const [recentAssets, setRecentAssets] = useState<RecentItem[]>([]);
@@ -89,11 +90,22 @@ export default function HomePage() {
           setRecentDocs(docs);
         }
       } catch (err) {
+        // Stale pointer self-heal (once): the active room may be gone
+        // (left/removed/deleted). Refresh rooms, retry the first
+        // accessible one; if none, the zero-room gate takes over silently.
+        const msg = err instanceof Error ? err.message : '';
+        if (!healedRef.current && msg === 'Workspace not found') {
+          healedRef.current = true;
+          try {
+            await refreshWorkspaces();
+          } catch { /* ignore */ }
+          return;
+        }
         console.error("Failed to fetch dashboard data:", err);
       }
     }
     loadData();
-  }, [currentWorkspace?.id, user?.active_workspace_id]);
+  }, [currentWorkspace?.id, user?.active_workspace_id, refreshWorkspaces]);
 
   // Full workspace source lists for the @ mention dropdown.
   useEffect(() => {

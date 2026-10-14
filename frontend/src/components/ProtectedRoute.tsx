@@ -19,7 +19,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       user?.onboarding_completed === false &&
       !pathname?.startsWith('/onboarding')
     ) {
-      router.push('/onboarding/welcome');
+      // Letter-never-lost: carry deep links (e.g. /join/{token}) through onboarding.
+      router.push(`/onboarding/welcome?next=${encodeURIComponent(pathname || '/home')}`);
     }
   }, [isAuthenticated, loading, user, pathname, router]);
 

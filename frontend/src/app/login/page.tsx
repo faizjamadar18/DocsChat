@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
@@ -13,6 +13,12 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams?.get('next') || '/home';
+  // Letter-never-lost: carry a /join/{token} invite through Google signup
+  // so invited new users skip the solo room (backend honors invite_token).
+  const inviteToken =
+    next.startsWith('/join/') ? decodeURIComponent(next.slice('/join/'.length)).split('?')[0].split('/')[0] : null;
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     setError('');
@@ -25,11 +31,20 @@ function LoginForm() {
     }
 
     try {
-      const data = await api.post('/auth/google', { credential: credentialResponse.credential });
+      const data = await api.post('/auth/google', {
+        credential: credentialResponse.credential,
+        ...(inviteToken ? { invite_token: inviteToken } : {}),
+      });
       auth.setToken(data.access_token);
       const needsOnboarding =
         data.is_new_user === true || data.user?.onboarding_completed === false;
-      router.push(needsOnboarding ? '/onboarding/welcome' : '/home');
+      if (needsOnboarding) {
+        router.push(`/onboarding/welcome?next=${encodeURIComponent(next)}`);
+      } else if (next && next.startsWith('/') && !next.startsWith('//')) {
+        router.push(next);
+      } else {
+        router.push('/home');
+      }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
       setError(errorMessage);

@@ -12,6 +12,8 @@ export interface Workspace {
   description?: string | null;
   created_at?: string;
   updated_at?: string;
+  role?: 'owner' | 'editor' | 'viewer' | string;
+  member_count?: number;
 }
 
 interface WorkspaceContextType {

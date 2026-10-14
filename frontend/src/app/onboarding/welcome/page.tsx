@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '../../../lib/auth';
 import { api } from '../../../lib/api';
 
-export default function WelcomePage() {
+function WelcomeInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams?.get('next') || '';
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export default function WelcomePage() {
       try {
         const me = await api.get('/auth/me');
         if (!cancelled && me?.onboarding_completed === true) {
-          router.push('/home');
+          router.push(next && next.startsWith('/') && !next.startsWith('//') ? next : '/home');
           return;
         }
       } catch {
@@ -31,7 +33,7 @@ export default function WelcomePage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, next]);
 
   if (checking) {
     return (
@@ -52,7 +54,7 @@ export default function WelcomePage() {
       </p>
       <button
         type="button"
-        onClick={() => router.push('/onboarding/organization')}
+        onClick={() => router.push(`/onboarding/organization${next ? `?next=${encodeURIComponent(next)}` : ''}`)}
         className="mt-8 w-full h-10 rounded-lg bg-[#eeeeec] hover:bg-white text-[#111110] text-[14px] font-medium transition-all active:scale-[0.99] cursor-pointer shadow-xs"
       >
         Get started
@@ -60,3 +62,12 @@ export default function WelcomePage() {
     </div>
   );
 }
+
+export default function WelcomePage() {
+  return (
+    <Suspense>
+      <WelcomeInner />
+    </Suspense>
+  );
+}
+

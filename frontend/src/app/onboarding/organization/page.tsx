@@ -1,12 +1,18 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { auth } from '../../../lib/auth';
 import { api } from '../../../lib/api';
 
-export default function OrganizationPage() {
+function OrganizationInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams?.get('next') || '';
+  // Letter-never-lost: a /join/{token} next means invite signup. Backend
+  // completes onboarding room-less; we route back to the Join screen.
+  const inviteToken =
+    next.startsWith('/join/') ? decodeURIComponent(next.slice('/join/'.length)).split('?')[0].split('/')[0] : null;
   const [checking, setChecking] = useState(true);
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -22,7 +28,7 @@ export default function OrganizationPage() {
       try {
         const me = await api.get('/auth/me');
         if (!cancelled && me?.onboarding_completed === true) {
-          router.push('/home');
+          router.push(next && next.startsWith('/') && !next.startsWith('//') ? next : '/home');
           return;
         }
         // Prefill with the auto-provisioned workspace name so Continue works instantly.
@@ -46,7 +52,7 @@ export default function OrganizationPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, next]);
 
   const handleContinue = async () => {
     setError('');
@@ -61,8 +67,11 @@ export default function OrganizationPage() {
     }
     setSaving(true);
     try {
-      await api.patch('/auth/onboarding', { workspace_name: trimmed });
-      router.push('/home');
+      await api.patch('/auth/onboarding', {
+        workspace_name: trimmed,
+        ...(inviteToken ? { invite_token: inviteToken } : {}),
+      });
+      router.push(next && next.startsWith('/') && !next.startsWith('//') ? next : '/home');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not save. Try again.');
     } finally {
@@ -116,3 +125,12 @@ export default function OrganizationPage() {
     </div>
   );
 }
+
+export default function OrganizationPage() {
+  return (
+    <Suspense>
+      <OrganizationInner />
+    </Suspense>
+  );
+}
+

@@ -13,7 +13,7 @@ export default function Header({
   onToggleMobileSidebar?: () => void;
 }) {
   const pathname = usePathname();
-  const { currentWorkspace, toggleSidebar, activeDocTitle } = useWorkspace();
+  const { currentWorkspace, toggleSidebar, activeDocTitle, workspaces, loading } = useWorkspace();
   const { user } = useAuth();
   const { startVoice, status: voiceStatus } = useVoiceAgent();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -24,7 +24,11 @@ export default function Header({
     return () => window.removeEventListener('open-search-palette', handleOpen);
   }, []);
 
-  const workspaceName = currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'Quello HQ');
+  // Room-less: never render a phantom room name. Neutral product crumb instead.
+  const roomless = !loading && workspaces.length === 0;
+  const workspaceName = roomless
+    ? 'Quello'
+    : currentWorkspace?.name || (user?.username ? `${user.username} HQ` : 'Quello HQ');
 
   // Compute breadcrumb segments
   const getBreadcrumbs = () => {

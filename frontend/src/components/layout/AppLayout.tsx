@@ -6,6 +6,7 @@ import { VoiceAgentProvider } from '../../context/VoiceAgentContext';
 import VoiceNotch from '../voice/VoiceNotch';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import EmptyWorkspaceGate from './EmptyWorkspaceGate';
 
 function AppShell({
   children,
@@ -18,7 +19,13 @@ function AppShell({
   onCloseMobile: () => void;
   onOpenMobile: () => void;
 }) {
-  const { currentWorkspace } = useWorkspace();
+  const { currentWorkspace, workspaces, loading: workspacesLoading } = useWorkspace();
+
+  // Zero-room gate: no rooms left (left/removed with nothing else) blocks
+  // EVERY workspace tab at the shell — never a per-tab message, never a
+  // forced modal, never onboarding again. /join, /login, /onboarding live
+  // outside this shell and keep working.
+  const roomless = !workspacesLoading && workspaces.length === 0;
 
   return (
     // Remount the entire workspace subtree on switch so no previous-workspace
@@ -41,7 +48,7 @@ function AppShell({
 
         {/* Scrollable Canvas / Workspace View */}
         <main className="flex-1 min-h-0 flex flex-col overflow-y-auto bg-surface rounded-none lg:rounded-tl-[20px] border-0 lg:border-t lg:border-l border-border/80 shadow-none lg:shadow-2xs">
-          {children}
+          {roomless ? <EmptyWorkspaceGate /> : children}
         </main>
       </div>
     </div>

@@ -9,6 +9,7 @@ import UploadModal from '@/components/assets/UploadModal';
 import DeleteConfirmationModal from '@/components/assets/DeleteConfirmationModal';
 import UploadBanner, { UploadState } from '@/components/assets/UploadBanner';
 import OraSidebar, { OraLogoMark } from '@/components/layout/OraSidebar';
+import { useWorkspace } from '@/context/WorkspaceContext';
 
 export interface Source {
   id: string;
@@ -63,6 +64,8 @@ function formatTimeAgo(dateString: string): string {
 }
 
 export default function AssetsPage() {
+  const { currentWorkspace } = useWorkspace();
+  const canEdit = (currentWorkspace?.role || 'owner') !== 'viewer';
   const [sources, setSources] = useState<Source[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -387,6 +390,7 @@ export default function AssetsPage() {
               <span>Quello</span>
             </button>
 
+            {canEdit && (
             <button
               type="button"
               onClick={() => setIsUploadModalOpen(true)}
@@ -395,6 +399,7 @@ export default function AssetsPage() {
               <Plus className="w-3.5 h-3.5" />
               <span>Upload</span>
             </button>
+            )}
           </div>
         </div>
 
@@ -445,8 +450,9 @@ export default function AssetsPage() {
                   </div>
                   <p className="text-[13px] font-medium text-text-primary">No assets yet</p>
                   <p className="text-xs text-text-muted mt-0.5 max-w-xs mx-auto">
-                    Upload a document or connect a source to query, summarize, and cite it with Quello.
+                    {canEdit ? 'Upload a document or connect a source to query, summarize, and cite it with Quello.' : 'Ask questions about documents your team has shared here.'}
                   </p>
+                  {canEdit && (
                   <button
                     type="button"
                     onClick={() => setIsUploadModalOpen(true)}
@@ -455,6 +461,7 @@ export default function AssetsPage() {
                     <Plus className="w-3.5 h-3.5" />
                     Upload document
                   </button>
+                  )}
                 </div>
               )
             ) : (

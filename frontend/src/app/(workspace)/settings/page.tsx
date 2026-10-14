@@ -24,6 +24,8 @@ import { useWorkspace } from '../../../context/WorkspaceContext';
 import { useConfirm } from '../../../context/ConfirmContext';
 import { useAuth, notifyUserUpdated } from '../../../hooks/useAuth';
 import { api } from '../../../lib/api';
+import MembersTab from '../../../components/settings/MembersTab';
+import CreateWorkspaceModal from '../../../components/workspaces/CreateWorkspaceModal';
 import { useVapiKey } from '../../../hooks/useVapiKey';
 import { useVoiceLogs, type VoiceLog } from '../../../hooks/useVoiceLogs';
 import VoiceLogModal from '../../../components/voice/VoiceLogModal';
@@ -82,7 +84,7 @@ const sanitizeSlug = (val: string) => {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'voice'>('account');
+  const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'members' | 'voice'>('account');
   const { currentWorkspace, refreshWorkspaces, workspaces, switchWorkspace } = useWorkspace();
   const { user, logout, setUser } = useAuth();
   const { status: vapiStatus, saving: vapiSaving, error: vapiError, saveKey, deleteKey } = useVapiKey();
@@ -136,13 +138,8 @@ export default function SettingsPage() {
     setWorkspaceError('');
   }
 
-  // Create Workspace Modal State
+  // Create Workspace Modal State (shared dialog component owns the form)
   const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
-  const [newWsName, setNewWsName] = useState('');
-  const [newWsSlug, setNewWsSlug] = useState('');
-  const [newWsDescription, setNewWsDescription] = useState('');
-  const [creatingWorkspace, setCreatingWorkspace] = useState(false);
-  const [createWorkspaceError, setCreateWorkspaceError] = useState('');
 
   // Delete Workspace Modal State
   const [showDeleteWorkspace, setShowDeleteWorkspace] = useState(false);
@@ -178,27 +175,17 @@ export default function SettingsPage() {
     setDeleteWorkspaceError('');
   }, [deletingWorkspace]);
 
-  const handleCloseCreateWorkspace = useCallback(() => {
-    if (creatingWorkspace) return;
-    setShowCreateWorkspace(false);
-    setNewWsName('');
-    setNewWsSlug('');
-    setNewWsDescription('');
-    setCreateWorkspaceError('');
-  }, [creatingWorkspace]);
-
   // Keyboard shortcut (Escape) to close modals
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (showDeleteAccount && !deletingAccount) handleCloseDeleteAccount();
         if (showDeleteWorkspace && !deletingWorkspace) handleCloseDeleteWorkspace();
-        if (showCreateWorkspace && !creatingWorkspace) handleCloseCreateWorkspace();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showDeleteAccount, deletingAccount, showDeleteWorkspace, deletingWorkspace, showCreateWorkspace, creatingWorkspace, handleCloseDeleteAccount, handleCloseDeleteWorkspace, handleCloseCreateWorkspace]);
+  }, [showDeleteAccount, deletingAccount, showDeleteWorkspace, deletingWorkspace, handleCloseDeleteAccount, handleCloseDeleteWorkspace]);
 
   // Profile Picture Upload Handler — stages a preview only. The image is
   // persisted when Save Profile is clicked, so it renders site-wide at once.
@@ -302,34 +289,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Create New Workspace Handler
-  const handleCreateWorkspace = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = newWsName.trim();
-    if (!trimmed) {
-      setCreateWorkspaceError('Workspace name is required.');
-      return;
-    }
-    setCreatingWorkspace(true);
-    setCreateWorkspaceError('');
-    try {
-      const created = await api.post('/workspaces', {
-        name: trimmed,
-        slug: newWsSlug.trim() ? sanitizeSlug(newWsSlug) : sanitizeSlug(trimmed),
-        description: newWsDescription.trim() || null,
-      });
-      await refreshWorkspaces();
-      if (created?.id) {
-        await switchWorkspace(created.id);
-      }
-      handleCloseCreateWorkspace();
-    } catch (err: unknown) {
-      setCreateWorkspaceError(err instanceof Error ? err.message : 'Failed to create workspace.');
-    } finally {
-      setCreatingWorkspace(false);
-    }
-  };
-
   // Delete Workspace Handler
   const handleDeleteWorkspace = async () => {
     if (!currentWorkspace || currentWorkspace.id === 'default') return;
@@ -411,6 +370,18 @@ export default function SettingsPage() {
             }`}
           >
             Workspace
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('members')}
+            className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activeTab === 'members'
+                ? 'bg-neutral-900 text-white shadow-xs'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            Members
           </button>
 
           <button
@@ -731,10 +702,6 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setNewWsName('');
-                  setNewWsSlug('');
-                  setNewWsDescription('');
-                  setCreateWorkspaceError('');
                   setShowCreateWorkspace(true);
                 }}
                 className="px-3.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
@@ -906,108 +873,11 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Modal: Create Workspace */}
-          {showCreateWorkspace && isMounted && createPortal(
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-                onClick={handleCloseCreateWorkspace}
-              />
-              <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-border overflow-hidden animate-fade-in">
-                <button
-                  type="button"
-                  onClick={handleCloseCreateWorkspace}
-                  disabled={creatingWorkspace}
-                  className="absolute top-4 right-4 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer disabled:opacity-50"
-                  title="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-
-                <form onSubmit={handleCreateWorkspace} className="p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-neutral-100 text-neutral-800 flex items-center justify-center shrink-0">
-                      <Building className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-text-primary">Create New Workspace</h3>
-                      <p className="text-xs text-text-muted">Organize your documents into a dedicated space</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-text-primary">Workspace Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={newWsName}
-                      onChange={(e) => {
-                        setNewWsName(e.target.value);
-                        if (!newWsSlug) {
-                          setNewWsSlug(sanitizeSlug(e.target.value));
-                        }
-                      }}
-                      placeholder="e.g. Design Team HQ"
-                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-text-primary">URL Slug</label>
-                    <div className="flex items-center rounded-xl border border-border overflow-hidden bg-[#F9F9FA] focus-within:bg-white focus-within:border-primary transition-all">
-                      <span className="px-3 py-2 bg-sidebar text-[11px] text-text-secondary border-r border-border select-none">
-                        quello.app/
-                      </span>
-                      <input
-                        type="text"
-                        value={newWsSlug}
-                        onChange={(e) => setNewWsSlug(sanitizeSlug(e.target.value))}
-                        placeholder="design-team"
-                        className="flex-1 px-3 py-2 text-xs text-text-primary focus:outline-none bg-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-medium text-text-primary">Description (optional)</label>
-                    <textarea
-                      rows={2}
-                      value={newWsDescription}
-                      onChange={(e) => setNewWsDescription(e.target.value)}
-                      placeholder="What is this workspace for?"
-                      className="w-full px-4 py-2 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-text-muted"
-                    />
-                  </div>
-
-                  {createWorkspaceError && (
-                    <p className="text-xs text-red-600 font-medium">{createWorkspaceError}</p>
-                  )}
-
-                  <div className="flex items-center justify-end gap-2.5 pt-2">
-                    <button
-                      type="button"
-                      disabled={creatingWorkspace}
-                      onClick={handleCloseCreateWorkspace}
-                      className="px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary bg-white hover:bg-sidebar border border-border rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={creatingWorkspace || !newWsName.trim()}
-                      className="px-4 py-2 text-xs font-medium bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center gap-2"
-                    >
-                      {creatingWorkspace && (
-                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      )}
-                      {creatingWorkspace ? 'Creating...' : 'Create Workspace'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>,
-            document.body
-          )}
+          {/* Modal: Create Workspace (shared dialog) */}
+          <CreateWorkspaceModal
+            open={showCreateWorkspace}
+            onClose={() => setShowCreateWorkspace(false)}
+          />
 
           {/* Modal: Delete Workspace Confirmation */}
           {showDeleteWorkspace && isMounted && createPortal(
@@ -1093,6 +963,11 @@ export default function SettingsPage() {
           )}
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* TAB: MEMBERS                                                            */}
+      {/* ========================================================================= */}
+      {activeTab === 'members' && <MembersTab />}
 
       {/* ========================================================================= */}
       {/* TAB 3: VOICE LOGS                                                         */}

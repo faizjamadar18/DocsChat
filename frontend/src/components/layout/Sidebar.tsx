@@ -37,7 +37,7 @@ function WorkspaceTile({ name, logoUrl, size = 'md' }: { name: string; logoUrl?:
 }
 
 function WorkspaceSwitcher({ onSwitch }: { onSwitch?: () => void }) {
-  const { workspaces, currentWorkspace, switchWorkspace } = useWorkspace();
+  const { workspaces, currentWorkspace, switchWorkspace, loading } = useWorkspace();
   const { user } = useAuth();
   const switcherPathname = useSwitcherPathname();
   const switcherRouter = useSwitcherRouter();
@@ -88,6 +88,21 @@ function WorkspaceSwitcher({ onSwitch }: { onSwitch?: () => void }) {
     : currentWorkspace
       ? [currentWorkspace]
       : [];
+
+  // Room-less: no phantom names. Static label, no dropdown — the real list
+  // returns by itself the moment a room exists.
+  if (!loading && workspaces.length === 0) {
+    return (
+      <div className="flex items-center gap-2.5 min-w-0 w-full cursor-default">
+        <div className="w-6 h-6 rounded-md bg-sidebar border border-border flex items-center justify-center shrink-0">
+          <span className="text-[11px] font-semibold text-text-muted">–</span>
+        </div>
+        <span className="text-sm font-medium text-text-muted truncate flex-1">
+          No workspaces
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} className="relative">
@@ -164,6 +179,11 @@ function WorkspaceSwitcher({ onSwitch }: { onSwitch?: () => void }) {
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs font-medium text-text-primary truncate leading-tight">
                     {ws.name}
+                    {(ws.role && ws.role !== 'owner') && (
+                      <span className="ml-1.5 inline-flex items-center px-1.5 py-px rounded-full bg-accent-soft text-accent text-[10px] font-medium align-middle">
+                        {ws.role === 'editor' ? 'Shared • Editor' : 'Shared'}
+                      </span>
+                    )}
                   </span>
                   <span className="block text-[11px] text-text-muted truncate leading-tight">
                     quello.app/{ws.slug}
