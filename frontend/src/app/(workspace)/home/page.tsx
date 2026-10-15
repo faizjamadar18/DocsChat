@@ -64,6 +64,7 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    let cancelled = false;
     async function loadData() {
       // Key on the live workspace context (not the stale session snapshot) so
       // switching workspaces refills Home immediately, without a refresh.
@@ -71,6 +72,7 @@ export default function HomePage() {
       if (!wsId) return;
       try {
         const data = await api.get(`/workspaces/${wsId}/dashboard`);
+        if (cancelled) return;
         if (data) {
           const assets: RecentItem[] = (data.recent_assets || []).map((a: { id: string; filename: string; file_size: number; uploaded_at: string; source_type?: string }) => ({
             id: a.id,
@@ -105,6 +107,14 @@ export default function HomePage() {
       }
     }
     loadData();
+    const reload = () => { void loadData(); };
+    window.addEventListener('sources-updated', reload);
+    window.addEventListener('focus', reload);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('sources-updated', reload);
+      window.removeEventListener('focus', reload);
+    };
   }, [currentWorkspace?.id, user?.active_workspace_id, refreshWorkspaces]);
 
   // Full workspace source lists for the @ mention dropdown.

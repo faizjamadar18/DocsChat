@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, MoreVertical, Download, Trash2, X, Eye, Layers } from 'lucide-react';
 import { api } from '@/lib/api';
+import { auth } from '@/lib/auth';
 import {
   FilenameIcon,
 } from '@/components/connectors/ConnectorIcons';
@@ -218,6 +219,9 @@ export default function AssetsPage() {
               // Only add to sources UI once processing is completely finished
               await fetchSources();
               setSelectedAsset(updated);
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('sources-updated'));
+              }
             }
             return;
           }
@@ -284,6 +288,9 @@ export default function AssetsPage() {
         return next.length === 0 ? null : next;
       });
       await fetchSources();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('sources-updated'));
+      }
     } catch (err) {
       console.error('Failed to delete source:', err);
     } finally {
@@ -294,7 +301,7 @@ export default function AssetsPage() {
 
   const handleDownload = async (source: Source) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = auth.getToken();
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/api/sources/${source.id}/download`, {
         headers: {
@@ -321,7 +328,7 @@ export default function AssetsPage() {
   // no modal/iframe held in the React tree. Object URL revoked after a minute.
   const handleView = async (source: Source) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = auth.getToken();
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/api/sources/${source.id}/download`, {
         headers: {
