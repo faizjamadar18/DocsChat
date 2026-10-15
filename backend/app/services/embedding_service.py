@@ -12,9 +12,26 @@ _embeddings = GoogleGenerativeAIEmbeddings(
 def generate_embeddings(texts: list[str]) -> list[list[float]]:
     """
     Generate embeddings for a list of text strings via Google's embedding API.
+    Batches in 50s with one retry so large PDFs don't time out on free tier.
     Returns list of embedding vectors.
     """
-    return _embeddings.embed_documents(texts)
+    import time
+    out: list[list[float]] = []
+    batch_size = 50
+    for start in range(0, len(texts), batch_size):
+        batch = texts[start:start + batch_size]
+        last_err: Exception | None = None
+        for attempt in range(2):
+            try:
+                out.extend(_embeddings.embed_documents(batch))
+                last_err = None
+                break
+            except Exception as e:
+                last_err = e
+                time.sleep(2 * (attempt + 1))
+        if last_err is not None:
+            raise last_err
+    return out
 
 
 def generate_single_embedding(text: str) -> list[float]:

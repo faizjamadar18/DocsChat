@@ -10,11 +10,12 @@ settings = get_settings()
 
 COLLECTION_NAME = "docschat_shared_collection_v2"
 
-# Initialize Qdrant Client
+# Initialize Qdrant Client (60s timeout for free-tier latency on large PDFs)
 try:
     _qdrant_client = QdrantClient(
         url=settings.QDRANT_URL,
         api_key=settings.QDRANT_API_KEY,
+        timeout=60,
     )
     logger.info("QdrantClient initialized successfully.")
 except Exception as e:
@@ -97,13 +98,30 @@ def add_documents(
         )
 
     if points:
-        batch_size = 500
+        import time
+        batch_size = 100
         for start in range(0, len(points), batch_size):
             end = start + batch_size
-            _qdrant_client.upsert(
-                collection_name=COLLECTION_NAME,
-                points=points[start:end],
-            )
+            batch = points[start:end]
+            last_err: Exception | None = None
+            for attempt in range(3):
+                try:
+                    _qdrant_client.upsert(
+                        collection_name=COLLECTION_NAME,
+                        points=batch,
+                        wait=True,
+                    )
+                    last_err = None
+                    break
+                except Exception as e:
+                    last_err = e
+                    logger.warning(
+                        "Qdrant upsert batch %s-%s attempt %s failed: %s",
+                        start, end, attempt + 1, e,
+                    )
+                    time.sleep(2 * (attempt + 1))
+            if last_err is not None:
+                raise last_err
 
     return len(points)
 
