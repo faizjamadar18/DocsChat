@@ -1,438 +1,590 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { NotionIcon, GitHubIcon, GoogleDriveIcon } from './Icons';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import Image from 'next/image';
+import {
+  USE_CASES_DATA,
+  PlatformType,
+  ProviderType,
+  MentionType,
+} from './useCasesData';
+import {
+  ChatGptIcon,
+  ClaudeIcon,
+  PerplexityIcon,
+  GrokIcon,
+  GeminiIcon,
+  NotionIcon,
+  GoogleDriveIcon,
+  GitHubIcon,
+  PdfIcon,
+  StudioDocIcon,
+} from '@/components/connectors/ConnectorIcons';
+import { QuelloMark } from './Icons';
+
+// --- Platform Mark for AI Tools & Connected Sources ---
+function PlatformIcon({
+  platform,
+  className = 'size-4 shrink-0',
+}: {
+  platform: PlatformType;
+  className?: string;
+}) {
+  switch (platform) {
+    case 'chatgpt':
+      return <ChatGptIcon className={className} fill="#000000" />;
+    case 'claude':
+      return <ClaudeIcon className={className} />;
+    case 'perplexity':
+      return <PerplexityIcon className={className} />;
+    case 'grok':
+      return <GrokIcon className={className} />;
+    case 'gemini':
+      return <GeminiIcon className={className} />;
+    case 'notion':
+      return <NotionIcon className={className} />;
+    case 'github':
+      return <GitHubIcon className={className} />;
+    case 'google-drive':
+      return <GoogleDriveIcon className={className} />;
+    case 'studio':
+      return <StudioDocIcon className={className} />;
+    case 'quello':
+    default:
+      return <QuelloMark className={className} />;
+  }
+}
+
+// --- Source Provider Icon ---
+function ProviderIcon({
+  provider,
+  className = 'size-4 shrink-0',
+}: {
+  provider: ProviderType;
+  className?: string;
+}) {
+  switch (provider) {
+    case 'notion':
+      return <NotionIcon className={className} />;
+    case 'google-drive':
+      return <GoogleDriveIcon className={className} />;
+    case 'github':
+      return <GitHubIcon className={className} />;
+    case 'pdf':
+      return <PdfIcon className={className} />;
+    default:
+      return null;
+  }
+}
+
+// Chevron Icon for accordion
+function ChevronIcon({ className = 'size-3' }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      fill="currentColor"
+      viewBox="0 0 256 256"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z" />
+    </svg>
+  );
+}
+
+// --- Document & Tool Mention Pill (Notion, GitHub, Google Drive, PDF, Studio, Quello MCP) ---
+function MentionPill({ type, name }: { type: MentionType; name: string }) {
+  if (type === 'quello') {
+    return (
+      <span
+        title={`Quello MCP: ${name}`}
+        className="inline-flex items-center align-middle -translate-y-px mr-1.5 px-2 py-0.5 rounded-md bg-[#f1efe9] border border-[#dcd9d0] text-xs sm:text-[13px] font-medium text-[#21201c] shadow-[0_1px_1px_rgba(0,0,0,0.04)] hover:bg-[#e8e5dc] transition-colors select-none"
+      >
+        <span>{name}</span>
+      </span>
+    );
+  }
+
+  const renderIcon = () => {
+    switch (type) {
+      case 'notion':
+        return <NotionIcon className="size-3.5 shrink-0" />;
+      case 'github':
+        return <GitHubIcon className="size-3.5 shrink-0 text-[#181717]" />;
+      case 'google-drive':
+        return <GoogleDriveIcon className="size-3.5 shrink-0" />;
+      case 'pdf':
+        return <PdfIcon className="size-3.5 shrink-0" />;
+      case 'studio':
+      default:
+        return <StudioDocIcon className="size-3.5 shrink-0" />;
+    }
+  };
+
+  return (
+    <span
+      title={`Referenced Document: ${name}`}
+      className="inline-flex items-center gap-1.5 align-middle -translate-y-px mr-1.5 px-2 py-0.5 rounded-md bg-[#f1efe9] border border-[#dcd9d0] text-xs sm:text-[13px] font-medium text-[#21201c] shadow-[0_1px_1px_rgba(0,0,0,0.04)] hover:bg-[#e8e5dc] transition-colors select-none"
+    >
+      {renderIcon()}
+      <span className="truncate max-w-65">{name}</span>
+    </span>
+  );
+}
+
+const CYCLE_DURATION_MS = 8000;
 
 export default function UseCases() {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [timerResetKey, setTimerResetKey] = useState(0);
+  const [inView, setInView] = useState(false);
+  const [isActivityOpen, setIsActivityOpen] = useState(false);
+  const [isSourcesMenuOpen, setIsSourcesMenuOpen] = useState(false);
 
+  const currentExample = USE_CASES_DATA.examples[activeIndex];
+
+  // In-view viewport tracking
   useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsPlaying(true);
-        }
+        setInView(entry.isIntersecting);
       },
-      { threshold: 0.3 }
+      {
+        rootMargin: '0px 0px -20% 0px',
+        threshold: 0,
+      }
     );
 
-    if (rootRef.current) {
-      observer.observe(rootRef.current);
-    }
-
+    observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // 8-second auto-advance timer
+  useEffect(() => {
+    if (!inView) return;
+
+    const timer = window.setTimeout(() => {
+      setActiveIndex((prev) => (prev + 1) % USE_CASES_DATA.examples.length);
+      setTimerResetKey((k) => k + 1);
+      setIsActivityOpen(false);
+      setIsSourcesMenuOpen(false);
+    }, CYCLE_DURATION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [inView, activeIndex, timerResetKey]);
+
+  // Tab selection handler
+  const handleSelect = useCallback((index: number) => {
+    setActiveIndex(index);
+    setTimerResetKey((k) => k + 1);
+    setIsActivityOpen(false);
+    setIsSourcesMenuOpen(false);
+  }, []);
+
+  // Pre-process markdown: replace [n] citations with markdown links [n](#citation:n)
+  const processedMarkdown = React.useMemo(() => {
+    const text = currentExample.assistantMarkdown;
+    const sourceMap = new Map(currentExample.sources.map((s) => [s.index, s]));
+
+    return text.replace(
+      /(`+)[\s\S]*?\1|(?<!\w)\[(\d+)\](?!\()/g,
+      (match, code, num) => {
+        if (code !== undefined) return match;
+        const sourceIndex = Number(num);
+        if (sourceMap.has(sourceIndex)) {
+          return `[${num}](#citation:${num})`;
+        }
+        return match;
+      }
+    );
+  }, [currentExample]);
+
+  // Unique source providers for icons pill
+  const uniqueSources = React.useMemo(() => {
+    const seen = new Set<string>();
+    return currentExample.sources.filter((s) => {
+      if (seen.has(s.provider)) return false;
+      seen.add(s.provider);
+      return true;
+    });
+  }, [currentExample]);
 
   return (
     <section
       id="traceability"
-      ref={rootRef}
-      className="relative z-2 flex flex-col items-center overflow-hidden bg-[#fdfdfc] px-4 sm:px-6 py-12 sm:py-20 md:py-28 lg:py-36 text-[#21201c] w-full max-w-full"
+      ref={sectionRef}
+      className="flex flex-col items-center px-4 sm:px-6 py-16 sm:py-20 md:py-24 bg-[#fdfdfc] text-[#21201c] w-full max-w-full scroll-mt-24 select-text"
     >
-      {/* Background radial dot grid */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 hidden md:block bg-[radial-gradient(rgba(26,25,22,0.06)_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(90%_80%_at_72%_48%,#000_28%,transparent_82%)] [-webkit-mask-image:radial-gradient(90%_80%_at_72%_48%,#000_28%,transparent_82%)]"
-      />
-
-      <div className="relative w-full max-w-300">
-        <div className="grid items-center gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16">
-          {/* Left Column: Heading, description, bullets, CTA */}
-          <div className="max-w-xl">
-            <h2 className="text-balance text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-medium leading-[1.08] tracking-[-0.03em] text-[#1a1916]">
-              Every answer
-              <br />
-              shows its work
+      <div className="grid w-full max-w-300 grid-cols-1 gap-6 md:grid-cols-12 md:items-start">
+        {/* Left Column: Headline and 10 Selector Rows */}
+        <div className="flex flex-col md:col-span-4">
+          <div data-section-anchor="true">
+            <h2 className="text-2xl font-medium leading-[1.35] tracking-[-0.03em]">
+              <span className="text-[#21201c]">
+                Reliable results.
+                <br aria-hidden="true" />
+              </span>
             </h2>
-
-            <div className="mt-5 space-y-3 text-pretty text-base leading-relaxed text-[#6b665e]">
-              <p>
-                Open any response and see the documents, technical specs, and exact passages behind it.
-              </p>
-              <p>
-                Whether you&apos;re preparing a release, resolving a decision, or referencing past work, you can check the source instead of guessing.
-              </p>
-            </div>
-
-            <div className="mt-7 space-y-3">
-              <div className="flex items-start gap-3 text-sm leading-relaxed text-[#2e2b26]">
-                <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-[#1a1916]/5 text-[#1a1916]">
-                  <svg
-                    className="size-3"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                </span>
-                <span>Inspect citations, page references, and repositories in one click.</span>
-              </div>
-
-              <div className="flex items-start gap-3 text-sm leading-relaxed text-[#2e2b26]">
-                <span className="mt-0.5 flex size-4.5 shrink-0 items-center justify-center rounded-full bg-[#1a1916]/5 text-[#1a1916]">
-                  <svg
-                    className="size-3"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                </span>
-                <span>Follow decisions across tools without digging through threads and folders.</span>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <Link
-                href="/register"
-                className="group inline-flex items-center gap-2 rounded-full border border-[#e4e4e4] bg-white px-5 py-2.5 text-sm font-medium text-[#2e2b26] shadow-xs hover:bg-[#edebe6] transition-colors"
-              >
-                <span>Explore answers with sources</span>
-                <svg
-                  className="size-4 transition-transform group-hover:translate-x-0.5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
+            <p className="mt-2 text-xs text-[#827f73] leading-relaxed">
+              Ask in Quello, or via MCP in ChatGPT, Claude, Perplexity, or your favourite tool. Every answer cites your workspace (Notion, Drive, GitHub, PDFs) down to the exact passage.
+            </p>
           </div>
 
-          {/* Right Column: Interactive conversation + Reasoning Trace card */}
-          <div className="relative flex min-h-105 items-center sm:min-h-115 lg:min-h-135">
-            {/* Ambient blurry shadow glow in the upper-right corner */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -top-12 -right-12 h-96 w-96 rounded-full bg-linear-to-bl from-white via-[#faf9f5]/80 to-transparent blur-3xl opacity-90"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute top-2 right-2 h-72 w-72 rounded-full bg-linear-to-bl from-black/3 to-transparent blur-2xl"
-            />
+          <div className="hidden md:block mt-3">
+            {USE_CASES_DATA.examples.map((example, idx) => {
+              const isActive = idx === activeIndex;
+              return (
+                <button
+                  key={example.id}
+                  type="button"
+                  onClick={() => handleSelect(idx)}
+                  aria-current={isActive ? 'true' : undefined}
+                  className="group relative w-full cursor-pointer border-b border-[#e4e1d9] py-3 text-left transition-colors first:pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6a00]"
+                >
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="flex items-center justify-center shrink-0" title={example.platformName}>
+                        <PlatformIcon platform={example.platform} className="size-4.5 shrink-0" />
+                      </span>
+                      <span
+                        className={`text-[14px] font-medium tracking-[-0.015em] transition-colors duration-300 truncate ${
+                          isActive
+                            ? 'text-[#21201c]'
+                            : 'text-[#827f73] group-hover:text-[#21201c]'
+                        }`}
+                      >
+                        {example.title}
+                      </span>
+                    </div>
 
+                    <span
+                      className={`shrink-0 text-xs font-semibold tabular-nums lining-nums transition-colors duration-300 ${
+                        isActive
+                          ? 'text-[#21201c]'
+                          : 'text-[#cecbbf] group-hover:text-[#21201c]'
+                      }`}
+                    >
+                      {example.number}
+                    </span>
+                  </div>
+
+                  {isActive && inView && (
+                    <div
+                      key={timerResetKey}
+                      aria-hidden="true"
+                      className="absolute bottom-0 left-0 h-px bg-[#ff6a00] animate-progress-line"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Column: Chat Panel - Solid 560px height, overflow-hidden (ZERO scrollbar, no scrolling down) */}
+        <div className="flex w-full md:col-span-8">
+          <div
+            aria-live="off"
+            className="flex h-140 w-full flex-col justify-start overflow-hidden rounded-lg border border-[#e4e1d9] bg-white p-6 sm:p-8 md:p-10 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)]"
+          >
             <div
-              className="relative mx-auto w-full max-w-135 lg:ml-0 lg:max-w-none lg:mask-[radial-gradient(140%_135%_at_8%_12%,#000_52%,transparent_92%)] lg:[-webkit-mask-image:radial-gradient(140%_135%_at_8%_12%,#000_52%,transparent_92%)]"
+              key={currentExample.id}
+              className="flex w-full flex-col gap-2"
               style={{
-                WebkitMaskImage: 'radial-gradient(140% 135% at 8% 12%, #000 52%, transparent 92%)',
-                maskImage: 'radial-gradient(140% 135% at 8% 12%, #000 52%, transparent 92%)',
+                animation: 'fadeSlideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
               }}
             >
-              {/* Top Chat Messages */}
-              <div className="mx-auto max-w-md lg:max-w-none space-y-2.5">
-                {/* User Message */}
-                <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-[#edebe6] px-4 py-2.5 text-sm leading-snug text-[#1a1916] shadow-2xs">
-                  What is the status of our v2 release, and what dependencies are still blocking the launch?
+              {/* User Message */}
+              <div
+                data-slot="chat-message"
+                className="group/message relative flex w-full flex-col px-3 pt-2 rounded-lg border border-transparent overflow-x-clip"
+              >
+                <div
+                  data-slot="chat-message-sender"
+                  className="flex items-center gap-3 pb-2.5 md:pb-1.5"
+                >
+                  <span
+                    data-slot="avatar"
+                    className="relative flex shrink-0 overflow-hidden rounded-full bg-[#f1efe9] size-7.5"
+                  >
+                    <Image
+                      alt="You"
+                      src="/jane-doe-avatar.webp"
+                      width={30}
+                      height={30}
+                      className="aspect-square size-full object-cover"
+                    />
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[#21201c]">You</span>
+                    <span className="text-[11px] text-[#827f73]">
+                      in {currentExample.userContext || currentExample.platformName}
+                    </span>
+                  </div>
                 </div>
 
-                {/* AI Assistant Message */}
-                <div className="max-w-[94%] rounded-2xl rounded-bl-md border border-[#e4e4e4] bg-white px-4 py-2.5 text-sm leading-snug text-[#2e2b26] shadow-2xs">
-                  v2 is on track for November 18th following QA sign-off. One blocker remains: OAuth session refresh configuration, documented in auth-specification.md pending production credentials.
+                <div
+                  data-slot="chat-message-text"
+                  className="prose leading-normal pb-2 md:pl-10.5 text-sm md:text-base text-[#21201c]"
+                >
+                  <p className="leading-relaxed">
+                    {currentExample.mention && (
+                      <MentionPill
+                        type={currentExample.mention.type}
+                        name={currentExample.mention.name}
+                      />
+                    )}
+                    <span>{currentExample.userMessage}</span>
+                  </p>
                 </div>
               </div>
 
-              {/* Trace Audit Card */}
-              <div className="mt-5 rounded-2xl border border-[#e4e4e4] bg-white p-3.5 sm:p-5 md:px-6 shadow-[0_18px_44px_-34px_rgba(20,20,45,0.22),0_10px_28px_-16px_rgba(0,0,0,0.06)]">
-                {/* Top Divider & Grounded Trace badge */}
-                <div className="relative mb-5 sm:mb-6 mt-1 flex items-center justify-center">
-                  <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[#e4e4e4]" />
-                  <span
-                    style={{
-                      transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                      transitionDelay: '0ms',
-                    }}
-                    className={`relative inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium text-emerald-700 ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                  >
-                    <svg
-                      className="size-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z" />
-                    </svg>
-                    Grounded Source Trace
-                  </span>
-                </div>
-
-                {/* Timeline content with vertical spine line */}
-                <div className="relative mx-auto mt-6 max-w-lg lg:max-w-none pl-7">
-                  {/* Vertical Spine Line */}
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      transition: 'transform 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.15s',
-                      transformOrigin: 'top',
-                    }}
-                    className={`absolute left-2.25 top-1 bottom-1 w-px bg-[#e4e4e4] ${isPlaying ? 'scale-y-100' : 'scale-y-0'
-                      }`}
-                  />
-
-                  {/* Step 1: Reasoning */}
-                  <div
-                    style={{
-                      transition: 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
-                      transitionDelay: '180ms',
-                    }}
-                    className={`relative pb-5 ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                  >
-                    <span className="absolute -left-7 top-0 grid size-4.75 place-items-center rounded-full border border-[#e4e4e4] bg-white text-[#6b665e]">
-                      <svg
-                        className="size-3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.3-4.3" />
-                      </svg>
-                    </span>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#6b665e]">
-                      Reasoning
-                    </p>
-                    <p className="mt-1 text-sm text-[#2e2b26]">
-                      Cross-referenced Q4 Product Roadmap with latest QA audit and repository architecture docs
-                    </p>
-                  </div>
-
-                  {/* Step 2: Knowledge sources */}
-                  <div
-                    style={{
-                      transition: 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
-                      transitionDelay: '380ms',
-                    }}
-                    className={`relative pb-5 ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                  >
-                    <span className="absolute -left-7 top-0 grid size-4.75 place-items-center rounded-full border border-[#e4e4e4] bg-white text-[#6b665e]">
-                      <svg
-                        className="size-3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <path d="M14 2v6h6" />
-                      </svg>
-                    </span>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#6b665e]">
-                      Knowledge sources
-                    </p>
-
-                    <div className="mt-2 space-y-1.5">
-                      {/* Source Row 1: Notion */}
-                      <div
-                        style={{
-                          transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                          transitionDelay: '520ms',
-                        }}
-                        className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/4 ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                          }`}
-                      >
-                        <NotionIcon className="size-3.5 shrink-0 text-[#21201c]" />
-                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-medium leading-snug text-[#2e2b26] truncate sm:whitespace-normal">
-                          Q4 Product Roadmap &amp; Milestones · Release 2.0
-                        </span>
-                        <span className="text-[10px] sm:text-[11px] font-medium text-[#8d8d86] tabular-nums shrink-0">98% match</span>
-                        <svg
-                          style={{
-                            transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-                            transitionDelay: '740ms',
-                          }}
-                          className={`size-3.5 shrink-0 text-emerald-500 ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                            }`}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                      </div>
-
-                      {/* Source Row 2: GitHub */}
-                      <div
-                        style={{
-                          transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                          transitionDelay: '720ms',
-                        }}
-                        className={`flex items-center gap-2 sm:gap-2.5 rounded-lg bg-[#FAFAF8] px-2 sm:px-2.5 py-1.5 sm:py-2 ring-1 ring-black/4 ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                          }`}
-                      >
-                        <GitHubIcon className="size-3.5 shrink-0 text-[#21201c]" />
-                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-medium leading-snug text-[#2e2b26] truncate sm:whitespace-normal">
-                          docs/auth-specification.md · § Session Handling
-                        </span>
-                        <span className="text-[10px] sm:text-[11px] font-medium text-[#8d8d86] tabular-nums shrink-0">96% match</span>
-                        <svg
-                          style={{
-                            transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-                            transitionDelay: '940ms',
-                          }}
-                          className={`size-3.5 shrink-0 text-emerald-500 ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                            }`}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                      </div>
-
-                      {/* Source Row 3: Google Drive */}
-                      <div
-                        style={{
-                          transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                          transitionDelay: '920ms',
-                        }}
-                        className={`flex items-center gap-2 sm:gap-2.5 rounded-lg bg-[#FAFAF8] px-2 sm:px-2.5 py-1.5 sm:py-2 ring-1 ring-black/4 ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                          }`}
-                      >
-                        <GoogleDriveIcon className="size-3.5 shrink-0" />
-                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-medium leading-snug text-[#2e2b26] truncate sm:whitespace-normal">
-                          QA Test Sign-Off &amp; Performance Report.pdf ·pg 6
-                        </span>
-                        <span className="text-[10px] sm:text-[11px] font-medium text-[#8d8d86] tabular-nums shrink-0">93% match</span>
-                        <svg
-                          style={{
-                            transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-                            transitionDelay: '1140ms',
-                          }}
-                          className={`size-3.5 shrink-0 text-emerald-500 ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                            }`}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Step 3: Synthesis & Verification */}
-                  <div
-                    style={{
-                      transition: 'opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
-                      transitionDelay: '1160ms',
-                    }}
-                    className={`relative ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                      }`}
-                  >
-                    <span className="absolute -left-7 top-0 grid size-4.75 place-items-center rounded-full border border-[#e4e4e4] bg-white text-[#6b665e]">
-                      <svg
-                        className="size-3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
-                    </span>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-[#6b665e]">
-                      Verification &amp; Grounding
-                    </p>
-
-                    <div className="mt-2 flex items-center gap-2 rounded-lg bg-[#FAFAF8] px-2.5 py-2 ring-1 ring-black/4">
-                      <svg
-                        className="size-3.5 shrink-0 text-emerald-600"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <path d="m9 11 3 3L22 4" />
-                      </svg>
-                      <span className="min-w-0 flex-1 text-sm font-medium text-[#2e2b26]">
-                        Checked across 3 sources · Linked passages shown below
-                      </span>
-                      <svg
-                        style={{
-                          transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
-                          transitionDelay: '1380ms',
-                        }}
-                        className={`size-3.5 shrink-0 text-emerald-500 ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
-                          }`}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 6 9 17l-5-5" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Audit status line */}
+              {/* Assistant Message */}
+              <div
+                data-slot="chat-message"
+                className="group/message relative flex w-full flex-col px-3 pt-2 rounded-lg border border-transparent overflow-x-clip"
+              >
                 <div
-                  style={{
-                    transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-                    transitionDelay: '1600ms',
-                  }}
-                  className={`mt-6 flex items-center justify-center gap-2 border-t border-[#e4e4e4] pt-5 text-sm ${isPlaying ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                    }`}
+                  data-slot="chat-message-sender"
+                  className="flex items-center gap-3 pb-2.5 md:pb-1.5"
                 >
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="font-medium text-[#2e2b26]">
-                    Every answer <span className="text-[#6b665e]">links back to its sources</span>
+                  <span
+                    data-slot="avatar"
+                    className="relative flex shrink-0 items-center justify-center size-7.5"
+                  >
+                    <PlatformIcon
+                      platform={currentExample.assistantPlatform || currentExample.platform}
+                      className="size-6.5 shrink-0"
+                    />
                   </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-[#21201c]">
+                      {currentExample.assistantName || currentExample.platformName}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#10b981]/10 px-2 py-0.5 text-[10px] font-medium text-[#047857]">
+                      <span className="size-1.5 rounded-full bg-[#10b981]" />
+                      {currentExample.assistantBadge || currentExample.badgeText}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Reasoning Steps Accordion */}
+                <div data-slot="chat-message-activity" className="md:pl-10.5 pb-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsActivityOpen((open) => !open)}
+                    aria-expanded={isActivityOpen}
+                    aria-label={`Completed ${currentExample.reasoningSteps.length} actions`}
+                    className="inline-flex w-full min-w-0 max-w-full cursor-pointer items-center gap-2 text-left text-sm text-[#636158] transition-colors hover:text-[#21201c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff6a00]"
+                  >
+                    <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium text-xs sm:text-sm">
+                          Completed {currentExample.reasoningSteps.length} actions
+                        </span>
+                      </span>
+                      <ChevronIcon
+                        className={`size-3 shrink-0 translate-y-px transition-transform duration-200 ${
+                          isActivityOpen ? 'rotate-90' : ''
+                        }`}
+                      />
+                    </span>
+                  </button>
+
+                  {/* Expandable Reasoning Steps */}
+                  <div
+                    className={`overflow-hidden border-l border-[#e4e1d9] pl-3 ml-2 transition-all duration-200 ${
+                      isActivityOpen ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0 mt-0'
+                    }`}
+                  >
+                    <ul className="space-y-1.5 py-1">
+                      {currentExample.reasoningSteps.map((step, idx) => (
+                        <li
+                          key={idx}
+                          data-slot="chat-message-activity-step"
+                          className="flex items-center gap-2 text-xs text-[#636158]"
+                        >
+                          <span className="flex size-3.5 shrink-0 items-center justify-center">
+                            <span className="size-1.5 rounded-full bg-[#10b981]" />
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Main Assistant Answer with Citations */}
+                <div
+                  data-slot="chat-message-text"
+                  className="prose leading-normal pb-2.5 md:pl-10.5 text-sm md:text-[15px] text-[#21201c]"
+                >
+                  <div className="prose prose-markdown [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => (
+                          <p className="mb-2 last:mb-0 leading-relaxed text-[#21201c]">
+                            {children}
+                          </p>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-semibold text-[#21201c]">
+                            {children}
+                          </strong>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="list-disc pl-5 mb-2 space-y-1 text-[#21201c]">
+                            {children}
+                          </ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="list-decimal pl-5 mb-2 space-y-1 text-[#21201c]">
+                            {children}
+                          </ol>
+                        ),
+                        li: ({ children }) => (
+                          <li className="leading-relaxed text-[#21201c]">{children}</li>
+                        ),
+                        code: ({ children }) => (
+                          <code className="px-1.5 py-0.5 rounded bg-[#f1efe9] text-xs font-mono text-[#21201c]">
+                            {children}
+                          </code>
+                        ),
+                        a: ({ href, children }) => {
+                          if (href?.startsWith('#citation:')) {
+                            const index = Number(href.slice('#citation:'.length));
+                            const source = currentExample.sources.find(
+                              (s) => s.index === index
+                            );
+                            return (
+                              <a
+                                key={index}
+                                href={source?.url || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                data-slot="chat-message-source-marker"
+                                aria-label={`Source ${index}: ${source?.title || 'Source'}`}
+                                title={
+                                  source
+                                    ? `${source.title} (${source.url})`
+                                    : `Source ${index}`
+                                }
+                                className="mx-0.5 -translate-y-px inline-flex h-4 min-w-4 cursor-pointer items-center justify-center rounded-md border border-[#cecbbf] bg-white px-1 align-baseline text-[10px] font-medium leading-none text-[#21201c] no-underline tabular-nums outline-0 transition-colors hover:bg-[#f1efe9] focus-visible:outline-2 focus-visible:outline-[#ff6a00] focus-visible:outline-offset-1"
+                              >
+                                {index}
+                              </a>
+                            );
+                          }
+
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline underline-offset-2 decoration-[#cecbbf] hover:decoration-[#21201c] text-[#21201c] transition-colors"
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
+                      }}
+                    >
+                      {processedMarkdown}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+
+                {/* Sources Used Trigger + Popover */}
+                <div data-slot="chat-message-sources" className="relative md:pl-10.5 pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsSourcesMenuOpen((prev) => !prev)}
+                    data-slot="chat-message-sources-trigger"
+                    className="inline-flex min-h-6 cursor-pointer items-center gap-2 rounded text-xs sm:text-sm text-[#636158] outline-0 transition-colors hover:text-[#21201c] focus-visible:outline-2 focus-visible:outline-[#ff6a00] focus-visible:outline-offset-2"
+                    aria-expanded={isSourcesMenuOpen}
+                  >
+                    <span>{currentExample.sources.length} sources used</span>
+                    <span className="inline-flex items-center gap-1.5" aria-hidden="true">
+                      {uniqueSources.slice(0, 4).map((source) => (
+                        <span
+                          key={source.provider}
+                          className="flex size-4 shrink-0 items-center justify-center"
+                        >
+                          <ProviderIcon
+                            provider={source.provider}
+                            className="size-3.5"
+                          />
+                        </span>
+                      ))}
+                    </span>
+                  </button>
+
+                  {/* Sources Dropdown Popover */}
+                  {isSourcesMenuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsSourcesMenuOpen(false)}
+                      />
+                      <div className="absolute left-0 md:left-10.5 bottom-full mb-2 z-50 w-72 sm:w-80 rounded-lg border border-[#e4e1d9] bg-white p-2 shadow-lg animate-fade-in">
+                        <div className="px-2 py-1 text-xs font-semibold text-[#827f73] uppercase tracking-wider border-b border-[#f1efe9] mb-1">
+                          Connected Sources
+                        </div>
+                        <div className="flex flex-col gap-1 max-h-52 overflow-y-auto">
+                          {currentExample.sources.map((source) => (
+                            <a
+                              key={`${source.index}-${source.title}`}
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2.5 rounded-md p-2 hover:bg-[#f1efe9] transition-colors group"
+                            >
+                              <div className="flex size-5 shrink-0 items-center justify-center">
+                                <ProviderIcon provider={source.provider} className="size-4" />
+                              </div>
+                              <div className="flex min-w-0 flex-1 flex-col">
+                                <span className="truncate text-xs font-medium text-[#21201c]">
+                                  {source.title}
+                                </span>
+                                <span className="truncate text-[11px] text-[#827f73]">
+                                  {source.url}
+                                </span>
+                              </div>
+                              <span className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded border border-[#cecbbf] bg-white px-1 text-[10px] font-medium tabular-nums text-[#21201c]">
+                                {source.index}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes fadeSlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </section>
   );
 }
