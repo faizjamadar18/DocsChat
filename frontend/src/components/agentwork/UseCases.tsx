@@ -233,7 +233,7 @@ export default function UseCases() {
               </span>
             </h2>
             <p className="mt-2 text-xs text-[#827f73] leading-relaxed">
-              Ask in Quello, or via MCP in ChatGPT, Claude, Perplexity, or your favourite tool. Every answer cites your workspace (Notion, Drive, GitHub, PDFs, etc.) down to the exact passage.
+              Ask in Quello, or via MCP in ChatGPT, Claude, Perplexity, or your favourite tool. Every answer cites your workspace (Notion, Drive, GitHub, PDFs etc.) down to the exact passage.
             </p>
           </div>
 
