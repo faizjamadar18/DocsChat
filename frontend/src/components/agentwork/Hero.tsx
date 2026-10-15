@@ -26,9 +26,9 @@ export default function Hero() {
   }, []);
 
   return (
-    <section id="overview" className="px-4 sm:px-6 py-8 md:py-16 flex flex-col gap-8 sm:gap-10 items-center w-full max-w-full overflow-hidden">
+    <section id="overview" className="px-4 sm:px-6 py-8 md:py-16 flex flex-col gap-8 sm:gap-10 items-center w-full max-w-full overflow-hidden scroll-mt-24">
       {/* Top Headline & CTAs Grid */}
-      <div className="max-w-300 w-full flex flex-col gap-6 md:grid md:grid-cols-12 md:items-end">
+      <div data-section-anchor="true" className="max-w-300 w-full flex flex-col gap-6 md:grid md:grid-cols-12 md:items-end">
         {/* Left Column: Heading and Subtitle */}
         <div className="md:col-span-8 flex flex-col gap-3.5 sm:gap-4">
           <h1 className="text-3xl sm:text-4xl md:text-[50px] font-[550] tracking-[-0.03em] leading-[1.12] text-[#21201c] text-balance">
@@ -51,6 +51,7 @@ export default function Hero() {
           </Link>
           <Link
             href="#how-it-works"
+            scroll={false}
             className="w-full sm:w-37.5 h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] transition-colors whitespace-nowrap text-center"
           >
             See how it works
@@ -67,8 +68,8 @@ export default function Hero() {
           {/* CSS-only Mesh Pastel Gradient Background */}
           <div className="absolute inset-0 hero-bg pointer-events-none" />
 
-          {/* Floating Scaled Hero Mockup (behaves like a fixed image, background visible throughout) */}
-          <div ref={containerRef} className="relative z-3 w-full flex items-center justify-center">
+          {/* Floating Scaled Hero Mockup (static preview image — fully inert across all viewports) */}
+          <div ref={containerRef} aria-hidden="true" className="relative z-3 w-full flex items-center justify-center pointer-events-none select-none">
             <div
               style={{
                 width: `${1000 * scale}px`,

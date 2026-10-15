@@ -43,10 +43,10 @@ export default function FAQSection() {
   };
 
   return (
-    <section id="faq" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-16 md:py-24 w-full max-w-full overflow-hidden">
+    <section id="faq" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-16 md:py-24 w-full max-w-full overflow-hidden scroll-mt-24">
       <div className="flex w-full max-w-300 flex-col md:flex-row gap-8 md:gap-16 items-start">
         {/* Left Heading */}
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c] md:w-1/3 shrink-0">
+        <h2 data-section-anchor="true" className="text-xl sm:text-2xl md:text-3xl font-medium tracking-[-0.03em] text-[#21201c] md:w-1/3 shrink-0">
           Frequently
           <br className="hidden md:block" /> Asked
           <br className="hidden md:block" /> Questions

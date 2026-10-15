@@ -23,6 +23,7 @@ import {
   PerplexityIcon,
   MistralIcon,
 } from '../connectors/ConnectorIcons';
+import { useInView } from '../../hooks/useInView';
 
 interface StepData {
   number: string;
@@ -90,6 +91,10 @@ export default function HowItWorks() {
   const [typedText, setTypedText] = useState<string>('');
   const [manualOverride, setManualOverride] = useState<boolean>(false);
 
+  // Viewport gate: timelines start when the user lands on the section, not on page mount.
+  const { ref: sectionRef, inView, hasEntered } = useInView<HTMLElement>();
+  const prevInViewRef = useRef<boolean>(false);
+
   // Card 3 sources animation states
   const [sourcesStepActive, setSourcesStepActive] = useState<boolean>(false);
   const [visibleSourceCount, setVisibleSourceCount] = useState<number>(0);
@@ -104,9 +109,10 @@ export default function HowItWorks() {
     return order.map((pos) => (pos / (integrationIcons.length - 1)) * 2.2);
   }, []);
 
-  // Main step cycling loop
+  // Main step cycling loop (runs only while the section is on screen)
   useEffect(() => {
     if (manualOverride) return;
+    if (!hasEntered || !inView) return;
 
     let timeoutId: NodeJS.Timeout;
 
@@ -168,15 +174,15 @@ export default function HowItWorks() {
     }
 
     return () => clearTimeout(timeoutId);
-  }, [activeStep, cycleKey, manualOverride]);
+  }, [activeStep, cycleKey, manualOverride, hasEntered, inView]);
 
-  // Card 3: Timeline sequence (triggered when activeStep === 2)
+  // Card 3: Timeline sequence (triggered when activeStep === 2 while on screen)
   useEffect(() => {
     // Clear any pending timers on deactivate and on unmount
     sourcesTimersRef.current.forEach(clearTimeout);
     sourcesTimersRef.current = [];
 
-    if (activeStep !== 2) {
+    if (activeStep !== 2 || !hasEntered || !inView) {
       const resetTimer = setTimeout(() => {
         setSourcesStepActive(false);
         setVisibleSourceCount(0);
@@ -214,16 +220,28 @@ export default function HowItWorks() {
       sourcesTimersRef.current.forEach(clearTimeout);
       sourcesTimersRef.current = [];
     };
-  }, [activeStep]);
+  }, [activeStep, hasEntered, inView]);
 
-  // Re-trigger icon pop animation periodically if user stays on Card 1
+  // Re-trigger icon pop animation periodically if user stays on Card 1 while on screen
   useEffect(() => {
     if (!manualOverride || activeStep !== 0) return;
+    if (!hasEntered || !inView) return;
     const interval = setInterval(() => {
       setCycleKey((k) => k + 1);
     }, 5500);
     return () => clearInterval(interval);
-  }, [manualOverride, activeStep]);
+  }, [manualOverride, activeStep, hasEntered, inView]);
+
+  // Restart the story at step 01 on every landing (entry or re-entry)
+  useEffect(() => {
+    const wasVisible = prevInViewRef.current;
+    prevInViewRef.current = inView;
+    if (!hasEntered || !inView || wasVisible || manualOverride) return;
+    setActiveStep(0);
+    setTypedText('');
+    setSourcesExpanded(false);
+    setCycleKey((k) => k + 1);
+  }, [inView, hasEntered, manualOverride]);
 
   // Handle manual tab/card selection
   const handleSelectStep = (index: number) => {
@@ -243,10 +261,10 @@ export default function HowItWorks() {
   };
 
   return (
-    <section id="how-it-works" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-20 bg-[#fdfdfc] w-full max-w-full overflow-hidden">
+    <section id="how-it-works" ref={sectionRef} className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-20 bg-[#fdfdfc] w-full max-w-full overflow-hidden scroll-mt-24">
       <div className="flex w-full max-w-300 flex-col gap-8 sm:gap-10">
         {/* Header Lines */}
-        <div className="max-w-2xl text-xl sm:text-2xl md:text-[28px] font-medium leading-[1.35] tracking-[-0.03em]">
+        <div data-section-anchor="true" className="max-w-2xl text-xl sm:text-2xl md:text-[28px] font-medium leading-[1.35] tracking-[-0.03em]">
           {headerLines.map((line, index) => {
             const isActive = index === activeStep;
             return (
@@ -280,14 +298,14 @@ export default function HowItWorks() {
             {/* Visual Box */}
             <div className="relative w-full">
               <div
-                className={`relative flex h-70 sm:h-75 w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+                className={`relative flex h-75 w-full overflow-hidden rounded-xl border border-[#e2e1de] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)] transition-all duration-300 ${
                   activeStep === 0
                     ? 'border-[#cfceca] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05),inset_0_0_0_3.5px_#f9f9f8]'
                     : 'group-hover:border-[#cfceca]'
                 }`}
               >
-                {/* 15 Integration Icons Grid */}
-                <div className="flex size-full flex-wrap content-center items-center justify-center gap-x-7 sm:gap-x-10 md:gap-x-12 gap-y-7 sm:gap-y-9 md:gap-y-11 px-4 sm:px-6 pb-15 sm:pb-17 pt-6 text-[#21201c]">
+                {/* 15 Integration Icons Grid (fixed 5-col grid = identical layout at every viewport) */}
+                <div className="grid size-full grid-cols-5 place-items-center content-center gap-6 px-6 py-6 text-[#21201c]">
                   {integrationIcons.map(({ name, Icon }, index) => {
                     const delay = activeStep === 0 ? iconDelays[index] : 0;
                     return (
@@ -306,10 +324,10 @@ export default function HowItWorks() {
                                 transform: 'none',
                               }
                         }
-                        className="shrink-0 flex items-center justify-center"
+                        className="flex size-10 items-center justify-center"
                         title={name}
                       >
-                        <Icon className="size-5" />
+                        <Icon className="size-5 shrink-0" />
                       </div>
                     );
                   })}

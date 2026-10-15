@@ -696,4 +696,35 @@ body {
   }
 }
 
+/* Smooth in-page navigation (fallback when Lenis is unavailable) */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Keep anchored sections clear of the sticky glass nav */
+section[id] {
+  scroll-margin-top: 96px;
+}
+
+/* UseCases 8-second progress line animation */
+@keyframes progressLine {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-progress-line {
+  animation: progressLine 8s linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-progress-line {
+    animation: none !important;
+    width: 100% !important;
+  }
+}
+
 

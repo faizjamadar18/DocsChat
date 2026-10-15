@@ -122,6 +122,7 @@ export default function CTABanner() {
                 {/* Secondary Button */}
                 <Link
                   href="#how-it-works"
+                  scroll={false}
                   className="w-full sm:w-44 py-3 px-6 rounded-lg bg-[#1f1e1b] border border-white/[0.14] text-[#f3f1ec] font-medium text-sm hover:border-white/[0.28] hover:bg-[#252420] hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-all duration-200 inline-flex items-center justify-center text-center"
                 >
                   See how it works

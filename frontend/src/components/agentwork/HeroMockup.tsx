@@ -84,7 +84,7 @@ export default function HeroMockup() {
   ];
 
   return (
-    <div className="w-full h-full bg-sidebar rounded-2xl border border-border shadow-ui-visual flex overflow-hidden text-text-primary select-none text-left relative">
+    <div aria-hidden="true" className="w-full h-full bg-sidebar rounded-2xl border border-border shadow-ui-visual flex overflow-hidden text-text-primary select-none text-left relative pointer-events-none">
       {/* Left Sidebar */}
       <aside className="w-52 shrink-0 flex flex-col justify-between bg-sidebar">
         <div className="flex flex-col flex-1 min-h-0">
@@ -118,7 +118,7 @@ export default function HeroMockup() {
 
           {/* New Chat Button */}
           <div className="px-2.5 pt-2 pb-1.5 shrink-0">
-            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors w-full cursor-default">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary w-full cursor-default">
               <Edit02Icon size={15} className="text-text-secondary shrink-0" />
               <span>New Chat</span>
             </div>
@@ -130,30 +130,30 @@ export default function HeroMockup() {
               <Home01Icon size={15} className="text-accent-hover shrink-0" />
               <span>Home</span>
             </div>
-            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary cursor-default">
               <CommandLineIcon size={15} className="shrink-0 text-text-secondary" />
               <span>Playground</span>
             </div>
-            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary cursor-default">
               <NoteEditIcon size={15} className="shrink-0 text-text-secondary" />
               <span>Studio</span>
             </div>
-            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary cursor-default">
               <Folder01Icon size={15} className="shrink-0 text-text-secondary" />
               <span>Assets</span>
             </div>
-            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary cursor-default">
               <Plug01Icon size={15} className="shrink-0 text-text-secondary" />
               <span>Connectors</span>
             </div>
-            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default">
+            <div className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-secondary cursor-default">
               <ServerStack01Icon size={15} className="shrink-0 text-text-secondary" />
               <span>MCP Server</span>
             </div>
           </nav>
 
           {/* Chats Section */}
-          <div className="px-2.5 pt-2 flex-1 min-h-0 overflow-y-auto no-scrollbar scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="px-2.5 pt-2 flex-1 min-h-0 overflow-hidden">
             <div className="px-2.5 py-1 text-[11px] font-semibold text-text-muted">
               Chats
             </div>
@@ -161,7 +161,7 @@ export default function HeroMockup() {
               {chatHistory.map((title, idx) => (
                 <div
                   key={idx}
-                  className="px-2.5 py-1.5 rounded-lg text-[11px] text-text-secondary hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-default truncate leading-tight"
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] text-text-secondary cursor-default truncate leading-tight"
                 >
                   {title}
                 </div>
@@ -172,7 +172,7 @@ export default function HeroMockup() {
 
         {/* User Profile Footer */}
         <div className="p-2.5 border-t border-border/80">
-          <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-accent-subtle cursor-default transition-colors">
+          <div className="flex items-center justify-between p-1.5 rounded-lg cursor-default">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-6 h-6 rounded-full bg-text-primary text-white flex items-center justify-center text-[10px] font-semibold shrink-0">
                 F
@@ -231,7 +231,7 @@ export default function HeroMockup() {
         </header>
 
         {/* Scrollable Canvas / Workspace View */}
-        <main className="flex-1 min-h-0 flex flex-col overflow-y-auto no-scrollbar scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden bg-surface rounded-tl-[20px] shadow-2xs p-5 space-y-4">
+        <main className="flex-1 min-h-0 flex flex-col overflow-hidden bg-surface rounded-tl-[20px] shadow-2xs p-5 space-y-4">
           {/* Greeting Header */}
           <div>
             <h1 className="text-xl font-bold tracking-tight text-text-primary">
@@ -264,7 +264,7 @@ export default function HeroMockup() {
           </div>
 
           {/* Start Writing Action Card */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-sidebar border border-border cursor-default hover:bg-accent-subtle transition-colors">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-sidebar border border-border cursor-default">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[#111113] flex items-center justify-center text-white shrink-0 shadow-xs">
                 <PenLine className="w-3.5 h-3.5" />
@@ -306,7 +306,7 @@ export default function HeroMockup() {
                 return (
                   <div
                     key={asset.id}
-                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
+                    className="flex items-center justify-between p-2.5 rounded-xl cursor-default"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
@@ -337,7 +337,7 @@ export default function HeroMockup() {
               {recentDocs.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center justify-between p-2.5 rounded-xl hover:bg-sidebar transition-colors cursor-default"
+                  className="flex items-center justify-between p-2.5 rounded-xl cursor-default"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">

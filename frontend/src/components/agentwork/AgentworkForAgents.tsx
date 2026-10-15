@@ -11,6 +11,7 @@ import {
   MistralIcon,
   GeminiIcon,
 } from '@/components/connectors/ConnectorIcons';
+import { useInView } from '@/hooks/useInView';
 
 interface CardItem {
   id: string;
@@ -191,6 +192,10 @@ export default function AgentworkForAgents() {
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isLogoHighlighted, setIsLogoHighlighted] = useState(false);
   const nextCardIndexRef = useRef(0);
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Viewport gate: card loop starts when the user lands on the section, not on page mount.
+  const { ref: sectionRef, inView, hasEntered } = useInView<HTMLElement>();
 
   // Trigger the next card in 1-by-1 sequence
   const startNextCard = useCallback(() => {
@@ -198,13 +203,35 @@ export default function AgentworkForAgents() {
     nextCardIndexRef.current = (nextCardIndexRef.current + 1) % CARDS.length;
   }, []);
 
-  // Initial delay of 800ms before starting first card (matching Agentwork)
+  // Kick off 800ms after landing on the section (matching Agentwork).
+  // Re-runs on every re-entry so the story restarts at the first card.
   useEffect(() => {
+    if (!hasEntered || !inView) return;
     const timer = setTimeout(() => {
       startNextCard();
     }, 800);
     return () => clearTimeout(timer);
-  }, [startNextCard]);
+  }, [startNextCard, hasEntered, inView]);
+
+  // Pause on exit: unmounting the active card/pulse cancels their
+  // raf + timers via child cleanups; reset so re-entry restarts at card 1.
+  useEffect(() => {
+    if (hasEntered && !inView) {
+      setActiveCardIndex(null);
+      setIsLogoHighlighted(false);
+      nextCardIndexRef.current = 0;
+      if (pulseTimerRef.current) {
+        clearTimeout(pulseTimerRef.current);
+        pulseTimerRef.current = null;
+      }
+    }
+  }, [inView, hasEntered]);
+
+  useEffect(() => {
+    return () => {
+      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    };
+  }, []);
 
   // When card border finishes tracing:
   // 1. Clear card border (fades out)
@@ -218,13 +245,14 @@ export default function AgentworkForAgents() {
   // Wait 600ms (Agentwork Te = 0.6) then start next card 1 by 1
   const handleLogoPulseComplete = useCallback(() => {
     setIsLogoHighlighted(false);
-    setTimeout(() => {
+    if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    pulseTimerRef.current = setTimeout(() => {
       startNextCard();
     }, 600);
   }, [startNextCard]);
 
   return (
-    <section id="connectors" className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-16 md:py-24 bg-[#fdfdfc] w-full max-w-full overflow-hidden">
+    <section id="connectors" ref={sectionRef} className="flex flex-col items-center px-4 sm:px-6 py-12 sm:py-16 md:py-24 bg-[#fdfdfc] w-full max-w-full overflow-hidden scroll-mt-24">
       <div className="flex w-full max-w-300 flex-col gap-6">
         {/* Website Logo App Icon Tile with Animated Highlight Border */}
         <div className="relative shrink-0 w-fit">
@@ -248,7 +276,7 @@ export default function AgentworkForAgents() {
         </div>
 
         {/* Section Heading & Subtitle */}
-        <div className="flex flex-col gap-2.5">
+        <div data-section-anchor="true" className="flex flex-col gap-2.5">
           <h2 className="text-xl sm:text-[28px] md:text-[32px] font-medium tracking-[-0.03em] text-[#1a1916]">
             Use your workspace inside your AI app
           </h2>

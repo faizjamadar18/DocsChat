@@ -13,17 +13,8 @@ export default function Footer() {
     { label: 'Connected AI Apps', href: '/#connectors' },
   ];
 
-  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (href.startsWith('#')) {
-      e.preventDefault();
-      const targetId = href.replace('#', '');
-      const element = document.getElementById(targetId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        window.history.pushState(null, '', href);
-      }
-    }
-  };
+  // In-page anchors glide via the global Lenis interceptor (LenisProvider),
+  // so footer links stay plain <a> tags with no local scroll handler.
 
   return (
     <footer className="relative w-full pt-4 sm:pt-6 px-3 sm:px-4 pb-4 sm:pb-6">
@@ -58,7 +49,6 @@ export default function Footer() {
                   <a
                     key={link.label}
                     href={link.href}
-                    onClick={(e) => handleSmoothScroll(e, link.href)}
                     className="text-xs sm:text-sm font-medium text-[#63635e] hover:text-[#ff6a00] transition-colors whitespace-nowrap"
                   >
                     {link.label}
