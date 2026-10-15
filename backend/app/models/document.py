@@ -29,3 +29,15 @@ class DocumentResponse(BaseModel):
 class DocumentListResponse(BaseModel):
     documents: list[DocumentResponse]
     total: int
+
+
+class AiRefactorRequest(BaseModel):
+    selected_text: str = Field(min_length=1, max_length=5000)
+    instruction: str = Field(min_length=1, max_length=1000)
+    preset: Optional[str] = Field(default=None, max_length=32)
+
+
+class AiRefactorResponse(BaseModel):
+    original: str
+    rewritten: str
+    preset: Optional[str] = None

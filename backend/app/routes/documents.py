@@ -9,8 +9,11 @@ from app.models.document import (
     DocumentUpdate,
     DocumentResponse,
     DocumentListResponse,
+    AiRefactorRequest,
+    AiRefactorResponse,
 )
 from app.middleware.auth_middleware import get_current_user
+from app.services.llm_service import generate_response
 from app.services.rag_service import process_document_content
 from app.services import vector_store as vs
 from app.services.workspace_access import get_workspace_with_access, require_role
@@ -286,3 +289,102 @@ async def reindex_document(
     )
 
     return {"message": "Document indexing initiated", "id": document_id}
+
+
+_ALLOWED_PRESETS = ("improve", "proofread", "explain")
+
+
+def _build_refactor_prompt(selected_text: str, instruction: str, preset: Optional[str]) -> str:
+    clean_preset = (preset or "").strip().lower()
+    if clean_preset == "explain":
+        return (
+            "Explain the following text in 1-3 short sentences. "
+            "Be clear and simple. Return only the explanation, no quotes.\n\n"
+            f'Text: "{selected_text}"'
+        )
+    if clean_preset == "improve":
+        return (
+            "Improve the writing of the following text. Keep the same meaning. "
+            "Return only the improved text, no quotes, no explanation.\n\n"
+            f'Text: "{selected_text}"\nInstruction: {instruction}'
+        )
+    if clean_preset == "proofread":
+        return (
+            "Fix spelling and grammar in the following text. Keep the same meaning. "
+            "Return only the corrected text, no quotes, no explanation.\n\n"
+            f'Text: "{selected_text}"\nInstruction: {instruction}'
+        )
+    return (
+        "Rewrite the following text exactly as instructed. "
+        "Return only the rewritten text, no quotes, no explanation.\n\n"
+        f'Text: "{selected_text}"\nInstruction: {instruction}'
+    )
+
+
+def _clean_llm_text(text: str, fallback: str) -> str:
+    cleaned = (text or "").strip()
+    if not cleaned:
+        return fallback
+    # Strip markdown code fences if the model wraps the answer.
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        # Drop opening fence and optional language tag line.
+        if len(lines) >= 2:
+            cleaned = "\n".join(lines[1:])
+        if cleaned.rstrip().endswith("```"):
+            cleaned = cleaned.rstrip()[: -3]
+        cleaned = cleaned.strip()
+    # Strip a single surrounding quote pair.
+    if len(cleaned) >= 2 and (
+        (cleaned.startswith('"') and cleaned.endswith('"'))
+        or (cleaned.startswith("'") and cleaned.endswith("'"))
+    ):
+        cleaned = cleaned[1:-1].strip()
+    return cleaned or fallback
+
+
+@router.post("/{document_id}/ai-refactor", response_model=AiRefactorResponse)
+async def ai_refactor_document(
+    document_id: str,
+    data: AiRefactorRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Rewrite or explain selected text without saving. Preview only."""
+    try:
+        check_db()
+    except DatabaseNotReadyError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
+
+    if not ObjectId.is_valid(document_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid document ID")
+
+    selected = (data.selected_text or "").strip()
+    instruction = (data.instruction or "").strip()
+    preset = (data.preset or "").strip().lower() or None
+    if not selected:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Selected text is empty")
+    if not instruction:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Instruction is empty")
+    if preset and preset not in _ALLOWED_PRESETS:
+        preset = None
+
+    doc = await database.documents_collection.find_one({"_id": ObjectId(document_id)})
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    if doc.get("workspace_id"):
+        _ws, _role = await get_workspace_with_access(doc["workspace_id"], current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot use AI refactor")
+    elif str(doc.get("user_id")) != current_user["id"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    prompt = _build_refactor_prompt(selected, instruction, preset)
+    try:
+        raw = await generate_response(prompt)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI refactor failed: {exc}",
+        )
+
+    rewritten = _clean_llm_text(str(raw), fallback=selected)
+    return AiRefactorResponse(original=selected, rewritten=rewritten, preset=preset)

@@ -374,6 +374,7 @@ export default function StudioPage() {
               <div className="flex-1">
                 <EditorCanvas
                   key={activeDoc.id}
+                  documentId={activeDoc.id}
                   initialContent={activeDoc.content_json || activeDoc.content_text || ''}
                   onAutoSave={handleAutoSaveContent}
                   onIdleIndex={handleIdleIndex}

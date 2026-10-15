@@ -8,15 +8,18 @@ import TaskItem from '@tiptap/extension-task-item';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import { Plus, GripVertical } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu';
+import { SelectionAIMenu } from './SelectionAIMenu';
 
 interface EditorCanvasProps {
   initialContent: Record<string, unknown> | string;
+  documentId: string | null;
   onAutoSave: (contentJson: Record<string, unknown>, contentText: string) => void;
   onIdleIndex?: () => void;
 }
 
 export function EditorCanvas({
   initialContent,
+  documentId,
   onAutoSave,
   onIdleIndex,
 }: EditorCanvasProps) {
@@ -31,6 +34,16 @@ export function EditorCanvas({
   // Block handle position state
   const [handlePos, setHandlePos] = useState<{ top: number } | null>(null);
   const editorWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Text-selection AI menu state
+  const [selectionMenu, setSelectionMenu] = useState<{
+    top: number;
+    left: number;
+    from: number;
+    to: number;
+    text: string;
+  } | null>(null);
+  const dismissedSelectionRef = useRef<string | null>(null);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -115,6 +128,33 @@ export function EditorCanvas({
       } catch {
         // ignore
       }
+
+      // Text-selection AI menu: show for non-empty selections only.
+      try {
+        const { from, to, empty } = ed.state.selection;
+        if (empty || to <= from) {
+          setSelectionMenu(null);
+          return;
+        }
+        const selectedText = ed.state.doc.textBetween(from, to, ' ');
+        if (!selectedText || !selectedText.trim() || selectedText.length > 5000) {
+          setSelectionMenu(null);
+          return;
+        }
+        const key = `${from}-${to}-${selectedText}`;
+        if (dismissedSelectionRef.current === key) return;
+        const coords = ed.view.coordsAtPos(to);
+        const menuWidth = 288;
+        const menuHeight = 340;
+        let top = coords.bottom + 8;
+        if (coords.bottom > window.innerHeight - menuHeight) {
+          top = Math.max(70, coords.top - menuHeight - 8);
+        }
+        const left = Math.max(16, Math.min(coords.left, window.innerWidth - menuWidth - 16));
+        setSelectionMenu({ top, left, from, to, text: selectedText });
+      } catch {
+        // ignore selection menu errors
+      }
     },
     onBlur: () => {
       // Trigger idle index on blur
@@ -146,6 +186,13 @@ export function EditorCanvas({
     if (!editor) return;
     editor.chain().focus().insertContent('/').run();
   }, [editor]);
+
+  const handleCloseSelectionMenu = useCallback(() => {
+    if (selectionMenu) {
+      dismissedSelectionRef.current = `${selectionMenu.from}-${selectionMenu.to}-${selectionMenu.text}`;
+    }
+    setSelectionMenu(null);
+  }, [selectionMenu]);
 
   if (!editor) {
     return (
@@ -192,6 +239,17 @@ export function EditorCanvas({
         query={slashQuery}
         position={slashMenuPos}
       />
+
+      {/* Text-selection AI menu (formatting + Skills + custom prompt) */}
+      {selectionMenu && !slashMenuOpen && (
+        <SelectionAIMenu
+          editor={editor}
+          documentId={documentId}
+          position={{ top: selectionMenu.top, left: selectionMenu.left }}
+          range={{ from: selectionMenu.from, to: selectionMenu.to, text: selectionMenu.text }}
+          onClose={handleCloseSelectionMenu}
+        />
+      )}
     </div>
   );
 }
