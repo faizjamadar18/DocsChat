@@ -216,7 +216,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="w-full px-3.5 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in max-w-full overflow-hidden">
+    <div className="w-full px-3.5 sm:px-6 py-5 sm:py-8 space-y-5 sm:space-y-6 animate-fade-in max-w-full overflow-x-hidden">
       {/* Greeting Header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
