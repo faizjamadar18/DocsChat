@@ -62,14 +62,32 @@ async def process_pdf(
     source_id: str,
     file_path: str,
     workspace_id: Optional[str] = None,
+    r2_key: Optional[str] = None,
 ):
     """
     Full PDF processing pipeline: load → chunk → embed → store.
     Updates source status in MongoDB as it progresses.
     Tags vectors with workspace_id in Qdrant.
+    When r2_key is given, content is fetched from R2 into a temp file
+    (survives Render restarts); otherwise file_path is read from local disk.
     """
+    tmp_r2_path: Optional[str] = None
+    effective_path = file_path
     try:
-        chunks, page_count = await asyncio.to_thread(_load_and_chunk_pdf, file_path)
+        if r2_key:
+            try:
+                from app.services import storage as storage_svc
+                content = await asyncio.to_thread(storage_svc.download_pdf_bytes, r2_key)
+                import tempfile
+                fd, tmp_r2_path = tempfile.mkstemp(suffix=".pdf")
+                with open(fd, "wb") as f:
+                    f.write(content)
+                effective_path = tmp_r2_path
+            except Exception as e:
+                print(f"[ERR] R2 download failed for {r2_key}, trying local path: {e}")
+                effective_path = file_path
+
+        chunks, page_count = await asyncio.to_thread(_load_and_chunk_pdf, effective_path)
 
         chunk_count = await asyncio.to_thread(
             vs.add_documents,
@@ -100,6 +118,12 @@ async def process_pdf(
         )
         print(f"[ERR] Error processing PDF {file_path}: {e}")
         raise
+    finally:
+        if tmp_r2_path:
+            try:
+                os.remove(tmp_r2_path)
+            except OSError:
+                pass
 
 
 async def _resolve_citations(

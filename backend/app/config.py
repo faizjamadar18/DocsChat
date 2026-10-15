@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     QDRANT_URL: str
     QDRANT_API_KEY: str
 
+    # Cloudflare R2 object storage (S3-compatible, free 10GB + zero egress).
+    # Empty = local uploads/ folder fallback (dev/tests keep working).
+    # Endpoint looks like https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+    R2_ENDPOINT: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET: str = ""
+
     # Notion Connector (OAuth public integration)
     NOTION_CLIENT_ID: str = ""
     NOTION_CLIENT_SECRET: str = ""

@@ -1,7 +1,7 @@
 import os
 import asyncio
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Header, Query, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from datetime import datetime, timezone
 from typing import Optional
 from bson import ObjectId
@@ -12,6 +12,7 @@ from app.middleware.auth_middleware import get_current_user
 from app.services.workspace_access import get_workspace_with_access, require_role
 from app.services.rag_service import process_pdf, UPLOADS_DIR
 from app.services import vector_store as vs
+from app.services import storage as storage_svc
 from app.config import get_settings
 
 settings = get_settings()
@@ -109,14 +110,32 @@ async def upload_pdf(
         _ws, _role = await get_workspace_with_access(target_ws, current_user["id"])
         require_role(_role, ("owner", "editor"), "Viewers cannot upload. Ask the owner for editor access.")
 
-    user_upload_dir = os.path.join(UPLOADS_DIR, current_user["id"])
-    os.makedirs(user_upload_dir, exist_ok=True)
+    # Pre-generate source_id so the R2 key is stable before Mongo insert.
+    source_id = str(ObjectId())
+    r2_key: Optional[str] = None
+    storage_mode = "local"
+    file_path: Optional[str] = None
 
-    safe_filename = f"{ObjectId()}_{file.filename}"
-    file_path = os.path.join(user_upload_dir, safe_filename)
+    if storage_svc.is_r2_enabled():
+        try:
+            candidate = storage_svc.build_r2_key(current_user["id"], source_id, file.filename or "file.pdf")
+            storage_svc.upload_pdf_bytes(content, candidate)
+            r2_key = candidate
+            storage_mode = "r2"
+        except Exception as e:
+            print(f"[WARN] R2 upload failed, falling back to local disk: {e}")
+            r2_key = None
+            storage_mode = "local"
 
-    with open(file_path, "wb") as f:
-        f.write(content)
+    if storage_mode == "local":
+        user_upload_dir = os.path.join(UPLOADS_DIR, current_user["id"])
+        os.makedirs(user_upload_dir, exist_ok=True)
+
+        safe_filename = f"{source_id}_{file.filename}"
+        file_path = os.path.join(user_upload_dir, safe_filename)
+
+        with open(file_path, "wb") as f:
+            f.write(content)
 
     source_doc = {
         "user_id": current_user["id"],
@@ -124,6 +143,8 @@ async def upload_pdf(
         "source_type": "pdf",
         "filename": file.filename,
         "file_path": file_path,
+        "r2_key": r2_key,
+        "storage": storage_mode,
         "file_size": len(content),
         "page_count": 0,
         "chunk_count": 0,
@@ -135,15 +156,18 @@ async def upload_pdf(
         check_db()
     except DatabaseNotReadyError:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
-    result = await database.sources_collection.insert_one(source_doc)
+    result = await database.sources_collection.insert_one(
+        {**source_doc, "_id": ObjectId(source_id)}
+    )
     source_id = str(result.inserted_id)
 
     background_tasks.add_task(
         process_pdf,
         current_user["id"],
         source_id,
-        file_path,
+        file_path or r2_key or "",
         target_ws,
+        r2_key,
     )
 
     return SourceResponse(
@@ -208,7 +232,7 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
 
 @router.get("/{source_id}/download")
 async def download_source(source_id: str, current_user: dict = Depends(get_current_user)):
-    """Download a source PDF file (shared room)."""
+    """Download a source PDF file (shared room). R2 first, local fallback."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -227,6 +251,12 @@ async def download_source(source_id: str, current_user: dict = Depends(get_curre
         await get_workspace_with_access(source["workspace_id"], current_user["id"])
     elif str(source.get("user_id")) != current_user["id"]:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source not found")
+
+    r2_key = source.get("r2_key")
+    if r2_key and source.get("storage") == "r2":
+        url = storage_svc.get_presigned_download_url(r2_key, source.get("filename", "document.pdf"))
+        if url:
+            return RedirectResponse(url=url, status_code=302)
 
     file_path = source.get("file_path")
     if not file_path or not os.path.exists(file_path):
@@ -272,6 +302,9 @@ async def delete_source(source_id: str, current_user: dict = Depends(get_current
     deleted_vectors = await asyncio.to_thread(
         vs.delete_source_vectors, current_user["id"], source_id
     )
+
+    if source.get("r2_key"):
+        storage_svc.delete_pdf(source.get("r2_key"))
 
     if source.get("file_path") and os.path.exists(source["file_path"]):
         try:
