@@ -215,16 +215,26 @@ export default function QuelloForAgents() {
 
   // Pause on exit: unmounting the active card/pulse cancels their
   // raf + timers via child cleanups; reset so re-entry restarts at card 1.
+  // Deferred to a microtask so this stays an event-style update
+  // (no synchronous setState in the effect body).
   useEffect(() => {
     if (hasEntered && !inView) {
-      setActiveCardIndex(null);
-      setIsLogoHighlighted(false);
-      nextCardIndexRef.current = 0;
-      if (pulseTimerRef.current) {
-        clearTimeout(pulseTimerRef.current);
-        pulseTimerRef.current = null;
-      }
+      let cancelled = false;
+      void Promise.resolve().then(() => {
+        if (cancelled) return;
+        setActiveCardIndex(null);
+        setIsLogoHighlighted(false);
+        nextCardIndexRef.current = 0;
+        if (pulseTimerRef.current) {
+          clearTimeout(pulseTimerRef.current);
+          pulseTimerRef.current = null;
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
     }
+    return undefined;
   }, [inView, hasEntered]);
 
   useEffect(() => {

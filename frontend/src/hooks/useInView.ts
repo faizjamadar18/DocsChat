@@ -30,9 +30,17 @@ export function useInView<T extends HTMLElement = HTMLElement>({
     const el = ref.current;
     if (!el) return;
     if (typeof IntersectionObserver === 'undefined') {
-      setInView(true);
-      setHasEntered(true);
-      return;
+      // Ancient browsers only: defer so this stays a subscription-style
+      // update (no synchronous setState in the effect body).
+      let cancelled = false;
+      void Promise.resolve().then(() => {
+        if (cancelled) return;
+        setInView(true);
+        setHasEntered(true);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
     const observer = new IntersectionObserver(
       ([entry]) => {
