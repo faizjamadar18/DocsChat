@@ -735,7 +735,7 @@ export default function OraSidebar({
         </div>
       </div>
 
-      {/* Ora History Dropdown Menu — light-mode compliant (see DESIGN.md > Components > dropdown) */}
+      {/* Ora History Dropdown Menu — light-mode compliant (see docs/design-system.md > Components > dropdown) */}
       {isHistoryDropdownOpen && (
         <div
           ref={dropdownRef}

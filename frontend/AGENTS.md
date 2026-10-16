@@ -1,8 +1,8 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # Frontend (Next.js 16 App Router + React 19 + Tailwind CSS v4)
 
-Project tokens and component recipes in `DESIGN.md` (repo root) are canonical.
-When `DESIGN.md` and any other source conflict, `DESIGN.md` wins for `frontend/src/**`.
+Project tokens and component recipes in `docs/design-system.md` (repo root `docs/`) are canonical.
+When `docs/design-system.md` and any other source conflict, `docs/design-system.md` wins for `frontend/src/**`.
 
 ## Next.js version notes
 

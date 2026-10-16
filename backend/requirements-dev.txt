@@ -1,5 +1,4 @@
-# Dev-only dependencies for the autonomous verification gates in
-# `.agents/skills/add-feature/SKILL.md` and `.agents/skills/review-changes/SKILL.md`.
+# Dev-only dependencies for the verification gates (full pytest + flake8).
 # Install with: pip install -r requirements-dev.txt
 # (Production installs use requirements.txt only.)
 pytest==9.1.1

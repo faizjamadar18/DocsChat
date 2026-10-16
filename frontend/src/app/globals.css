@@ -169,7 +169,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  /* Workspace canonical tokens (DESIGN.md): monochrome black and white */
+  /* Workspace canonical tokens (docs/design-system.md): monochrome black and white */
   --color-border: #ECECEE;
   --color-accent: #111827;
   --color-accent-foreground: #FFFFFF;

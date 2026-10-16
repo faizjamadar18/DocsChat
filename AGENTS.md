@@ -1,28 +1,21 @@
 # Quello — Agent Instructions
 
-> **Read this file completely before writing any code.**
-> This is the single source of truth for all AI agents (Antigravity, Claude Code, Cursor, etc.) working on this project.
+Quello is a RAG-powered AI workspace: users upload PDFs and documents,
+organize them in team workspaces, and ask questions grounded in their content.
+FastAPI backend (Python), Next.js frontend (TypeScript).
 
----
-
-## Project Overview
-
-Quello is a RAG-powered AI workspace that lets users upload PDFs, write documents, and ask an AI assistant questions grounded in their content. It uses a FastAPI backend (Python) and a Next.js frontend (TypeScript).
-
-### Tech Stack
+## Tech Stack
 
 | Layer | Technology | Version |
 |-------|-----------|---------|
 | Frontend | Next.js (App Router), Tailwind CSS v4, TypeScript | Next.js 16, React 19 |
 | Backend | FastAPI, Python, Uvicorn | FastAPI 0.115, Python 3.11+ |
 | Database | MongoDB Atlas (Motor async driver) | Motor 3.6 |
-| Vector Store | Qdrant Cloud (migrating from ChromaDB) | qdrant-client 1.12+ |
+| Vector Store | Qdrant Cloud | qdrant-client 1.12+ |
 | Embeddings | Google Text Embedding (gemini-embedding-2) | via langchain-google-genai |
 | LLMs | Google Gemini 2.5 Flash, Groq Llama 3.3 70B | via langchain |
 | Auth | Google OAuth | — |
 | Deployment | Vercel (frontend), Render (backend) | — |
-
----
 
 ## How to Run
 
@@ -45,39 +38,32 @@ npm run dev
 ```
 App at `http://localhost:3000`.
 
----
+Design tokens in `docs/design-system.md` are canonical for `frontend/src/**`.
 
 ## Folder Structure
 
 ```
 DocsChat/
-├── AGENTS.md                    # ← Master instructions
-├── backend/                     # FastAPI python app
-├── frontend/                    # Next.js app
-├── .agents/skills/              # AI Skills & Workflows
+├── AGENTS.md               # Agent instructions (this file)
+├── backend/                # FastAPI app (app/, tests/)
+├── frontend/               # Next.js app (src/)
+├── docs/                   # Design system, reference screenshots
+└── .github/workflows/      # CI (pytest, lint, typecheck)
 ```
 
----
+## Verify Before Handover
 
-## Subagent Roles
+Run only the gates for the stack touched:
 
-When multiple agents work in parallel, they must respect these boundaries:
+- **Backend:** full `pytest` passes; `flake8 app/ --select=F,E9` clean.
+- **Frontend:** `npm run lint` with 0 errors and 0 warnings; `npx tsc --noEmit` clean.
 
-| Role | Responsibility | May Touch |
-|------|---------------|-----------|
-| **Planner** | Produce implementation plan | Any file (read-only) |
-| **Implementer** | Write code to fulfill the core goal. Do not follow the plan exactly if it is flawed. Think out of the box and deviate from the plan if a better external implementation exists. Stop and notify if a major blocker arises. | `backend/app/`, `frontend/src/` |
-| **Reviewer** | Audits code against plan. | Any file (read-only) |
+Hand over green work with test results. The user verifies the change itself.
 
----
+## Hard Boundaries
 
-## Hard Boundaries — NEVER Do These
-
-> [!CAUTION]
-> Violating any of these will break the project or compromise security.
-
-1. **NEVER** edit `.env` files — they contain secrets. Only edit `.env.example`.
-2. **NEVER** delete user data, MongoDB collections, or Qdrant collections.
-3. Work directly on the `main` branch with atomic Conventional Commits per task. The build phase is done — only small tweaks remain. Historical branches exist on the remote for the record only; do not create new branches and do not commit to them. For every task: implement, run lint + pytest + all verifications, then hand over to the user for verification, and only after their explicit YES commit + push to `main`. Never auto-commit or auto-push without explicit user confirmation.
-4. **NEVER** hardcode API keys, secrets, or credentials in source code.
-5. **NEVER** ask the user to manually test APIs, run commands, or act as a QA tester. The agent runs all code verifications itself (lint, `pytest`, `tsc`, diagnostics) after implementing and hands over green work. The user only verifies the change itself. After their explicit YES, the agent commits and pushes. Never commit or push without explicit YES.
+1. Never edit `.env` files — they contain secrets. Only edit `.env.example`.
+2. Never delete user data, MongoDB collections, or Qdrant collections.
+3. Never hardcode API keys, secrets, or credentials in source code.
+4. Work directly on `main` with atomic Conventional Commits. Never commit or push without the user's explicit YES.
+5. The agent runs all verifications itself (lint, `pytest`, `tsc`, diagnostics). Never ask the user to act as QA.
