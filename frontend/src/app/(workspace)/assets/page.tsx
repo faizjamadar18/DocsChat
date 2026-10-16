@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, MoreVertical, Download, Trash2, X, Eye, Layers } from 'lucide-react';
+import { Search, Plus, MoreVertical, Download, Trash2, X, Eye, Layers, ExternalLink } from 'lucide-react';
 import { api } from '@/lib/api';
 import { auth } from '@/lib/auth';
 import {
@@ -20,6 +20,14 @@ export interface Source {
   uploaded_at: string;
   file_size: number;
   source_type?: string; // "pdf" | "notion" | "drive" | "github" (legacy = pdf)
+  remote_url?: string | null;
+}
+
+const CONNECTOR_SOURCE_TYPES = new Set(['notion', 'drive', 'github', 'slack']);
+
+/** Connector imports have no file on our server — only indexed text + original link. */
+function isConnectorSource(source: Source): boolean {
+  return CONNECTOR_SOURCE_TYPES.has((source.source_type || '').toLowerCase());
 }
 
 /**
@@ -564,31 +572,51 @@ export default function AssetsPage() {
                           onClick={(e) => e.stopPropagation()}
                           className="absolute right-0 top-full mt-1.5 w-40 rounded-xl bg-white border border-border shadow-xl p-1.5 z-30 animate-fade-in"
                         >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveDropdownId(null);
-                              void handleView(source);
-                            }}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-text-muted" />
-                            <span>View</span>
-                          </button>
+                          {isConnectorSource(source) ? (
+                            source.remote_url ? (
+                              <a
+                                href={source.remote_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDropdownId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5 text-text-muted" />
+                                <span>Open original</span>
+                              </a>
+                            ) : null
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDropdownId(null);
+                                  void handleView(source);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-text-muted" />
+                                <span>View</span>
+                              </button>
 
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveDropdownId(null);
-                              handleDownload(source);
-                            }}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
-                          >
-                            <Download className="w-3.5 h-3.5 text-text-muted" />
-                            <span>Download</span>
-                          </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDropdownId(null);
+                                  handleDownload(source);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
+                              >
+                                <Download className="w-3.5 h-3.5 text-text-muted" />
+                                <span>Download</span>
+                              </button>
+                            </>
+                          )}
 
                           <button
                             type="button"
@@ -656,6 +684,8 @@ export default function AssetsPage() {
                   page_count: fetched.page_count || 0,
                   uploaded_at: fetched.uploaded_at || new Date().toISOString(),
                   file_size: fetched.file_size || 0,
+                  source_type: fetched.source_type,
+                  remote_url: fetched.remote_url ?? null,
                 };
                 setSources((prev) => (prev.some((s) => s.id === restored.id) ? prev : [restored, ...prev]));
                 setSelectedAsset(restored);
