@@ -8,7 +8,7 @@ _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env
 
 class Settings(BaseSettings):
     MONGODB_URL: str
-    DB_NAME: str = "notebuddy"
+    DB_NAME: str = "quello"
 
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
