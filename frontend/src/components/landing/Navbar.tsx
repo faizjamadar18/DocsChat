@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AgentworkLogo } from './Icons';
+import { QuelloLogo } from './Icons';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function Navbar() {
@@ -67,7 +67,7 @@ export default function Navbar() {
       <nav aria-label="Main navigation" className="w-full py-10 px-6">
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
           <Link href="/" aria-label="Quello home" className="text-[#21201c] hover:opacity-90">
-            <AgentworkLogo />
+            <QuelloLogo />
           </Link>
 
           {/* Desktop Action */}
@@ -99,7 +99,7 @@ export default function Navbar() {
       >
         <div className="mx-auto max-w-300 flex items-center justify-between gap-4">
           <Link href="/" aria-label="Quello home" className="text-[#21201c]">
-            <AgentworkLogo />
+            <QuelloLogo />
           </Link>
           <div className="hidden md:flex items-center">
             {renderActionButton('sm')}
@@ -129,7 +129,7 @@ export default function Navbar() {
           <div className="relative bg-[#ffffff] rounded-t-3xl p-6 pb-safe flex flex-col gap-5 max-h-[85vh] overflow-y-auto border-t border-[#e2e1de] shadow-2xl animate-fade-in">
             {/* Top Bar with Logo and Close */}
             <div className="flex items-center justify-between pb-3 border-b border-[#f1f0ef]">
-              <AgentworkLogo />
+              <QuelloLogo />
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}

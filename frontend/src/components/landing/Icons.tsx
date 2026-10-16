@@ -34,10 +34,6 @@ export function QuelloLogo({ className = 'h-6 w-auto', showName = true }: { clas
   );
 }
 
-// Aliases for compatibility across landing page components
-export const AgentworkLogo = QuelloLogo;
-export const AgentworkMark = QuelloMark;
-
 // App Provider Logos (SVG)
 export function SlackIcon({ className = 'size-5' }: { className?: string }) {
   return (

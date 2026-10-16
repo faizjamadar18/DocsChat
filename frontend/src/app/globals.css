@@ -409,9 +409,9 @@ body {
 }
 
 /* ========================================================
-   Agentwork Design Tokens & Utilities
+   Quello Design Tokens & Utilities
    ======================================================== */
-.agentwork-scope {
+.quello-scope {
   --sand-0: #ffffff;
   --sand-1: #fdfdfc;
   --sand-2: #f9f9f8;
@@ -658,8 +658,8 @@ body {
   }
 }
 
-/* Agentwork Logo Pulse Ring Animation */
-@keyframes agentworkLogoPulse {
+/* Quello Logo Pulse Ring Animation */
+@keyframes quelloLogoPulse {
   0% {
     transform: scale(1);
     opacity: 0.65;
@@ -670,11 +670,11 @@ body {
   }
 }
 
-.animate-agentwork-logo-pulse {
-  animation: agentworkLogoPulse 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.animate-quello-logo-pulse {
+  animation: quelloLogoPulse 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-@keyframes agentworkLogoGlow {
+@keyframes quelloLogoGlow {
   0% {
     opacity: 0.8;
     box-shadow: 0 0 18px rgba(255, 106, 0, 0.45);
@@ -685,13 +685,13 @@ body {
   }
 }
 
-.animate-agentwork-logo-glow {
-  animation: agentworkLogoGlow 0.8s ease-out forwards;
+.animate-quello-logo-glow {
+  animation: quelloLogoGlow 0.8s ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-agentwork-logo-pulse,
-  .animate-agentwork-logo-glow {
+  .animate-quello-logo-pulse,
+  .animate-quello-logo-glow {
     animation: none !important;
   }
 }

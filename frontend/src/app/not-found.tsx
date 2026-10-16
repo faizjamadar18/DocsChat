@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { QuelloMark } from '../components/agentwork/Icons';
+import { QuelloMark } from '../components/landing/Icons';
 
 export const metadata: Metadata = {
   title: '404 - Page Not Found | Quello',

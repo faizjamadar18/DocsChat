@@ -108,7 +108,7 @@ const CARDS: CardItem[] = [
 
 /**
  * AnimatedCardBorder: Traces an orange border clockwise 360 degrees around the card
- * using conic-gradient mask starting from 9 o'clock (-90deg), exactly matching Agentwork.com.
+ * using conic-gradient mask starting from 9 o'clock (-90deg).
  */
 function AnimatedCardBorder({ onComplete }: { onComplete: () => void }) {
   const borderRef = useRef<HTMLDivElement>(null);
@@ -117,7 +117,7 @@ function AnimatedCardBorder({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     let startTime: number | null = null;
     let rafId: number;
-    const duration = 2000; // 2 seconds border trace (Agentwork Ce = 2)
+    const duration = 2000; // 2 seconds border trace
 
     const step = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
@@ -163,14 +163,14 @@ function AnimatedCardBorder({ onComplete }: { onComplete: () => void }) {
 }
 
 /**
- * LogoPulseRing: Radiates an expanding orange highlight ring from the website logo
- * when a card's border finishes tracing, matching Agentwork.com (Oe).
+ * LogoPulseRing: Radiates an expanding orange highlight ring from the Quello mark
+ * when a card's border finishes tracing.
  */
 function LogoPulseRing({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 800); // 800ms duration (Agentwork F = 0.8)
+    }, 800); // 800ms duration
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -178,17 +178,17 @@ function LogoPulseRing({ onComplete }: { onComplete: () => void }) {
     <>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-[18px] border-2 border-[#ff6a00] animate-agentwork-logo-pulse"
+        className="pointer-events-none absolute inset-0 rounded-[18px] border-2 border-[#ff6a00] animate-quello-logo-pulse"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-1 rounded-[22px] border border-[#ff6a00]/30 animate-agentwork-logo-glow"
+        className="pointer-events-none absolute -inset-1 rounded-[22px] border border-[#ff6a00]/30 animate-quello-logo-glow"
       />
     </>
   );
 }
 
-export default function AgentworkForAgents() {
+export default function QuelloForAgents() {
   const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const [isLogoHighlighted, setIsLogoHighlighted] = useState(false);
   const nextCardIndexRef = useRef(0);
@@ -203,8 +203,8 @@ export default function AgentworkForAgents() {
     nextCardIndexRef.current = (nextCardIndexRef.current + 1) % CARDS.length;
   }, []);
 
-  // Kick off 800ms after landing on the section (matching Agentwork).
-  // Re-runs on every re-entry so the story restarts at the first card.
+  // Kick off 800ms after landing on the section.
+  // Re-runs on every re-entry so the loop restarts at the first card.
   useEffect(() => {
     if (!hasEntered || !inView) return;
     const timer = setTimeout(() => {
@@ -242,7 +242,7 @@ export default function AgentworkForAgents() {
   }, []);
 
   // When logo pulse completes (after 800ms):
-  // Wait 600ms (Agentwork Te = 0.6) then start next card 1 by 1
+  // Wait 600ms then start next card 1 by 1
   const handleLogoPulseComplete = useCallback(() => {
     setIsLogoHighlighted(false);
     if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);

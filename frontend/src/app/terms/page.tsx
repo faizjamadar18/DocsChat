@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Navbar from '@/components/agentwork/Navbar';
-import Footer from '@/components/agentwork/Footer';
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
 import LenisProvider from '@/components/LenisProvider';
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
 
   return (
     <LenisProvider>
-      <div className="agentwork-scope min-h-dvh relative bg-[#fdfdfc] text-[#21201c] antialiased selection:bg-[#ffd7c0] selection:text-[#592d18]">
+      <div className="quello-scope min-h-dvh relative bg-[#fdfdfc] text-[#21201c] antialiased selection:bg-[#ffd7c0] selection:text-[#592d18]">
         <Navbar />
 
         <main className="pt-6 sm:pt-10 pb-20 sm:pb-28">

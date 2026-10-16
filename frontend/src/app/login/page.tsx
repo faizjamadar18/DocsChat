@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import { QuelloMark, RadialSpinner } from '../../components/agentwork/Icons';
+import { QuelloMark, RadialSpinner } from '../../components/landing/Icons';
 import BackendWarmup from '../../components/BackendWarmup';
 import { api } from '../../lib/api';
 import { auth } from '../../lib/auth';
@@ -177,7 +177,7 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Quello Google Button Container with exact plura.in hover and click animations */}
+          {/* Quello Google Button Container with slide-up text swapping animation */}
           <div
             onPointerDownCapture={() => {
               setError('');

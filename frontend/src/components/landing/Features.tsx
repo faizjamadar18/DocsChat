@@ -1,146 +1,166 @@
-import SectionLabel from './SectionLabel';
+'use client';
 
-const CornerBrackets = () => (
-  <>
-    <span className="absolute left-0 top-0 w-2 h-2 border-l-2 border-t-2 border-white pointer-events-none" />
-    <span className="absolute right-0 top-0 w-2 h-2 border-r-2 border-t-2 border-white pointer-events-none" />
-    <span className="absolute bottom-0 left-0 w-2 h-2 border-l-2 border-b-2 border-white pointer-events-none" />
-    <span className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-white pointer-events-none" />
-  </>
-);
+import React from 'react';
+import { NotionIcon, GitHubIcon, GoogleDriveIcon } from './Icons';
 
 export default function Features() {
   return (
-    <section className="border-b border-white/10">
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-20 sm:py-24">
-        <div className="text-center mb-16">
-          <div className="mb-6">
-            <SectionLabel>Features</SectionLabel>
+    <section id="features" className="flex flex-col items-center px-6 py-16 md:py-24">
+      <div className="flex w-full max-w-300 flex-col gap-12">
+        {/* Headline */}
+        <h2 className="max-w-2xl text-2xl md:text-3xl font-medium leading-[1.3] tracking-[-0.03em] text-[#21201c]">
+          Cited answers, private workspaces, and writing help built for teams
+        </h2>
+
+        {/* 4-Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Card 1 & 2 Container */}
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Card 1: Answers you can verify */}
+              <div className="flex flex-col justify-between gap-6 p-6 rounded-2xl border border-[#e2e1de] bg-[#f9f9f8] min-h-65">
+                {/* Visual */}
+                <div className="flex flex-col gap-2.5 pt-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#ffffff] border border-[#e2e1de] text-xs font-medium text-[#21201c] w-fit shadow-xs">
+                    <NotionIcon className="size-3.5 text-[#21201c]" />
+                    <span>Architecture RFC</span>
+                    <span className="text-[10px] text-[#8d8d86] font-mono">[1]</span>
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#ffffff] border border-[#e2e1de] text-xs font-medium text-[#21201c] w-fit shadow-xs">
+                    <svg className="size-3.5 text-[#eab308]" viewBox="0 0 24 24" fill="currentColor">
+                      <rect width="24" height="24" rx="3" />
+                    </svg>
+                    <span>Security_Specs.pdf</span>
+                    <span className="text-[10px] text-[#8d8d86] font-mono">[2]</span>
+                  </div>
+                </div>
+
+                {/* Text */}
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="text-base font-semibold text-[#21201c]">Answers you can verify</h3>
+                  <p className="text-xs text-[#63635e] leading-relaxed">
+                    Every response links to the exact passage it came from. Open the source in one click.
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 2: Two-factor authentication / Workspace Security */}
+              <div className="flex flex-col justify-between gap-6 p-6 rounded-2xl border border-[#e2e1de] bg-[#f9f9f8] min-h-65">
+                {/* Visual: MFA input */}
+                <div className="flex items-center justify-center pt-6">
+                  <div className="flex gap-2">
+                    {['3', '8', '1', '•', '•', '•'].map((digit, i) => (
+                      <div
+                        key={i}
+                        className={`size-8 rounded-lg border text-xs font-mono font-bold flex items-center justify-center ${
+                          i < 3
+                            ? 'border-[#21201c] bg-[#ffffff] text-[#21201c] shadow-xs'
+                            : 'border-[#e2e1de] bg-[#fdfdfc] text-[#8d8d86]'
+                        }`}
+                      >
+                        {digit}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Text */}
+                <div className="flex flex-col gap-1.5">
+                  <h3 className="text-base font-semibold text-[#21201c]">Private by default</h3>
+                  <p className="text-xs text-[#63635e] leading-relaxed">
+                    Sign in with Google, keep each workspace separate, and respect existing permissions. Your docs are never used for training.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Live connector synchronization */}
+            <div className="flex flex-col justify-between gap-6 p-6 rounded-2xl border border-[#e2e1de] bg-[#f9f9f8] min-h-60">
+              {/* Visual: Synced sources */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-xs">
+                  <div className="flex items-center gap-2">
+                    <GoogleDriveIcon className="size-4" />
+                    <span className="font-medium text-[#21201c]">Google Drive</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#8d8d86]">
+                    <span>Synced 1min ago</span>
+                    <span className="text-[#ff6a00] font-medium">Up to date</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-xs">
+                  <div className="flex items-center gap-2">
+                    <GitHubIcon className="size-4 text-[#21201c]" />
+                    <span className="font-medium text-[#21201c]">GitHub</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#8d8d86]">
+                    <span>Synced 2min ago</span>
+                    <span className="text-[#ff6a00] font-medium">Up to date</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-xs">
+                  <div className="flex items-center gap-2">
+                    <NotionIcon className="size-4 text-[#21201c]" />
+                    <span className="font-medium text-[#21201c]">Notion</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[#8d8d86]">
+                    <span>Synced 5min ago</span>
+                    <span className="text-[#ff6a00] font-medium">Up to date</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Text */}
+              <div className="flex flex-col gap-1.5">
+                <h3 className="text-base font-semibold text-[#21201c]">Always up to date</h3>
+                <p className="text-xs text-[#63635e] leading-relaxed">
+                  Changes in your connected tools sync automatically. No re-uploads, no stale answers.
+                </p>
+              </div>
+            </div>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4 text-white">Everything you need to research better</h2>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">A clean workspace that connects your documents to the most capable AI models.</p>
-        </div>
 
-        <div className="grid gap-6">
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Card — Ask Anything */}
-            <div className="relative bg-black rounded-2xl p-6 sm:p-10 border-2 border-white/[0.12] flex flex-col">
-              <CornerBrackets />
-              <h3 className="text-lg font-semibold text-white mb-3">Ask Anything</h3>
-              <p className="text-sm text-white/50 leading-relaxed mb-6">
-                Natural language questions with citeable answers. Every response includes sources so you can verify.
+          {/* Card 4: Studio & writing help */}
+          <div className="flex flex-col justify-between gap-6 p-6 rounded-2xl border border-[#e2e1de] bg-[#f9f9f8] min-h-130">
+            {/* Visual: Studio Canvas Card */}
+            <div className="flex flex-col gap-4 p-5 rounded-xl bg-[#ffffff] border border-[#e2e1de] shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-[#e2e1de]">
+                <div className="flex items-center gap-2">
+                  <div className="size-6 rounded-md bg-[#21201c] text-[#ffffff] flex items-center justify-center font-semibold text-xs">
+                    S
+                  </div>
+                  <span className="text-sm font-semibold text-[#21201c]">Studio</span>
+                </div>
+                <span className="text-xs text-[#63635e] font-medium bg-[#f9f9f8] px-2 py-0.5 rounded border border-[#e2e1de]">
+                  Draft · Summarize · Edit
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <span className="text-[#8d8d86]">Editor:</span>
+                  <div className="font-medium text-[#21201c] mt-0.5">Clean docs with / commands</div>
+                </div>
+                <div>
+                  <span className="text-[#8d8d86]">Assistant:</span>
+                  <div className="font-medium text-[#21201c] mt-0.5">Draft with context</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-[#e2e1de]">
+                <span className="text-xs text-[#8d8d86]">Example:</span>
+                <p className="text-xs text-[#63635e] leading-relaxed bg-[#f9f9f8] p-3 rounded-lg border border-[#e2e1de]/60">
+                  Turn the release notes in Drive into a one-page launch summary, with links to sources.
+                </p>
+              </div>
+            </div>
+
+            {/* Text */}
+            <div className="flex flex-col gap-1.5">
+              <h3 className="text-base font-semibold text-[#21201c]">Studio for writing</h3>
+              <p className="text-sm text-[#63635e] leading-relaxed">
+                Outline, draft, and summarize alongside your sources — without copying between tools.
               </p>
-
-              {/* Mock Q&A */}
-              <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-4 mb-3">
-                <div className="flex justify-end mb-3">
-                  <div className="max-w-[85%] px-3 py-2 rounded-xl rounded-br-sm bg-white/[0.08] text-xs text-white/80">
-                    What are the key findings from this paper?
-                  </div>
-                </div>
-                <div className="max-w-[90%] text-xs text-white/70 leading-relaxed mb-2">
-                  Based on the paper, the key findings include RAG systems significantly improving factual accuracy and document chunking strategy directly impacting retrieval quality.
-                </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/40">paper.pdf · p.3</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/40">paper.pdf · p.7</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-white/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                <span>Every answer cites its source</span>
-              </div>
-            </div>
-
-            {/* Card — Multi-Model */}
-            <div className="relative bg-black rounded-2xl p-6 sm:p-10 border-2 border-white/[0.12] flex flex-col">
-              <CornerBrackets />
-              <h3 className="text-lg font-semibold text-white mb-3">Multi-Model</h3>
-              <p className="text-sm text-white/50 leading-relaxed mb-6">
-                Choose between Gemini and Groq models. Switch freely without leaving your workspace.
-              </p>
-
-              {/* Model cards */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/[0.08] p-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center text-xs text-white/60">G</div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white/80">Gemini 1.5 Flash</p>
-                    <p className="text-xs text-white/40">Fast · General purpose</p>
-                  </div>
-                  <div className="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] border border-white/[0.08] p-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-white/[0.06] flex items-center justify-center text-xs text-white/60">G</div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-white/80">Groq Llama 3 70B</p>
-                    <p className="text-xs text-white/40">Powerful · Deep reasoning</p>
-                  </div>
-                  <div className="w-5 h-5 rounded-full border-2 border-white/15" />
-                </div>
-              </div>
-
-              <div className="mt-4 flex items-center gap-2 text-xs text-white/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                <span>Switch models per question</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Full-width card — Upload & Analyze */}
-          <div className="relative bg-black rounded-2xl p-5 sm:p-7 border-2 border-white/[0.12] flex flex-col">
-            <CornerBrackets />
-            <h3 className="text-lg font-semibold text-white mb-6 text-center">Upload & Analyze</h3>
-
-
-            {/* Document cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3.5">
-                <div className="flex items-center gap-3 mb-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center text-xs text-white/40">PDF</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white/80 font-medium truncate">research-paper.pdf</p>
-                    <p className="text-xs text-white/40">2.4 MB</p>
-                  </div>
-                </div>
-                <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
-                  <div className="h-full w-full rounded-full bg-white/20" />
-                </div>
-                <p className="text-xs text-white/40 mt-1">Indexed</p>
-              </div>
-              <div className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-3.5">
-                <div className="flex items-center gap-3 mb-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-white/[0.06] flex items-center justify-center text-xs text-white/40">PDF</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white/80 font-medium truncate">meeting-notes.pdf</p>
-                    <p className="text-xs text-white/40">0.8 MB</p>
-                  </div>
-                </div>
-                <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
-                  <div className="h-full w-3/4 rounded-full bg-white/20" />
-                </div>
-                <p className="text-xs text-white/40 mt-1">Processing · 70%</p>
-              </div>
-            </div>
-
-            {/* Input bar mockup */}
-            <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3.5">
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <div className="flex-1 h-9 rounded-lg bg-white/[0.04] border border-white/[0.06]" />
-                <div className="w-9 h-9 rounded-lg bg-white/[0.07] flex items-center justify-center">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/40">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                </div>
-              </div>
-              <div className="flex gap-1.5">
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/40">paper.pdf · p.3</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/40">notes.pdf · p.7</span>
-              </div>
             </div>
           </div>
         </div>

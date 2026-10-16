@@ -1,116 +1,108 @@
+'use client';
+
+import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import SectionLabel from './SectionLabel';
+import HeroMockup from './HeroMockup';
 
 export default function Hero() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updateScale = () => {
+      const availableWidth = el.clientWidth;
+      if (availableWidth > 0) {
+        setScale(Math.min(1, availableWidth / 1000));
+      }
+    };
+
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="border-b border-white/10 overflow-hidden">
+    <section id="overview" className="px-4 sm:px-6 py-8 md:py-16 flex flex-col gap-8 sm:gap-10 items-center w-full max-w-full overflow-hidden scroll-mt-24">
+      {/* Top Headline & CTAs Grid */}
+      <div data-section-anchor="true" className="max-w-300 w-full flex flex-col gap-6 md:grid md:grid-cols-12 md:items-end">
+        {/* Left Column: Heading and Subtitle */}
+        <div className="md:col-span-8 flex flex-col gap-3.5 sm:gap-4">
+          <h1 className="text-3xl sm:text-4xl md:text-[50px] font-[550] tracking-[-0.03em] leading-[1.12] text-[#21201c] text-balance">
+            Your second brain,
+            <br />
+            backed by sources
+          </h1>
+          <p className="text-sm sm:text-base md:text-[19px] leading-relaxed tracking-[-0.01em] text-[#63635e] max-w-2xl text-pretty">
+            Unified workspace for every tool, document and your code, with the evidence behind every claim one click away. When the answer isn&apos;t written down, it asks the source who knows it. If your files don’t say it, neither does it.
+          </p>
+        </div>
 
-      <div
-        aria-hidden
-        className="absolute inset-0 isolate hidden contain-strict lg:block z-51 pointer-events-none">
-        <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]" />
-        <div className="h-320 absolute left-0 top-0 w-60 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] [translate:5%_-50%]" />
-        <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
+        {/* Right Column: Stacked Action Buttons */}
+        <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 w-full sm:w-auto md:col-span-4 md:col-start-9 lg:col-span-4 lg:col-start-9 justify-end md:items-end">
+          <Link
+            href="/register"
+            className="group relative overflow-hidden w-full sm:w-37.5 h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#21201c] text-[#ffffff] font-medium text-sm hover:opacity-80 active:scale-95 transition-all shadow-xs whitespace-nowrap text-center cursor-pointer select-none"
+          >
+            <div className="relative overflow-hidden">
+              <div className="transition-transform duration-300 ease-in-out group-hover:-translate-y-full">
+                Start for free
+              </div>
+              <div className="absolute inset-0 transition-transform duration-300 ease-in-out group-hover:translate-y-0 translate-y-full">
+                Start for free
+              </div>
+            </div>
+          </Link>
+          <Link
+            href="#how-it-works"
+            scroll={false}
+            className="group relative overflow-hidden w-full sm:w-37.5 h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] hover:border-[#d0cfcb] active:scale-95 transition-all whitespace-nowrap text-center cursor-pointer select-none"
+          >
+            <div className="relative overflow-hidden">
+              <div className="transition-transform duration-300 ease-in-out group-hover:-translate-y-full">
+                See how it works
+              </div>
+              <div className="absolute inset-0 transition-transform duration-300 ease-in-out group-hover:translate-y-0 translate-y-full">
+                See how it works
+              </div>
+            </div>
+          </Link>
+        </div>
       </div>
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-16 sm:py-16">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
 
-          <div className="relative max-w-xl">
-            {/* White spotlight behind text */}
-            <div className="absolute -top-20 -left-20 w-125 h-125 rounded-full bg-[radial-gradient(ellipse_at_center,hsla(0, 5%, 92%, 0.10)_0%,hsla(0,0%,100%,0.03)_40%,transparent_70%)] blur-3xl pointer-events-none" />
-            <div className="mb-8">
-              <SectionLabel>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2l1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5z" />
-                </svg>
-                AI-Powered Research
-              </SectionLabel>
-            </div>
-            <h1 className="text-[32px] sm:text-5xl lg:text-[56px] font-semibold tracking-tight leading-[1.1] mb-6">
-              Turn Documents into Answers, Instantly
-            </h1>
-            <p className="text-lg sm:text-xl text-white/60 leading-relaxed mb-10 max-w-lg">
-              Upload PDFs, ask questions, and get citeable answers powered by your choice of AI models. Your research workspace, reimagined.
-            </p>
-            <div className="flex flex-row items-center gap-2 sm:gap-4">
-              <Link
-                href="/login"
-                className="inline-flex items-center h-8 sm:h-10 px-4 sm:px-5 rounded-xl bg-white text-[#121212] text-sm sm:text-base font-semibold hover:bg-white/90 transition-colors"
-              >
-                Get started free
-              </Link>
-              <Link
-                href="#how-it-works"
-                className="inline-flex items-center h-10 sm:h-12 px-4 sm:px-7 rounded-xl border border-white/20 text-white text-sm sm:text-white font-medium hover:bg-white/5 transition-colors"
-              >
-                How it works
-              </Link>
-            </div>
-            <p className="text-sm text-white/40 mt-8">No credit card required &middot; Free plan included</p>
-          </div>
+      {/* Cloud & Mockup Banner Container */}
+      <div className="max-w-300 w-full relative">
+        {/* Subtle Ambient Drop Glow for Depth */}
+        <div className="absolute -inset-1 sm:-inset-2 bg-linear-to-b from-[#8ebcca]/20 via-[#ffd7c0]/15 to-transparent blur-xl rounded-3xl -z-1 pointer-events-none" />
 
-          <div className="flex items-center justify-center relative">
-            {/* MacBook mockup */}
-            <div className="relative w-full sm:max-w-225">
-              {/* Surface shadow — device resting on desk */}
-              <div className="absolute -bottom-8 left-[5%] right-[5%] h-10 rounded-full bg-black/40 blur-2xl" />
-              {/* Outer glow */}
-              <div className="absolute -inset-8 rounded-3xl bg-linear-to-br from-white/6 via-transparent to-white/1 blur-3xl" />
-              {/* Glass reflection overlay */}
-              <div className="absolute -top-12 left-[20%] right-[20%] h-20 bg-linear-to-b from-white/3 to-transparent blur-3xl rounded-full pointer-events-none" />
-              {/* SaaS product frame */}
-              <div className="relative rounded-2xl sm:rounded-[20px] bg-linear-to-b from-white/8 to-white/1 p-px shadow-[0_0_30px_rgba(0,0,0,0.4),0_20px_60px_-10px_rgba(0,0,0,0.5)]">
-                {/* Device bezel */}
-                <div className="rounded-[15px] sm:rounded-[19px] bg-[#1a1a1a] p-0.5 shadow-inner shadow-black/50">
-                  {/* Screen with inner shadow for glass depth */}
-                  <div className="rounded-[13px] sm:rounded-[17px] bg-base overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                    {/* Screen content */}
-                    <div className="px-5 sm:px-8 pb-8 sm:pb-10 pt-6 sm:pt-8 space-y-2 sm:space-y-5">
-                      {/* Top bar */}
-                      <div className="flex items-center justify-between mb-4 sm:mb-5">
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <div className="w-2 sm:w-3 h-2 sm:h-3 rounded-full bg-[#ff5f57]"></div>
-                          <div className="w-2 sm:w-3 h-2 sm:h-3 rounded-full bg-[#febc2e]"></div>
-                          <div className="w-2 sm:w-3 h-2 sm:h-3 rounded-full bg-[#28c840]"></div>
-                        </div>
-                        <span className="text-[9px] sm:text-xs text-white/40 font-medium">Quello</span>
-                      </div>
-                      {/* User message */}
-                      <div className="flex justify-end mt-5 sm:mt-7">
-                        <div className="max-w-[82%] sm:max-w-[78%] px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-2xl rounded-br-sm bg-white/8 text-[9px] sm:text-xs text-white leading-relaxed border border-white/5 shadow-sm">
-                          What are the key findings from this research paper?
-                        </div>
-                      </div>
-                      {/* Assistant response */}
-                      <div className="max-w-[85%] sm:max-w-[82%] text-[9px] sm:text-xs text-white/80 leading-relaxed">
-                        Based on the paper, the key findings include:
-                      </div>
-                      <div className="max-w-[85%] sm:max-w-[82%] text-[9px] sm:text-xs text-white/80 leading-relaxed space-y-0.5">
-                        <p>1. RAG systems significantly improve factual accuracy compared to base LLMs</p>
-                        <p>2. Document chunking strategy directly impacts retrieval quality</p>
-                      </div>
-                      {/* Citations */}
-                      <div className="flex gap-1 sm:gap-1.5 flex-wrap">
-                        <span className="text-[7px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full bg-white/4 border border-white/[0.07] text-white/50">paper.pdf &middot; p.3</span>
-                        <span className="text-[7px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full bg-white/4 border border-white/[0.07] text-white/50">paper.pdf &middot; p.7</span>
-                      </div>
-                      {/* Input bar */}
-                      <div className="flex items-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-white/6">
-                        <div className="flex-1 h-6 sm:h-9 rounded-full bg-white/4 border border-white/[0.07]"></div>
-                        <div className="w-6 sm:w-9 h-6 sm:h-9 rounded-full bg-white/8 border border-white/5 flex items-center justify-center shrink-0">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/50 sm:w-3.5 sm:h-3.5">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#e2e1de] shadow-sm p-3.5 sm:p-7 md:p-12 lg:p-14 flex items-center justify-center">
+          {/* CSS-only Mesh Pastel Gradient Background */}
+          <div className="absolute inset-0 hero-bg pointer-events-none" />
+
+          {/* Floating Scaled Hero Mockup (static preview image — fully inert across all viewports) */}
+          <div ref={containerRef} aria-hidden="true" className="relative z-3 w-full flex items-center justify-center pointer-events-none select-none">
+            <div
+              style={{
+                width: `${1000 * scale}px`,
+                height: `${640 * scale}px`,
+              }}
+              className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-ui-visual shrink-0"
+            >
+              <div
+                style={{
+                  width: '1000px',
+                  height: '640px',
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                }}
+              >
+                <HeroMockup />
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </section>
