@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Any
+from typing import Literal, Optional, Any
 from datetime import datetime
 
 
@@ -41,3 +41,14 @@ class AiRefactorResponse(BaseModel):
     original: str
     rewritten: str
     preset: Optional[str] = None
+
+
+class AiDraftRequest(BaseModel):
+    prompt: str = Field(min_length=1, max_length=2000)
+    mode: Literal["append", "replace"] = "append"
+    existing_excerpt: Optional[str] = Field(default=None, max_length=2000)
+
+
+class AiDraftResponse(BaseModel):
+    markdown: str
+    mode: str

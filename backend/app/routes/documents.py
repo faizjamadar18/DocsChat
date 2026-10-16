@@ -11,6 +11,8 @@ from app.models.document import (
     DocumentListResponse,
     AiRefactorRequest,
     AiRefactorResponse,
+    AiDraftRequest,
+    AiDraftResponse,
 )
 from app.middleware.auth_middleware import get_current_user
 from app.services.llm_service import generate_response
@@ -388,3 +390,70 @@ async def ai_refactor_document(
 
     rewritten = _clean_llm_text(str(raw), fallback=selected)
     return AiRefactorResponse(original=selected, rewritten=rewritten, preset=preset)
+
+
+def _build_draft_prompt(prompt: str, excerpt: Optional[str]) -> str:
+    base = (
+        "You are writing directly into a Notion-style document editor. "
+        "Write the requested content as structured Markdown with proper "
+        "headings (##), short paragraphs, and bullet lists where helpful. "
+        "Return ONLY the document markdown: no code fences, no quotes, "
+        "no preamble like 'Here is your article'."
+    )
+    if excerpt and excerpt.strip():
+        base += (
+            "\n\nCurrent document excerpt for tone context "
+            "(do not repeat it verbatim unless asked):\n"
+            f"{excerpt.strip()[:2000]}"
+        )
+    return base + f"\n\nRequest: {prompt.strip()}"
+
+
+@router.post("/{document_id}/ai-draft", response_model=AiDraftResponse)
+async def ai_draft_document(
+    document_id: str,
+    data: AiDraftRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Generate a full-document draft as Markdown without saving. Preview only.
+
+    Nothing is written to MongoDB or Qdrant here by design: the frontend
+    reveals the draft progressively and only a user-confirmed Keep triggers
+    the normal PUT save path (which then indexes once via the existing flow).
+    """
+    try:
+        check_db()
+    except DatabaseNotReadyError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database not ready")
+
+    if not ObjectId.is_valid(document_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid document ID")
+
+    prompt = (data.prompt or "").strip()
+    if not prompt:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Prompt is empty")
+    mode = data.mode or "append"
+
+    doc = await database.documents_collection.find_one({"_id": ObjectId(document_id)})
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    if doc.get("workspace_id"):
+        _ws, _role = await get_workspace_with_access(doc["workspace_id"], current_user["id"])
+        require_role(_role, ("owner", "editor"), "Viewers cannot use AI draft")
+    elif str(doc.get("user_id")) != current_user["id"]:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    llm_prompt = _build_draft_prompt(prompt, data.existing_excerpt)
+    try:
+        raw = await generate_response(llm_prompt)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI draft failed: {exc}",
+        )
+
+    markdown = _clean_llm_text(str(raw), fallback="")
+    if not markdown.strip():
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="AI returned an empty draft")
+
+    return AiDraftResponse(markdown=markdown, mode=mode)
