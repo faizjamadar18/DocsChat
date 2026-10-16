@@ -2,13 +2,30 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Cloud, Check, Loader2, PanelLeft } from 'lucide-react';
 import { useWorkspace } from '../../../context/WorkspaceContext';
+import { useConfirm } from '../../../context/ConfirmContext';
 import { api } from '../../../lib/api';
+import { markdownToSafeHtml, type AIDraftMode, type PendingEditorInsert } from '../../../lib/aiDraft';
 import { StudioDocumentsSidebar, StudioDoc } from '../../../components/studio/StudioDocumentsSidebar';
 import { EditorCanvas } from '../../../components/studio/EditorCanvas';
+import { type AIDraftStatus } from '../../../components/studio/AIDraftPreview';
 import OraSidebar, { OraLogoMark } from '../../../components/layout/OraSidebar';
+
+interface AIDraftState {
+  prompt: string;
+  fullMarkdown: string;
+  visibleLength: number;
+  status: AIDraftStatus;
+  stoppedEarly: boolean;
+  error: string | null;
+  mode: AIDraftMode;
+  docId: string;
+  /** Caret position captured when the draft started; null = insert at end. */
+  caretPos: number | null;
+}
 
 export default function StudioPage() {
   const { currentWorkspace, setActiveDocTitle } = useWorkspace();
+  const { confirm } = useConfirm();
   const [isOraDrawerOpen, setIsOraDrawerOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -29,6 +46,15 @@ export default function StudioPage() {
   // Active title state for immediate responsive typing in the H1 title input
   const [titleInput, setTitleInput] = useState('');
   const titleSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Notion-style AI draft: preview-only until Keep. Nothing here saves or
+  // indexes — Keep funnels through pendingInsert -> EditorCanvas -> one auto-save.
+  const [aiDraft, setAiDraft] = useState<AIDraftState | null>(null);
+  const [pendingInsert, setPendingInsert] = useState<PendingEditorInsert | null>(null);
+  const draftAbortRef = useRef<AbortController | null>(null);
+  const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const draftNonceRef = useRef(0);
+  const draftBusy = aiDraft?.status === 'generating' || aiDraft?.status === 'streaming';
 
   const showToast = useCallback((msg: string) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -114,6 +140,12 @@ export default function StudioPage() {
   const handleSelectDoc = (id: string) => {
     const doc = documents.find((d) => d.id === id);
     if (!doc) return;
+    // Never let a draft leak into the wrong document: discard it on switch.
+    if (draftAbortRef.current) draftAbortRef.current.abort();
+    if (revealTimerRef.current) clearInterval(revealTimerRef.current);
+    if (aiDraft) setAiDraft(null);
+    // Drop any confirmed insert that hasn't landed yet — it belongs to the old doc.
+    setPendingInsert(null);
     setActiveDocId(id);
     setActiveDoc(doc);
     setTitleInput(doc.title);
@@ -258,6 +290,189 @@ export default function StudioPage() {
     }
   };
 
+  // --- Notion-style AI draft state machine (preview-only, no save/index) ---
+  const stopDraftTimers = useCallback(() => {
+    if (draftAbortRef.current) {
+      draftAbortRef.current.abort();
+      draftAbortRef.current = null;
+    }
+    if (revealTimerRef.current) {
+      clearInterval(revealTimerRef.current);
+      revealTimerRef.current = null;
+    }
+  }, []);
+
+  const startDraftReveal = useCallback((docId: string) => {
+    if (revealTimerRef.current) clearInterval(revealTimerRef.current);
+    revealTimerRef.current = setInterval(() => {
+      setAiDraft((prev) => {
+        if (!prev || prev.docId !== docId) {
+          if (revealTimerRef.current) clearInterval(revealTimerRef.current);
+          return prev;
+        }
+        const next = Math.min(prev.fullMarkdown.length, prev.visibleLength + 120);
+        if (next >= prev.fullMarkdown.length) {
+          if (revealTimerRef.current) {
+            clearInterval(revealTimerRef.current);
+            revealTimerRef.current = null;
+          }
+          return { ...prev, visibleLength: next, status: 'ready' as AIDraftStatus };
+        }
+        return { ...prev, visibleLength: next };
+      });
+    }, 40);
+  }, []);
+
+  const handleDraftRequest = useCallback(
+    async (prompt: string, caretPos: number | null = null) => {
+      const trimmed = prompt.trim();
+      if (!trimmed || !activeDocId) return;
+      if (draftBusy) {
+        showToast('Already creating — stop or finish the current draft first');
+        return;
+      }
+      stopDraftTimers();
+      const docId = activeDocId;
+      const excerpt = (activeDoc?.content_text || '').slice(0, 1500);
+      setAiDraft({
+        prompt: trimmed,
+        fullMarkdown: '',
+        visibleLength: 0,
+        status: 'generating',
+        stoppedEarly: false,
+        error: null,
+        mode: 'append',
+        docId,
+        caretPos,
+      });
+
+      const controller = new AbortController();
+      draftAbortRef.current = controller;
+      try {
+        const res = await api.post(
+          `/documents/${docId}/ai-draft`,
+          { prompt: trimmed, mode: 'append', existing_excerpt: excerpt || undefined },
+          { signal: controller.signal },
+        );
+        // Doc switched or draft discarded while the LLM was working: drop it.
+        if (controller.signal.aborted) return;
+        const markdown = typeof res?.markdown === 'string' ? res.markdown : '';
+        if (!markdown.trim()) throw new Error('AI returned empty text. Try again.');
+        setAiDraft((prev) =>
+          prev && prev.docId === docId
+            ? { ...prev, fullMarkdown: markdown, status: 'streaming' }
+            : prev,
+        );
+        startDraftReveal(docId);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : 'Creation failed. Try again.';
+        setAiDraft((prev) =>
+          prev && prev.docId === docId
+            ? { ...prev, status: 'error', error: message }
+            : prev,
+        );
+      } finally {
+        if (draftAbortRef.current === controller) draftAbortRef.current = null;
+      }
+    },
+    [activeDocId, activeDoc?.content_text, draftBusy, startDraftReveal, stopDraftTimers, showToast],
+  );
+
+  const handleStopDraft = useCallback(() => {
+    // Standard stop semantics: the partial output always stays on screen.
+    // Stopping while still thinking keeps the card with Try again / Discard
+    // (nothing to Keep yet); stopping mid-stream keeps the partial draft.
+    setAiDraft((prev) => {
+      if (!prev) return prev;
+      if (prev.status === 'generating') {
+        if (draftAbortRef.current) {
+          draftAbortRef.current.abort();
+          draftAbortRef.current = null;
+        }
+        return { ...prev, status: 'ready' as AIDraftStatus, stoppedEarly: true };
+      }
+      if (revealTimerRef.current) {
+        clearInterval(revealTimerRef.current);
+        revealTimerRef.current = null;
+      }
+      return { ...prev, status: 'ready' as AIDraftStatus, stoppedEarly: true };
+    });
+  }, []);
+
+  const handleDiscardDraft = useCallback(() => {
+    // Discard is free: no save, no index, no backend call at all.
+    stopDraftTimers();
+    setAiDraft(null);
+  }, [stopDraftTimers]);
+
+  const handleTryAgainDraft = useCallback(() => {
+    const prompt = aiDraft?.prompt;
+    const caretPos = aiDraft?.caretPos ?? null;
+    if (!prompt) return;
+    stopDraftTimers();
+    setAiDraft(null);
+    void handleDraftRequest(prompt, caretPos);
+  }, [aiDraft?.prompt, aiDraft?.caretPos, handleDraftRequest, stopDraftTimers]);
+
+  const handleKeepDraft = useCallback(async () => {
+    if (!aiDraft || aiDraft.status !== 'ready') return;
+    const slice = aiDraft.fullMarkdown.slice(0, aiDraft.visibleLength || aiDraft.fullMarkdown.length);
+    if (!slice.trim()) {
+      showToast('Nothing to keep yet');
+      return;
+    }
+    if (aiDraft.mode === 'replace' && (activeDoc?.content_text || '').trim()) {
+      const ok = await confirm({
+        title: 'Replace document?',
+        description: 'This replaces the entire document content with the AI creation. You can keep typing afterwards — autosave will pick it up.',
+        confirmLabel: 'Replace',
+        variant: 'warning',
+      });
+      if (!ok) return;
+    }
+    draftNonceRef.current += 1;
+    setPendingInsert({
+      html: markdownToSafeHtml(slice),
+      mode: aiDraft.mode,
+      nonce: draftNonceRef.current,
+      docId: aiDraft.docId,
+      pos: aiDraft.caretPos,
+    });
+    stopDraftTimers();
+    setAiDraft(null);
+    showToast(aiDraft.mode === 'replace' ? 'Document replaced' : 'Added to document');
+  }, [aiDraft, activeDoc?.content_text, confirm, showToast, stopDraftTimers]);
+
+  // Move an existing assistant chat answer into the editor (fallback path).
+  const handleInsertChatMessage = useCallback(
+    (markdown: string) => {
+      if (!markdown.trim() || !activeDocId) return;
+      if (draftBusy) {
+        showToast('Please wait for the current creation to finish');
+        return;
+      }
+      draftNonceRef.current += 1;
+      setPendingInsert({
+        html: markdownToSafeHtml(markdown),
+        mode: 'append',
+        nonce: draftNonceRef.current,
+        docId: activeDocId,
+        pos: null,
+      });
+      showToast('Inserted into document');
+    },
+    [activeDocId, draftBusy, showToast],
+  );
+
+  // Abort any in-flight draft if the page unmounts.
+  useEffect(() => {
+    return () => {
+      if (draftAbortRef.current) draftAbortRef.current.abort();
+      if (revealTimerRef.current) clearInterval(revealTimerRef.current);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-base text-text-muted">
@@ -378,6 +593,31 @@ export default function StudioPage() {
                   initialContent={activeDoc.content_json || activeDoc.content_text || ''}
                   onAutoSave={handleAutoSaveContent}
                   onIdleIndex={handleIdleIndex}
+                  pendingInsert={pendingInsert}
+                  onPendingInsertApplied={() => setPendingInsert(null)}
+                  draftActive={!!aiDraft}
+                  onInlineDraft={(prompt, caret) => void handleDraftRequest(prompt, caret)}
+                  draftPreview={
+                    aiDraft && aiDraft.docId === activeDoc.id
+                      ? {
+                          prompt: aiDraft.prompt,
+                          visibleMarkdown: aiDraft.fullMarkdown.slice(0, aiDraft.visibleLength),
+                          totalLength: aiDraft.fullMarkdown.length,
+                          status: aiDraft.status,
+                          stoppedEarly: aiDraft.stoppedEarly,
+                          error: aiDraft.error,
+                          mode: aiDraft.mode,
+                        }
+                      : null
+                  }
+                  docEmpty={!(activeDoc.content_text || '').trim()}
+                  onDraftModeChange={(mode) =>
+                    setAiDraft((prev) => (prev ? { ...prev, mode } : prev))
+                  }
+                  onKeepDraft={() => void handleKeepDraft()}
+                  onTryAgainDraft={handleTryAgainDraft}
+                  onDiscardDraft={handleDiscardDraft}
+                  onStopDraft={handleStopDraft}
                 />
               </div>
             </div>
@@ -401,6 +641,7 @@ export default function StudioPage() {
           onClose={() => setIsOraDrawerOpen(false)}
           initialScope={activeDoc ? { id: activeDoc.id, title: activeDoc.title, type: 'document' } : null}
           mode="studio"
+          onInsertMessage={handleInsertChatMessage}
           onSelectThreadDocument={(scope) => {
             // Restore the full conversation's document context: select + open it.
             const match = documents.find((d) => d.id === scope.id);

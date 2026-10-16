@@ -100,6 +100,12 @@ export interface OraSidebarProps {
   availableScopes?: MentionItem[];
   activeScopeIds?: string[] | null;
   onScopeChange?: (ids: string[] | null) => void;
+  /**
+   * Studio explicit action. Chat stays chat: each assistant answer gains an
+   * "Insert into doc" action the user clicks deliberately. The sidebar never
+   * routes prompts into the editor on its own (no keyword detection).
+   */
+  onInsertMessage?: (markdown: string) => void;
 }
 
 const MAX_SCOPE_IDS = 200;
@@ -113,6 +119,7 @@ export default function OraSidebar({
   availableScopes,
   activeScopeIds,
   onScopeChange,
+  onInsertMessage,
 }: OraSidebarProps) {
   const { currentWorkspace } = useWorkspace();
   const { confirm } = useConfirm();
@@ -1077,7 +1084,7 @@ export default function OraSidebar({
                         <Markdown content={msg.content} />
                       </div>
 
-                      {/* Copy Message Action Button */}
+                      {/* Copy + Insert-into-doc Message Actions */}
                       <div className="flex items-center gap-1 mt-1.5 ml-1">
                         <button
                           type="button"
@@ -1091,6 +1098,17 @@ export default function OraSidebar({
                             <Copy className="w-3.5 h-3.5" />
                           )}
                         </button>
+                        {mode === 'studio' && onInsertMessage && msg.content.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => onInsertMessage(msg.content)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
+                            title="Append this answer to the editor"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Insert into doc
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}

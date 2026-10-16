@@ -6,15 +6,40 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
-import { Plus, GripVertical } from 'lucide-react';
+import { Plus, GripVertical, Sparkles, ArrowUp } from 'lucide-react';
 import { SlashCommandMenu } from './SlashCommandMenu';
 import { SelectionAIMenu } from './SelectionAIMenu';
+import { AIDraftPreview, type AIDraftStatus } from './AIDraftPreview';
+import type { PendingEditorInsert, AIDraftMode } from '@/lib/aiDraft';
 
 interface EditorCanvasProps {
   initialContent: Record<string, unknown> | string;
   documentId: string | null;
   onAutoSave: (contentJson: Record<string, unknown>, contentText: string) => void;
   onIdleIndex?: () => void;
+  /** Single AI-confirmed insert (Keep / chat Insert). Applied once, then cleared via callback. */
+  pendingInsert?: PendingEditorInsert | null;
+  onPendingInsertApplied?: () => void;
+  /** True while an AI draft preview is active (hides the inline entry). */
+  draftActive?: boolean;
+  /** Explicit inline-AI entry: invoked only from the editor's own Draft UI. */
+  onInlineDraft?: (prompt: string, caretPos: number | null) => void;
+  /** Active draft preview bundle (owned by the page, rendered at the caret). */
+  draftPreview?: {
+    prompt: string;
+    visibleMarkdown: string;
+    totalLength: number;
+    status: AIDraftStatus;
+    stoppedEarly: boolean;
+    error: string | null;
+    mode: AIDraftMode;
+  } | null;
+  docEmpty?: boolean;
+  onDraftModeChange?: (mode: AIDraftMode) => void;
+  onKeepDraft?: () => void;
+  onTryAgainDraft?: () => void;
+  onDiscardDraft?: () => void;
+  onStopDraft?: () => void;
 }
 
 export function EditorCanvas({
@@ -22,6 +47,17 @@ export function EditorCanvas({
   documentId,
   onAutoSave,
   onIdleIndex,
+  pendingInsert,
+  onPendingInsertApplied,
+  draftActive = false,
+  onInlineDraft,
+  draftPreview = null,
+  docEmpty = true,
+  onDraftModeChange,
+  onKeepDraft,
+  onTryAgainDraft,
+  onDiscardDraft,
+  onStopDraft,
 }: EditorCanvasProps) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,6 +80,51 @@ export function EditorCanvas({
     text: string;
   } | null>(null);
   const dismissedSelectionRef = useRef<string | null>(null);
+
+  // Inline AI prompt state (explicit trigger from the / menu only)
+  const [aiPromptOpen, setAiPromptOpen] = useState(false);
+  const [aiPromptValue, setAiPromptValue] = useState('');
+  const aiInputRef = useRef<HTMLInputElement>(null);
+  const aiPromptRef = useRef<HTMLDivElement>(null);
+  // Viewport anchor for the prompt + preview, captured at the caret line.
+  // maxH caps the floating card to the visible space so its action buttons
+  // (Keep / Discard) are always reachable by scrolling inside the card.
+  const [aiAnchor, setAiAnchor] = useState<{ top: number; left: number; maxH: number } | null>(null);
+
+  // Scroll the page so `needed` px below the caret line become visible.
+  // Fixed popups can't extend the page themselves — the page must make room.
+  // Takes the editor host element explicitly so editor callbacks (created once)
+  // never capture a stale closure.
+  const ensureRoomBelow = useCallback((host: HTMLElement | null, caretBottom: number, needed: number) => {
+    const deficit = caretBottom + 8 + needed - window.innerHeight;
+    if (deficit <= 0) return;
+    let scroller: HTMLElement | null = null;
+    let cur = host?.parentElement ?? null;
+    while (cur && !scroller) {
+      try {
+        const style = window.getComputedStyle(cur);
+        if (
+          (style.overflowY === 'auto' || style.overflowY === 'scroll') &&
+          cur.scrollHeight > cur.clientHeight + 1
+        ) {
+          scroller = cur;
+        }
+      } catch {
+        // ignore
+      }
+      cur = cur.parentElement;
+    }
+    if (!scroller) {
+      scroller = (document.scrollingElement as HTMLElement | null) ?? null;
+    }
+    if (!scroller) return;
+    try {
+      const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+      scroller.scrollTop = Math.min(Math.max(maxScroll, 0), scroller.scrollTop + deficit + 16);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -89,9 +170,21 @@ export function EditorCanvas({
       if (match) {
         setSlashQuery(match[1]);
         try {
-          const coords = ed.view.coordsAtPos(from);
+          let coords = ed.view.coordsAtPos(from);
+          // Make room for the menu: scroll the page first so the popup is
+          // never cut off at the viewport bottom, then re-anchor.
+          ensureRoomBelow(ed.view.dom, coords.bottom, 340);
+          try {
+            coords = ed.view.coordsAtPos(from);
+          } catch {
+            // keep first coords
+          }
+          let top = coords.bottom + 6;
+          if (top + 340 > window.innerHeight) {
+            top = Math.max(16, coords.top - 340);
+          }
           setSlashMenuPos({
-            top: coords.bottom + 6,
+            top,
             left: Math.max(16, Math.min(coords.left, window.innerWidth - 280)),
           });
           setSlashMenuOpen(true);
@@ -175,6 +268,38 @@ export function EditorCanvas({
     }
   }, [editor, initialContent]);
 
+  // Track emptiness for the inline AI entry (set on mount + every update).
+  // Focus the inline prompt when it opens.
+  useEffect(() => {
+    if (aiPromptOpen) aiInputRef.current?.focus();
+  }, [aiPromptOpen]);
+
+  // Apply a single user-confirmed AI insert (Keep / chat Insert into doc).
+  // This is the ONLY path by which assistant content enters the document,
+  // so it triggers exactly one debounced auto-save (and later one index).
+  // The docId guard drops stale inserts after a document switch.
+  const pendingNonceRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!editor || !pendingInsert || pendingInsert.docId !== documentId) return;
+    if (pendingNonceRef.current === pendingInsert.nonce) return;
+    pendingNonceRef.current = pendingInsert.nonce;
+    try {
+      if (pendingInsert.mode === 'replace' || !editor.getText().trim()) {
+        editor.commands.setContent(pendingInsert.html || '<p></p>');
+      } else if (pendingInsert.pos != null) {
+        // Insert where the cursor was when the draft started (clamped live).
+        const size = editor.state.doc.content.size;
+        const at = Math.max(0, Math.min(pendingInsert.pos, size));
+        editor.chain().focus().insertContentAt(at, pendingInsert.html).run();
+      } else {
+        const end = editor.state.doc.content.size;
+        editor.chain().focus().insertContentAt(end, pendingInsert.html).run();
+      }
+    } finally {
+      onPendingInsertApplied?.();
+    }
+  }, [editor, pendingInsert, documentId, onPendingInsertApplied]);
+
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -193,6 +318,68 @@ export function EditorCanvas({
     }
     setSelectionMenu(null);
   }, [selectionMenu]);
+
+  const openAiPrompt = useCallback(() => {
+    // Pin the prompt (and later the preview) to the line being written on.
+    // Scroll the page first so there is room for the dialog below the line.
+    if (editor) {
+      try {
+        const { from } = editor.state.selection;
+        let coords = editor.view.coordsAtPos(from);
+        ensureRoomBelow(editor.view.dom, coords.bottom, 220);
+        try {
+          coords = editor.view.coordsAtPos(from);
+        } catch {
+          // keep first coords
+        }
+        const cardWidth = 576;
+        const left = Math.max(16, Math.min(coords.left, window.innerWidth - cardWidth - 16));
+        // Open below the line when there is room; otherwise flip above it.
+        // Either way the card is capped to the visible space so its buttons
+        // stay reachable (the card itself scrolls).
+        const spaceBelow = window.innerHeight - (coords.bottom + 8);
+        if (spaceBelow >= 420) {
+          const top = coords.bottom + 8;
+          setAiAnchor({ top, left, maxH: Math.max(220, window.innerHeight - top - 16) });
+        } else {
+          const top = Math.max(16, coords.top - 504);
+          setAiAnchor({ top, left, maxH: Math.max(220, coords.top - 70 - 16) });
+        }
+      } catch {
+        setAiAnchor(null);
+      }
+    } else {
+      setAiAnchor(null);
+    }
+    setAiPromptOpen(true);
+  }, [editor, ensureRoomBelow]);
+
+  const submitAiPrompt = useCallback(() => {
+    const prompt = aiPromptValue.trim();
+    if (!prompt || !onInlineDraft) return;
+    let caret: number | null = null;
+    try {
+      caret = editor?.state.selection.from ?? null;
+    } catch {
+      caret = null;
+    }
+    setAiPromptOpen(false);
+    setAiPromptValue('');
+    onInlineDraft(prompt, caret);
+  }, [aiPromptValue, onInlineDraft, editor]);
+
+  // Click outside closes the inline prompt (the draft preview has its own actions).
+  useEffect(() => {
+    if (!aiPromptOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (aiPromptRef.current && !aiPromptRef.current.contains(e.target as Node)) {
+        setAiPromptOpen(false);
+        setAiPromptValue('');
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, [aiPromptOpen]);
 
   if (!editor) {
     return (
@@ -231,6 +418,103 @@ export function EditorCanvas({
       {/* Editor Content Area */}
       <EditorContent editor={editor} />
 
+      {/* Explicit inline AI entry: prompt card opened from / → Create with AI.
+          The only way to start a draft from here; chat never triggers it. */}
+      {onInlineDraft && aiPromptOpen && !draftActive && (
+        <div
+          ref={aiPromptRef}
+          style={
+            aiAnchor
+              ? { top: `${aiAnchor.top}px`, left: `${aiAnchor.left}px`, maxHeight: `${aiAnchor.maxH}px`, overflowY: 'auto' as const }
+              : undefined
+          }
+          className={
+            aiAnchor
+              ? 'fixed z-50 w-[min(36rem,calc(100vw-2rem))] rounded-2xl border border-border bg-white shadow-xl p-3 animate-fade-in'
+              : 'mt-3 rounded-2xl border border-border bg-white shadow-xl p-3 animate-fade-in'
+          }
+        >
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sidebar border border-border focus-within:border-text-primary/40 transition-colors">
+            <Sparkles className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            <input
+              ref={aiInputRef}
+              type="text"
+              value={aiPromptValue}
+              onChange={(e) => setAiPromptValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submitAiPrompt();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setAiPromptOpen(false);
+                  setAiPromptValue('');
+                }
+              }}
+              placeholder="Describe what to write…"
+              aria-label="Describe what the AI should create"
+              className="flex-1 min-w-0 bg-transparent text-base sm:text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={submitAiPrompt}
+              disabled={!aiPromptValue.trim()}
+              title="Start draft"
+              className="w-7 h-7 rounded-full bg-text-primary text-white hover:bg-black disabled:opacity-25 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] text-text-muted">
+            AI will create in a preview right below your line. Nothing is saved until you keep it.
+          </p>
+        </div>
+      )}
+
+      {/* Draft preview anchored at the caret line (falls back below the editor). */}
+      {draftPreview && onKeepDraft && onTryAgainDraft && onDiscardDraft && onStopDraft && onDraftModeChange && (
+        aiAnchor ? (
+          <div
+            style={{ top: `${aiAnchor.top}px`, left: `${aiAnchor.left}px` }}
+            className="fixed z-50 w-[min(36rem,calc(100vw-2rem))] animate-fade-in"
+          >
+            <AIDraftPreview
+              prompt={draftPreview.prompt}
+              visibleMarkdown={draftPreview.visibleMarkdown}
+              totalLength={draftPreview.totalLength}
+              status={draftPreview.status}
+              stoppedEarly={draftPreview.stoppedEarly}
+              error={draftPreview.error}
+              mode={draftPreview.mode}
+              docEmpty={docEmpty}
+              onModeChange={onDraftModeChange}
+              onKeep={onKeepDraft}
+              onTryAgain={onTryAgainDraft}
+              onDiscard={onDiscardDraft}
+              onStop={onStopDraft}
+              capHeight={aiAnchor.maxH}
+            />
+          </div>
+        ) : (
+          <div className="mt-4">
+            <AIDraftPreview              prompt={draftPreview.prompt}
+              visibleMarkdown={draftPreview.visibleMarkdown}
+              totalLength={draftPreview.totalLength}
+              status={draftPreview.status}
+              stoppedEarly={draftPreview.stoppedEarly}
+              error={draftPreview.error}
+              mode={draftPreview.mode}
+              docEmpty={docEmpty}
+              onModeChange={onDraftModeChange}
+              onKeep={onKeepDraft}
+              onTryAgain={onTryAgainDraft}
+              onDiscard={onDiscardDraft}
+              onStop={onStopDraft}
+            />
+          </div>
+        )
+      )}
+
       {/* Floating Slash Command Menu */}
       <SlashCommandMenu
         editor={editor}
@@ -238,6 +522,7 @@ export function EditorCanvas({
         onClose={() => setSlashMenuOpen(false)}
         query={slashQuery}
         position={slashMenuPos}
+        onAiDraftCommand={onInlineDraft ? openAiPrompt : undefined}
       />
 
       {/* Text-selection AI menu (formatting + Skills + custom prompt) */}

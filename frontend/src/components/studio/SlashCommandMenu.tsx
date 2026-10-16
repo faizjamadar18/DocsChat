@@ -5,13 +5,14 @@ import {
   Table as TableIcon,
   Link as LinkIcon,
   Minus,
+  Sparkles,
 } from 'lucide-react';
 import { Editor } from '@tiptap/react';
 import { usePrompt, type PromptOptions } from '@/context/ConfirmContext';
 
 export interface CommandItem {
   id: string;
-  category: 'Style' | 'Block' | 'Insert';
+  category: 'Create with AI' | 'Style' | 'Block' | 'Insert';
   label: string;
   icon: React.ReactNode;
   isActive: (editor: Editor) => boolean;
@@ -207,6 +208,8 @@ interface SlashCommandMenuProps {
   onClose: () => void;
   query: string;
   position: { top: number; left: number };
+  /** Explicit inline-AI entry: opens the editor's draft prompt, never chat. */
+  onAiDraftCommand?: () => void;
 }
 
 export function SlashCommandMenu({
@@ -215,6 +218,7 @@ export function SlashCommandMenu({
   onClose,
   query,
   position,
+  onAiDraftCommand,
 }: SlashCommandMenuProps) {
   const prompt = usePrompt();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -236,7 +240,25 @@ export function SlashCommandMenu({
     setSelectedIndex(0);
   }
 
-  const filteredItems = COMMAND_ITEMS.filter((item) =>
+  const items = React.useMemo<CommandItem[]>(() => {
+    if (!onAiDraftCommand) return COMMAND_ITEMS;
+    const openPrompt = onAiDraftCommand;
+    return [
+      ...COMMAND_ITEMS,
+      {
+        id: 'ai-create',
+        category: 'Create with AI',
+        label: 'Create with AI',
+        icon: <Sparkles className="w-4 h-4 text-[#18181B]" />,
+        isActive: () => false,
+        action: () => {
+          openPrompt();
+        },
+      },
+    ];
+  }, [onAiDraftCommand]);
+
+  const filteredItems = items.filter((item) =>
     item.label.toLowerCase().includes(query.toLowerCase()) ||
     item.category.toLowerCase().includes(query.toLowerCase())
   );
@@ -300,7 +322,7 @@ export function SlashCommandMenu({
 
   if (!isOpen || filteredItems.length === 0) return null;
 
-  const categories = ['Style', 'Block', 'Insert'] as const;
+  const categories = ['Create with AI', 'Style', 'Block', 'Insert'] as const;
 
   return (
     <div
