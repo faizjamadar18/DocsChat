@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Dummy values: the test suite mocks the DB layer and never dials out.
+      MONGODB_URL: mongodb://localhost:27017
+      DB_NAME: quello_test
+      JWT_SECRET: ci-test-secret
+      GEMINI_API_KEY: ci-test
+      GROQ_API_KEY: ci-test
+      QDRANT_URL: http://localhost:6333
+      QDRANT_API_KEY: ci-test
+      GOOGLE_CLIENT_ID: ci-test-client-id
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Lint (syntax + import errors)
+        run: flake8 app/ --select=F,E9
+      - name: Test
+        run: python -m pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npx tsc --noEmit

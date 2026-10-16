@@ -1,22 +1,21 @@
 # Root .gitignore
 
-# IDE / Editor folders
+# Env files (never commit secrets)
+.env
+.env.local
+
+# IDE / OS
 .vscode/
 .idea/
 .DS_Store
 
-# AI Agent Specific (Do NOT push these)
+# Python / test noise (never commit local run metadata)
+__pycache__/
+.pytest_cache/
+
+# Local AI agent config (personal workflows stay out of the repo)
+.agents/
 .aider*
 .cursor*
 .gemini/
 *.scratch.*
-
-# IMPORTANT: Do NOT ignore the following! 
-# We explicitly want to commit the AI instructions and skills.
-!/.agents/
-!AGENTS.md
-!CLAUDE.md
-
-# Ignore top-level env files just in case
-.env
-.env.local
