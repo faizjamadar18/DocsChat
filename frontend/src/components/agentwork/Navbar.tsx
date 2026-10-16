@@ -34,7 +34,7 @@ export default function Navbar() {
       );
     }
     const showDashboard = hasSession;
-    const label = showDashboard ? 'dashboard' : 'sign in';
+    const label = showDashboard ? 'Dashboard' : 'Sign in';
     const href = showDashboard ? '/home' : '/login';
     return (
       <Link
