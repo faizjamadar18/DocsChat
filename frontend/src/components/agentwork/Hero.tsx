@@ -45,16 +45,30 @@ export default function Hero() {
         <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 w-full sm:w-auto md:col-span-4 md:col-start-9 lg:col-span-4 lg:col-start-9 justify-end md:items-end">
           <Link
             href="/register"
-            className="w-full sm:w-37.5 h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#21201c] text-[#ffffff] font-medium text-sm hover:bg-black transition-colors shadow-xs whitespace-nowrap text-center"
+            className="group relative overflow-hidden w-full sm:w-37.5 h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#21201c] text-[#ffffff] font-medium text-sm hover:opacity-80 active:scale-95 transition-all shadow-xs whitespace-nowrap text-center cursor-pointer select-none"
           >
-            Start for free
+            <div className="relative overflow-hidden">
+              <div className="transition-transform duration-300 ease-in-out group-hover:-translate-y-full">
+                Start for free
+              </div>
+              <div className="absolute inset-0 transition-transform duration-300 ease-in-out group-hover:translate-y-0 translate-y-full">
+                Start for free
+              </div>
+            </div>
           </Link>
           <Link
             href="#how-it-works"
             scroll={false}
-            className="w-full sm:w-37.5 h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] transition-colors whitespace-nowrap text-center"
+            className="group relative overflow-hidden w-full sm:w-37.5 h-10 inline-flex items-center justify-center py-2 px-3 rounded-xl bg-[#ffffff] border border-[#e2e1de] text-[#21201c] font-medium text-sm hover:bg-[#f9f9f8] hover:border-[#d0cfcb] active:scale-95 transition-all whitespace-nowrap text-center cursor-pointer select-none"
           >
-            See how it works
+            <div className="relative overflow-hidden">
+              <div className="transition-transform duration-300 ease-in-out group-hover:-translate-y-full">
+                See how it works
+              </div>
+              <div className="absolute inset-0 transition-transform duration-300 ease-in-out group-hover:translate-y-0 translate-y-full">
+                See how it works
+              </div>
+            </div>
           </Link>
         </div>
       </div>

@@ -250,3 +250,19 @@ export function ArrowUpIcon({ className = 'size-3.5' }: { className?: string }) 
   );
 }
 
+export function RadialSpinner({ className = 'size-4' }: { className?: string }) {
+  return (
+    <svg className={`${className} animate-spin`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="1" transform="rotate(0 12 12)" />
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="0.88" transform="rotate(45 12 12)" />
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="0.75" transform="rotate(90 12 12)" />
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="0.62" transform="rotate(135 12 12)" />
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="0.50" transform="rotate(180 12 12)" />
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="0.38" transform="rotate(225 12 12)" />
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="0.25" transform="rotate(270 12 12)" />
+      <line x1="12" y1="2.75" x2="12" y2="6.75" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" opacity="0.15" transform="rotate(315 12 12)" />
+    </svg>
+  );
+}
+
+

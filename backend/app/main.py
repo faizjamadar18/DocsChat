@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 import os
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -24,13 +25,27 @@ async def catch_unhandled_exceptions(request: Request, call_next):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup and shutdown events."""
-    # Startup
+    """Startup and shutdown events.
+
+    Liveness-first: answer /health instantly while the heavier MongoDB
+    connect + migrations + index build runs in the background. This keeps
+    Render free-tier cold starts short — the instance accepts traffic as
+    soon as Python imports finish instead of after the DB work.
+    """
+    # Startup (non-blocking)
+    async def _init_db_background():
+        try:
+            await init_db()
+            print("Quello API is ready")
+        except Exception as e:
+            print(f"FATAL: Database initialization failed: {e}")
+
     try:
-        await init_db()
-        print("Quello API is ready")
-    except Exception as e:
-        print(f"FATAL: Database initialization failed: {e}")
+        asyncio.get_running_loop().create_task(_init_db_background())
+        print("Quello API starting (db init in background)...")
+    except RuntimeError:
+        # No running loop (e.g. plain TestClient without lifespan) — skip.
+        pass
     yield
     # Shutdown
     await close_db()
@@ -81,7 +96,33 @@ fastapi_app.include_router(mcp_route.router)
 
 @fastapi_app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "docschat-api", "cors_origins": _cors_origins}
+    """Liveness probe — instant, never waits for the database.
+
+    Returns db_ready so callers can tell "server awake" apart from
+    "database ready". Keep-alive / warmup pings should hit this.
+    """
+    try:
+        import app.database as database
+
+        try:
+            database.check_db()
+            db_ready = True
+        except Exception:
+            db_ready = False
+    except Exception:
+        db_ready = False
+    return {
+        "status": "healthy",
+        "service": "docschat-api",
+        "db_ready": db_ready,
+        "cors_origins": _cors_origins,
+    }
+
+
+@fastapi_app.get("/api/health")
+async def api_health_check():
+    """Same liveness probe under /api/* for frontend warmup via proxy."""
+    return await health_check()
 
 
 @fastapi_app.get("/health/db")

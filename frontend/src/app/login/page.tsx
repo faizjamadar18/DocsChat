@@ -1,17 +1,19 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
-import { QuelloMark } from '../../components/agentwork/Icons';
+import { QuelloMark, RadialSpinner } from '../../components/agentwork/Icons';
+import BackendWarmup from '../../components/BackendWarmup';
 import { api } from '../../lib/api';
 import { auth } from '../../lib/auth';
 
 function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams?.get('next') || '/home';
@@ -19,6 +21,27 @@ function LoginForm() {
   // so invited new users skip the solo room (backend honors invite_token).
   const inviteToken =
     next.startsWith('/join/') ? decodeURIComponent(next.slice('/join/'.length)).split('?')[0].split('/')[0] : null;
+
+  // Immediately start loading when window blurs while hovering over the Google button (e.g. Google popup window opened)
+  useEffect(() => {
+    const handleBlur = () => {
+      if (isHovered) {
+        setError('');
+        setLoading(true);
+      }
+    };
+    window.addEventListener('blur', handleBlur);
+    return () => window.removeEventListener('blur', handleBlur);
+  }, [isHovered]);
+
+  // Safety timeout: reset loading if authentication does not finish within 45s
+  useEffect(() => {
+    if (!loading) return;
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 45000);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     setError('');
@@ -55,6 +78,7 @@ function LoginForm() {
 
   return (
     <div className="min-h-dvh flex">
+      <BackendWarmup />
       {/* Left Column (Desktop Dark Side) */}
       <div className="hidden lg:flex lg:w-1/2 bg-foreground relative overflow-hidden select-none">
         <div className="relative z-10 flex flex-col justify-between py-12 px-10 xl:px-16 w-full h-full">
@@ -154,7 +178,15 @@ function LoginForm() {
           </div>
 
           {/* Quello Google Button Container with exact plura.in hover and click animations */}
-          <div className="relative w-full mt-6 group select-none">
+          <div
+            onPointerDownCapture={() => {
+              setError('');
+              setLoading(true);
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className="relative w-full mt-6 group select-none"
+          >
             <button
               data-slot="button"
               type="button"
@@ -165,10 +197,7 @@ function LoginForm() {
                 <div className="transition-transform duration-300 ease-in-out group-hover:-translate-y-full">
                   <span className="flex items-center gap-2">
                     {loading ? (
-                      <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
+                      <RadialSpinner className="size-4 text-current" />
                     ) : (
                       <svg className="size-4" viewBox="-0.5 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -195,10 +224,7 @@ function LoginForm() {
                 <div className="absolute inset-0 transition-transform duration-300 ease-in-out group-hover:translate-y-0 translate-y-full">
                   <span className="flex items-center gap-2">
                     {loading ? (
-                      <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
+                      <RadialSpinner className="size-4 text-current" />
                     ) : (
                       <svg className="size-4" viewBox="-0.5 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -229,7 +255,19 @@ function LoginForm() {
             <div className="absolute inset-0 opacity-0 overflow-hidden cursor-pointer z-10 flex items-center justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => setError('Google sign in failed.')}
+                onError={() => {
+                  setLoading(false);
+                  setError('Google sign in failed.');
+                }}
+                click_listener={() => {
+                  setError('');
+                  setLoading(true);
+                }}
+                promptMomentNotification={(notification) => {
+                  if (notification.isDismissedMoment() || notification.isSkippedMoment()) {
+                    setLoading(false);
+                  }
+                }}
                 useOneTap
                 width="384"
               />
@@ -237,7 +275,6 @@ function LoginForm() {
           </div>
 
           {error && <div className="text-red-500 text-sm mt-3 text-center">{error}</div>}
-          {loading && <div className="text-muted-foreground text-sm mt-3 text-center">Signing in...</div>}
 
           <p className="text-center lg:text-left text-sm text-muted-foreground mt-6">
             Don&apos;t have an account?{' '}

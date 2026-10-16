@@ -1,5 +1,6 @@
 import React from 'react';
 import Navbar from '../components/agentwork/Navbar';
+import BackendWarmup from '../components/BackendWarmup';
 import Hero from '../components/agentwork/Hero';
 import HowItWorks from '../components/agentwork/HowItWorks';
 import UseCases from '../components/agentwork/UseCases';
@@ -12,6 +13,7 @@ export default function Home() {
   return (
     <LenisProvider>
       <div className="agentwork-scope min-h-dvh relative bg-[#fdfdfc] text-[#21201c] antialiased selection:bg-[#ffd7c0] selection:text-[#592d18]">
+        <BackendWarmup />
         <Navbar />
         <main>
           <Hero />
