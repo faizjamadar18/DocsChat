@@ -54,14 +54,14 @@ def get_r2_client():
 
 
 def build_r2_key(user_id: str, source_id: str, filename: str) -> str:
-    """Build a safe object key like user_id/source_id_filename.pdf."""
-    safe = re.sub(r"[^A-Za-z0-9._-]", "_", filename or "file.pdf")
-    safe = safe[-120:] or "file.pdf"
+    """Build a safe object key like user_id/source_id_filename.ext."""
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", filename or "file")
+    safe = safe[-120:] or "file"
     return f"{user_id}/{source_id}_{safe}"
 
 
-def upload_pdf_bytes(content: bytes, key: str) -> str:
-    """Upload PDF bytes to R2. Returns key. Raises on failure."""
+def upload_file_bytes(content: bytes, key: str, content_type: str = "application/octet-stream") -> str:
+    """Upload file bytes to R2. Returns key. Raises on failure."""
     client = get_r2_client()
     if client is None:
         raise RuntimeError("R2 is not configured")
@@ -69,12 +69,12 @@ def upload_pdf_bytes(content: bytes, key: str) -> str:
         io.BytesIO(content),
         settings.R2_BUCKET,
         key,
-        ExtraArgs={"ContentType": "application/pdf"},
+        ExtraArgs={"ContentType": content_type},
     )
     return key
 
 
-def download_pdf_bytes(key: str) -> bytes:
+def download_file_bytes(key: str) -> bytes:
     """Download R2 object bytes (used by the AI parser). Raises on failure."""
     client = get_r2_client()
     if client is None:
@@ -102,7 +102,7 @@ def get_presigned_download_url(key: str, filename: Optional[str] = None) -> Opti
         return None
 
 
-def delete_pdf(key: str) -> bool:
+def delete_file(key: str) -> bool:
     """Delete one R2 object. False when disabled or on error (never raises)."""
     client = get_r2_client()
     if client is None or not key:

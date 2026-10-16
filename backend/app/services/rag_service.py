@@ -12,12 +12,65 @@ from typing import AsyncGenerator, Optional
 settings = get_settings()
 
 NO_DOCUMENTS_MESSAGE = (
-    "I don't have any documents to reference in this workspace. Please upload some PDFs or create documents in Studio first, "
+    "I don't have any documents to reference in this workspace. Please upload some files or create documents in Studio first, "
     "then ask me questions about them."
 )
 
 UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+
+# Upload allowlist: extension -> stored source_type. V1 covers PDF plus the
+# common editable document kinds. Legacy .doc / .odt / .rtf need external
+# converters and are rejected at upload with a clear 400 (not silently mangled).
+SUPPORTED_EXTENSIONS = {
+    ".pdf": "pdf",
+    ".docx": "docx",
+    ".txt": "txt",
+    ".md": "md",
+}
+
+SOURCE_MEDIA_TYPES = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "txt": "text/plain",
+    "md": "text/markdown",
+}
+
+
+def detect_source_type(filename: Optional[str]) -> Optional[str]:
+    """Map an upload filename to its source_type, or None when unsupported."""
+    if not filename or "." not in filename:
+        return None
+    ext = "." + filename.rsplit(".", 1)[-1].lower()
+    return SUPPORTED_EXTENSIONS.get(ext)
+
+
+def media_type_for_source_type(source_type: Optional[str]) -> str:
+    """HTTP media type for a stored source_type. Never raises."""
+    return SOURCE_MEDIA_TYPES.get((source_type or "").lower(), "application/octet-stream")
+
+
+def extract_docx_text(file_path: str) -> str:
+    """Pull readable text (paragraphs + tables) out of a .docx file."""
+    try:
+        from docx import Document as DocxDocument
+        doc = DocxDocument(file_path)
+    except Exception as e:
+        raise ValueError(f"Could not read this Word file: {e}")
+    parts = [p.text for p in doc.paragraphs]
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                parts.append(cell.text)
+    return "\n".join(t for t in parts if t and t.strip()).strip()
+
+
+def extract_text_file(file_path: str) -> str:
+    """Read a .txt/.md upload as text. Decoding never raises."""
+    with open(file_path, "rb") as f:
+        raw = f.read()
+    text = raw.decode("utf-8", errors="replace").replace("\x00", "")
+    return text.strip()
 
 SYSTEM_PROMPT = """You are Quello, an intelligent workspace AI assistant.
 Answer the user's question clearly, accurately, and helpfully based on the workspace catalog and document context provided below.
@@ -77,7 +130,7 @@ async def process_pdf(
         if r2_key:
             try:
                 from app.services import storage as storage_svc
-                content = await asyncio.to_thread(storage_svc.download_pdf_bytes, r2_key)
+                content = await asyncio.to_thread(storage_svc.download_file_bytes, r2_key)
                 import tempfile
                 fd, tmp_r2_path = tempfile.mkstemp(suffix=".pdf")
                 with open(fd, "wb") as f:
@@ -122,6 +175,83 @@ async def process_pdf(
         if tmp_r2_path:
             try:
                 os.remove(tmp_r2_path)
+            except OSError:
+                pass
+
+
+async def process_source_file(
+    user_id: str,
+    source_id: str,
+    file_path: str,
+    workspace_id: Optional[str] = None,
+    source_type: Optional[str] = None,
+    r2_key: Optional[str] = None,
+) -> int:
+    """
+    Upload background pipeline for any supported file kind.
+    PDF keeps the dedicated PyPDFLoader path (page counts preserved);
+    docx/txt/md are extracted to text and indexed through the shared
+    chunk pipeline. Blank or unreadable files end in status=error so the
+    Assets poller never reports them as ready with zero chunks.
+    """
+    stype = (source_type or "").lower()
+    if stype == "pdf":
+        return await process_pdf(user_id, source_id, file_path, workspace_id, r2_key)
+
+    tmp_path: Optional[str] = None
+    effective_path = file_path
+    try:
+        if r2_key:
+            from app.services import storage as storage_svc
+            content = await asyncio.to_thread(storage_svc.download_file_bytes, r2_key)
+            import tempfile
+            suffix = ".docx" if stype == "docx" else ".txt"
+            fd, tmp_path = tempfile.mkstemp(suffix=suffix)
+            with open(fd, "wb") as f:
+                f.write(content)
+            effective_path = tmp_path
+
+        if stype == "docx":
+            text = await asyncio.to_thread(extract_docx_text, effective_path)
+        elif stype in ("txt", "md"):
+            text = await asyncio.to_thread(extract_text_file, effective_path)
+        else:
+            raise ValueError(f"Unsupported file type: {source_type}")
+
+        if not text or not text.strip():
+            raise ValueError("No readable text found in this file.")
+
+        chunk_count = await process_document_content(
+            user_id, source_id, os.path.basename(file_path) or source_id,
+            text, workspace_id,
+        )
+        if chunk_count == 0:
+            raise ValueError("No readable text found in this file.")
+
+        update_fields = {
+            "status": "ready",
+            "page_count": 0,
+            "chunk_count": chunk_count,
+        }
+        if workspace_id:
+            update_fields["workspace_id"] = workspace_id
+        await database.sources_collection.update_one(
+            {"_id": ObjectId(source_id)},
+            {"$set": update_fields}
+        )
+        print(f"[OK] Processed {stype}: {file_path} -> {chunk_count} chunks")
+        return chunk_count
+    except Exception as e:
+        await database.sources_collection.update_one(
+            {"_id": ObjectId(source_id)},
+            {"$set": {"status": "error"}}
+        )
+        print(f"[ERR] Error processing {stype or 'file'} {file_path}: {e}")
+        raise
+    finally:
+        if tmp_path:
+            try:
+                os.remove(tmp_path)
             except OSError:
                 pass
 

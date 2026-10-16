@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { NoteEditIcon } from 'hugeicons-react';
 
 /**
  * Official brand marks as inline SVG (crisp, vector, official brand colors).
@@ -160,7 +161,12 @@ export function GenericIcon({ letter, className = 'w-5 h-5' }: { letter: string;
 /**
  * Source-type icons for RAG citations, Studio docs, and Assets.
  * PdfIcon: Official premium Adobe Acrobat red PDF document icon.
- * StudioDocIcon / GoogleDocIcon: Official Google Docs document icon with folded corner and signature lines.
+ * GoogleDocIcon: Official Google Docs document icon with folded corner and
+ *   signature lines. Used for ALL uploaded document files
+ *   (.doc/.docx/.gdoc/.txt/.rtf/.md/.odt) so uploads keep their official look.
+ * StudioDocIcon: Premium HugeIcons note icon (matches the Studio nav mark).
+ *   Used ONLY for Studio notes created in the app, so they never read as
+ *   "Google Docs". No lucide icons here -- HugeIcons is the premium set.
  */
 
 export function PdfIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -186,6 +192,28 @@ export function PdfIcon({ className = 'w-4 h-4' }: { className?: string }) {
 }
 
 export function StudioDocIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  // Premium HugeIcons mark for Studio notes only. Inherits currentColor so the
+  // active row (accent) vs inactive row (muted) states keep working, and the
+  // Tailwind w-*/h-* class controls display size (24 viewBox scales cleanly).
+  // Size prop mirrors the most common row sizes so stroke stays crisp.
+  const size = className.includes('w-5')
+    ? 20
+    : className.includes('w-3.5')
+      ? 14
+      : className.includes('w-3')
+        ? 12
+        : 16;
+  return (
+    <NoteEditIcon
+      size={size}
+      strokeWidth={1.8}
+      className={className}
+      aria-hidden="true"
+    />
+  );
+}
+
+export function GoogleDocIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       {/* Official Google Docs blue document sheet with folded top-right corner */}
@@ -208,8 +236,6 @@ export function StudioDocIcon({ className = 'w-4 h-4' }: { className?: string })
     </svg>
   );
 }
-
-export const GoogleDocIcon = StudioDocIcon;
 
 /**
  * AI provider brand marks for the MCP Server tab.
@@ -400,7 +426,11 @@ export function ManusIcon({ className = 'w-5 h-5' }: { className?: string }) {
 /**
  * Universal Filename & Source Icon Resolver.
  * Intelligently maps filename prefixes, connector sync tags, repository paths,
- * and file extensions to authentic brand SVGs (GitHub, Google Drive, Notion, Slack, PDF, Google Doc).
+ * and file extensions to authentic brand SVGs (GitHub, Google Drive, Notion,
+ * Slack, PDF, Google Doc) plus the premium Studio mark for app-created notes.
+ * Rule: Studio notes (type document/studio, or extensionless titles) get the
+ * premium HugeIcons StudioDocIcon. Uploaded document files
+ * (.doc/.docx/.txt/.md/...) get the official Google blue GoogleDocIcon.
  */
 export function FilenameIcon({
   filename = '',
@@ -466,7 +496,7 @@ export function FilenameIcon({
     return <GitHubIcon className={className} />;
   }
 
-  // 5. Google Docs / Word / text documents
+  // 5. Uploaded document files -> official Google blue (never the Studio mark)
   if (
     lower.endsWith('.doc') ||
     lower.endsWith('.docx') ||
@@ -477,10 +507,12 @@ export function FilenameIcon({
     lower.endsWith('.markdown') ||
     lower.endsWith('.odt')
   ) {
-    return <StudioDocIcon className={className} />;
+    return <GoogleDocIcon className={className} />;
   }
 
-  // 6. Fallback
+  // 6. Fallback: extensionless titles are Studio notes in practice
+  // (Studio titles like "Untitled Document"; uploads virtually always carry
+  // an extension), so they get the premium Studio mark.
   return <StudioDocIcon className={className} />;
 }
 

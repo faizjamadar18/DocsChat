@@ -19,7 +19,7 @@ export interface Source {
   page_count: number;
   uploaded_at: string;
   file_size: number;
-  source_type?: string; // "pdf" | "notion" | "drive" | "github" (legacy = pdf)
+  source_type?: string; // "pdf" | "docx" | "txt" | "md" | "notion" | "drive" | "github" (legacy = pdf)
   remote_url?: string | null;
 }
 
@@ -31,8 +31,9 @@ function isConnectorSource(source: Source): boolean {
 }
 
 /**
- * Official provider icon per asset origin. Uploads are PDFs;
- * connector syncs carry their provider in source_type.
+ * Official provider icon per asset origin. Uploads are PDF, Word, or text
+ * files (FilenameIcon maps each kind); connector syncs carry their provider
+ * in source_type.
  */
 function AssetTypeIcon({ source }: { source: Source }) {
   return (
@@ -331,10 +332,23 @@ export default function AssetsPage() {
     }
   };
 
-  // View reuses the same authenticated download endpoint but opens the PDF
-  // in a new tab instead of saving. Fetch-on-click only: no preload cost,
-  // no modal/iframe held in the React tree. Object URL revoked after a minute.
+  // View reuses the same authenticated download endpoint but opens the file
+  // in a new tab instead of saving. PDF and plain-text kinds render inline;
+  // Word files cannot render in a browser tab, so they fall back to download.
+  // Fetch-on-click only: no preload cost, no modal/iframe held in the React
+  // tree. Object URL revoked after a minute.
+  const canPreviewInline = (source: Source) => {
+    const name = (source.filename || '').toLowerCase();
+    const type = (source.source_type || '').toLowerCase();
+    if (type === 'docx' || (!type && name.endsWith('.docx'))) return false;
+    return true;
+  };
+
   const handleView = async (source: Source) => {
+    if (!canPreviewInline(source)) {
+      await handleDownload(source);
+      return;
+    }
     try {
       const token = auth.getToken();
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -345,8 +359,11 @@ export default function AssetsPage() {
       });
       if (!response.ok) throw new Error('View failed');
       const blob = await response.blob();
+      const inlineType = blob.type && blob.type !== 'application/octet-stream'
+        ? blob.type
+        : (source.filename.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'text/plain');
       const url = window.URL.createObjectURL(
-        new Blob([blob], { type: 'application/pdf' })
+        new Blob([blob], { type: inlineType })
       );
       window.open(url, '_blank', 'noopener,noreferrer');
       setTimeout(() => window.URL.revokeObjectURL(url), 60000);
@@ -590,18 +607,20 @@ export default function AssetsPage() {
                             ) : null
                           ) : (
                             <>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveDropdownId(null);
-                                  void handleView(source);
-                                }}
-                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
-                              >
-                                <Eye className="w-3.5 h-3.5 text-text-muted" />
-                                <span>View</span>
-                              </button>
+                              {canPreviewInline(source) && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveDropdownId(null);
+                                    void handleView(source);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-sidebar rounded-lg transition-colors text-left cursor-pointer"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-text-muted" />
+                                  <span>View</span>
+                                </button>
+                              )}
 
                               <button
                                 type="button"

@@ -69,8 +69,8 @@ def test_upload_uses_r2_when_enabled():
          patch("app.database.workspaces_collection") as mock_workspaces, \
          patch("app.routes.sources.check_db"), \
          patch("app.services.storage.is_r2_enabled", return_value=True), \
-         patch("app.services.storage.upload_pdf_bytes", return_value=f"{USER_ID}/{SOURCE_ID}_a.pdf") as mock_upload, \
-         patch("app.routes.sources.process_pdf") as mock_process:
+         patch("app.services.storage.upload_file_bytes", return_value=f"{USER_ID}/{SOURCE_ID}_a.pdf") as mock_upload, \
+         patch("app.routes.sources.process_source_file") as mock_process:
         _mock_user(mock_users)
         _mock_workspace_member(mock_workspaces)
         mock_sources.insert_one = AsyncMock(return_value=type("R", (), {"inserted_id": ObjectId(SOURCE_ID)})())
@@ -146,7 +146,7 @@ def test_delete_purges_r2_object():
          patch("app.database.sources_collection") as mock_sources, \
          patch("app.database.workspaces_collection") as mock_workspaces, \
          patch("app.routes.sources.check_db"), \
-         patch("app.services.storage.delete_pdf", return_value=True) as mock_delete, \
+         patch("app.services.storage.delete_file", return_value=True) as mock_delete, \
          patch("app.services.vector_store.delete_source_vectors", return_value=1):
         _mock_user(mock_users)
         _mock_workspace_member(mock_workspaces)

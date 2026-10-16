@@ -2,9 +2,12 @@
 import React, { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { X, UploadCloud, AlertCircle } from 'lucide-react';
-import { PdfIcon } from '../connectors/ConnectorIcons';
+import { FilenameIcon } from '../connectors/ConnectorIcons';
 
 const emptySubscribe = () => () => {};
+
+const ACCEPTED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.md'];
+const ACCEPT_ATTR = ACCEPTED_EXTENSIONS.join(',');
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -32,8 +35,10 @@ export default function UploadModal({ isOpen, onClose, onStartUpload }: UploadMo
 
   const validateFile = (selectedFile: File) => {
     setError(null);
-    if (selectedFile.type !== 'application/pdf') {
-      setError('Only PDF files are accepted.');
+    const lowerName = selectedFile.name.toLowerCase();
+    const allowed = ACCEPTED_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+    if (!allowed) {
+      setError('Only PDF, Word (.docx), and text (.txt, .md) files are accepted.');
       return false;
     }
     if (selectedFile.size > 20 * 1024 * 1024) {
@@ -104,7 +109,7 @@ export default function UploadModal({ isOpen, onClose, onStartUpload }: UploadMo
             >
               <input
                 type="file"
-                accept=".pdf"
+                accept={ACCEPT_ATTR}
                 className="hidden"
                 id="file-upload"
                 onChange={handleFileSelect}
@@ -114,14 +119,14 @@ export default function UploadModal({ isOpen, onClose, onStartUpload }: UploadMo
                   <UploadCloud className="w-6 h-6 text-text-secondary" />
                 </div>
                 <p className="text-sm font-medium text-text-primary mb-1">Click to upload or drag and drop</p>
-                <p className="text-xs text-text-muted">PDF files only (max. 20MB)</p>
+                <p className="text-xs text-text-muted">PDF, Word, and text files (max. 20MB)</p>
               </label>
             </div>
           ) : (
             <div className="bg-sidebar/50 border border-border rounded-xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="w-10 h-10 rounded-lg bg-white border border-border/80 flex items-center justify-center shrink-0 shadow-2xs">
-                  <PdfIcon className="w-6 h-6" />
+                  <FilenameIcon filename={file.name} className="w-6 h-6" />
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-sm font-medium text-text-primary truncate">{file.name}</p>

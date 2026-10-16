@@ -10,7 +10,12 @@ from app.database import check_db, DatabaseNotReadyError
 from app.models.source import SourceResponse, SourceListResponse
 from app.middleware.auth_middleware import get_current_user
 from app.services.workspace_access import get_workspace_with_access, require_role
-from app.services.rag_service import process_pdf, UPLOADS_DIR
+from app.services.rag_service import (
+    process_source_file,
+    detect_source_type,
+    media_type_for_source_type,
+    UPLOADS_DIR,
+)
 from app.services import vector_store as vs
 from app.services import storage as storage_svc
 from app.config import get_settings
@@ -81,7 +86,7 @@ async def list_sources(
 
 
 @router.post("/upload", response_model=SourceResponse, status_code=status.HTTP_201_CREATED)
-async def upload_pdf(
+async def upload_source(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     workspace_id: Optional[str] = Query(None),
@@ -89,12 +94,14 @@ async def upload_pdf(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Upload a PDF file. Scoped to the current user's active workspace.
+    Upload a document file (PDF, Word, or plain text). Scoped to the current
+    user's active workspace.
     """
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
+    source_type = detect_source_type(file.filename or "")
+    if not source_type:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are accepted",
+            detail="Only .pdf, .docx, .txt, and .md files are accepted",
         )
 
     content = await file.read()
@@ -118,8 +125,10 @@ async def upload_pdf(
 
     if storage_svc.is_r2_enabled():
         try:
-            candidate = storage_svc.build_r2_key(current_user["id"], source_id, file.filename or "file.pdf")
-            storage_svc.upload_pdf_bytes(content, candidate)
+            candidate = storage_svc.build_r2_key(current_user["id"], source_id, file.filename or "file")
+            storage_svc.upload_file_bytes(
+                content, candidate, media_type_for_source_type(source_type)
+            )
             r2_key = candidate
             storage_mode = "r2"
         except Exception as e:
@@ -140,7 +149,7 @@ async def upload_pdf(
     source_doc = {
         "user_id": current_user["id"],
         "workspace_id": target_ws,
-        "source_type": "pdf",
+        "source_type": source_type,
         "filename": file.filename,
         "file_path": file_path,
         "r2_key": r2_key,
@@ -162,11 +171,12 @@ async def upload_pdf(
     source_id = str(result.inserted_id)
 
     background_tasks.add_task(
-        process_pdf,
+        process_source_file,
         current_user["id"],
         source_id,
         file_path or r2_key or "",
         target_ws,
+        source_type,
         r2_key,
     )
 
@@ -179,7 +189,7 @@ async def upload_pdf(
         chunk_count=0,
         status="processing",
         uploaded_at=source_doc["uploaded_at"],
-        source_type="pdf",
+        source_type=source_type,
     )
 
 
@@ -232,7 +242,7 @@ async def get_source(source_id: str, current_user: dict = Depends(get_current_us
 
 @router.get("/{source_id}/download")
 async def download_source(source_id: str, current_user: dict = Depends(get_current_user)):
-    """Download a source PDF file (shared room). R2 first, local fallback."""
+    """Download a source file (shared room). R2 first, local fallback."""
     try:
         check_db()
     except DatabaseNotReadyError:
@@ -254,7 +264,7 @@ async def download_source(source_id: str, current_user: dict = Depends(get_curre
 
     r2_key = source.get("r2_key")
     if r2_key and source.get("storage") == "r2":
-        url = storage_svc.get_presigned_download_url(r2_key, source.get("filename", "document.pdf"))
+        url = storage_svc.get_presigned_download_url(r2_key, source.get("filename", "document"))
         if url:
             return RedirectResponse(url=url, status_code=302)
 
@@ -262,10 +272,14 @@ async def download_source(source_id: str, current_user: dict = Depends(get_curre
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on server")
 
+    filename = source.get("filename", "document")
+    media_type = media_type_for_source_type(
+        source.get("source_type") or detect_source_type(filename) or "pdf"
+    )
     return FileResponse(
         path=file_path,
-        filename=source.get("filename", "document.pdf"),
-        media_type="application/pdf",
+        filename=filename,
+        media_type=media_type,
     )
 
 
@@ -304,7 +318,7 @@ async def delete_source(source_id: str, current_user: dict = Depends(get_current
     )
 
     if source.get("r2_key"):
-        storage_svc.delete_pdf(source.get("r2_key"))
+        storage_svc.delete_file(source.get("r2_key"))
 
     if source.get("file_path") and os.path.exists(source["file_path"]):
         try:
