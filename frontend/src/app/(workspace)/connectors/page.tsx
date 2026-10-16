@@ -46,7 +46,7 @@ export default function ConnectorsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search connectors..."
-          className="w-full pl-9 pr-3 py-2 rounded-lg border border-border text-xs text-text-primary focus:outline-none focus:border-accent-hover"
+          className="w-full pl-9 pr-3 py-2 rounded-lg border border-border text-base sm:text-xs text-text-primary focus:outline-none focus:border-accent-hover"
         />
       </div>
 

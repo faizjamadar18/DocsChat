@@ -390,47 +390,56 @@ export default function ConnectorDetailPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {driveSources.map((s) => (
-                      <div key={s.id} className="grid grid-cols-[1fr_90px_90px_96px] gap-2 items-center px-4 py-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <GoogleDriveIcon className="w-4 h-4 shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
-                            {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                      <div key={s.id} className="flex flex-col sm:grid sm:grid-cols-[1fr_90px_90px_96px] gap-2.5 sm:gap-2 sm:items-center px-4 py-3">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <GoogleDriveIcon className="w-4 h-4 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
+                              {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                            </div>
+                          </div>
+                          <div className="sm:hidden shrink-0">
+                            <StatusPill status={s.status} />
                           </div>
                         </div>
-                        <StatusPill status={s.status} />
-                        <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
-                        <span className="flex items-center justify-end gap-0.5">
-                          {s.remote_url ? (
-                            <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          ) : null}
-                          <button
-                            type="button"
-                            title="Re-sync"
-                            onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
-                            className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete"
-                            onClick={async () => {
-                              const ok = await confirm({
-                                title: 'Delete Imported Source',
-                                description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
-                                confirmLabel: 'Delete',
-                                variant: 'danger',
-                              });
-                              if (ok) void deleteSource(s.id);
-                            }}
-                            className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </span>
+                        <div className="hidden sm:block">
+                          <StatusPill status={s.status} />
+                        </div>
+                        <div className="flex items-center justify-between sm:contents">
+                          <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
+                          <span className="flex items-center justify-end gap-0.5">
+                            {s.remote_url ? (
+                              <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            ) : null}
+                            <button
+                              type="button"
+                              title="Re-sync"
+                              onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
+                              className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              title="Delete"
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: 'Delete Imported Source',
+                                  description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
+                                  confirmLabel: 'Delete',
+                                  variant: 'danger',
+                                });
+                                if (ok) void deleteSource(s.id);
+                              }}
+                              className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -548,47 +557,56 @@ export default function ConnectorDetailPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {githubSources.map((s) => (
-                      <div key={s.id} className="grid grid-cols-[1fr_90px_90px_96px] gap-2 items-center px-4 py-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <GitHubIcon className="w-4 h-4 shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
-                            {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                      <div key={s.id} className="flex flex-col sm:grid sm:grid-cols-[1fr_90px_90px_96px] gap-2.5 sm:gap-2 sm:items-center px-4 py-3">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <GitHubIcon className="w-4 h-4 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
+                              {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                            </div>
+                          </div>
+                          <div className="sm:hidden shrink-0">
+                            <StatusPill status={s.status} />
                           </div>
                         </div>
-                        <StatusPill status={s.status} />
-                        <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
-                        <span className="flex items-center justify-end gap-0.5">
-                          {s.remote_url ? (
-                            <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          ) : null}
-                          <button
-                            type="button"
-                            title="Re-sync"
-                            onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
-                            className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete"
-                            onClick={async () => {
-                              const ok = await confirm({
-                                title: 'Delete Imported Source',
-                                description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
-                                confirmLabel: 'Delete',
-                                variant: 'danger',
-                              });
-                              if (ok) void deleteSource(s.id);
-                            }}
-                            className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </span>
+                        <div className="hidden sm:block">
+                          <StatusPill status={s.status} />
+                        </div>
+                        <div className="flex items-center justify-between sm:contents">
+                          <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
+                          <span className="flex items-center justify-end gap-0.5">
+                            {s.remote_url ? (
+                              <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            ) : null}
+                            <button
+                              type="button"
+                              title="Re-sync"
+                              onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
+                              className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              title="Delete"
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: 'Delete Imported Source',
+                                  description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
+                                  confirmLabel: 'Delete',
+                                  variant: 'danger',
+                                });
+                                if (ok) void deleteSource(s.id);
+                              }}
+                              className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -706,47 +724,56 @@ export default function ConnectorDetailPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {notionSources.map((s) => (
-                      <div key={s.id} className="grid grid-cols-[1fr_90px_90px_96px] gap-2 items-center px-4 py-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <NotionIcon className="w-4 h-4 shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
-                            {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                      <div key={s.id} className="flex flex-col sm:grid sm:grid-cols-[1fr_90px_90px_96px] gap-2.5 sm:gap-2 sm:items-center px-4 py-3">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <NotionIcon className="w-4 h-4 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-text-primary truncate">{s.filename}</p>
+                              {s.sync_error ? <p className="text-[10px] text-red-600 truncate">{s.sync_error}</p> : null}
+                            </div>
+                          </div>
+                          <div className="sm:hidden shrink-0">
+                            <StatusPill status={s.status} />
                           </div>
                         </div>
-                        <StatusPill status={s.status} />
-                        <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
-                        <span className="flex items-center justify-end gap-0.5">
-                          {s.remote_url ? (
-                            <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          ) : null}
-                          <button
-                            type="button"
-                            title="Re-sync"
-                            onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
-                            className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete"
-                            onClick={async () => {
-                              const ok = await confirm({
-                                title: 'Delete Imported Source',
-                                description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
-                                confirmLabel: 'Delete',
-                                variant: 'danger',
-                              });
-                              if (ok) void deleteSource(s.id);
-                            }}
-                            className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </span>
+                        <div className="hidden sm:block">
+                          <StatusPill status={s.status} />
+                        </div>
+                        <div className="flex items-center justify-between sm:contents">
+                          <span className="text-[11px] text-text-muted">{timeAgo(s.last_synced_at || s.uploaded_at)}</span>
+                          <span className="flex items-center justify-end gap-0.5">
+                            {s.remote_url ? (
+                              <a href={s.remote_url} target="_blank" rel="noreferrer" title="Open original" className="p-1.5 text-text-muted hover:text-text-primary">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            ) : null}
+                            <button
+                              type="button"
+                              title="Re-sync"
+                              onClick={() => void resyncSource(s.id).then(() => setNotice('Re-sync started.'))}
+                              className="p-1.5 text-text-muted hover:text-text-primary cursor-pointer"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              title="Delete"
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: 'Delete Imported Source',
+                                  description: 'Delete this imported source? All indexed knowledge from this source will be removed from your workspace.',
+                                  confirmLabel: 'Delete',
+                                  variant: 'danger',
+                                });
+                                if (ok) void deleteSource(s.id);
+                              }}
+                              className="p-1.5 text-text-muted hover:text-red-600 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>

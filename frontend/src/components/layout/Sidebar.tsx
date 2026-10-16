@@ -387,7 +387,7 @@ export default function Sidebar({
                             }
                           }
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
+                        className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-0.5 hover:text-red-600 rounded transition-all shrink-0 cursor-pointer"
                         title="Delete chat"
                       >
                         <Delete02Icon size={14} />

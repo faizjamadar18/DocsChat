@@ -237,6 +237,31 @@ export default function UseCases() {
             </p>
           </div>
 
+          {/* Mobile horizontal use-case switcher */}
+          <div className="flex md:hidden items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full py-2.5 -mx-4 px-4 overscroll-x-contain">
+            {USE_CASES_DATA.examples.map((example, idx) => {
+              const isActive = idx === activeIndex;
+              return (
+                <button
+                  key={example.id}
+                  type="button"
+                  onClick={() => handleSelect(idx)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 transition-colors cursor-pointer border ${
+                    isActive
+                      ? 'bg-[#21201c] text-white border-[#21201c] shadow-xs'
+                      : 'bg-white text-[#636158] border-[#e4e1d9] hover:bg-[#f9f9f8]'
+                  }`}
+                >
+                  <PlatformIcon platform={example.platform} className="size-3.5 shrink-0" />
+                  <span className="truncate max-w-36">{example.title}</span>
+                  <span className={`text-[10px] tabular-nums ${isActive ? 'text-white/70' : 'text-[#827f73]'}`}>
+                    {example.number}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           <div className="hidden md:block mt-3">
             {USE_CASES_DATA.examples.map((example, idx) => {
               const isActive = idx === activeIndex;
@@ -288,11 +313,11 @@ export default function UseCases() {
           </div>
         </div>
 
-        {/* Right Column: Chat Panel - Solid 560px height, overflow-hidden (ZERO scrollbar, no scrolling down) */}
+        {/* Right Column: Chat Panel - Solid 560px height on desktop, scrollable on mobile */}
         <div className="flex w-full md:col-span-8">
           <div
             aria-live="off"
-            className="flex h-140 w-full flex-col justify-start overflow-hidden rounded-lg border border-[#e4e1d9] bg-white p-6 sm:p-8 md:p-10 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)]"
+            className="flex min-h-125 md:h-140 w-full flex-col justify-start overflow-y-auto md:overflow-hidden rounded-lg border border-[#e4e1d9] bg-white p-3.5 sm:p-8 md:p-10 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08),0px_2px_4px_0px_rgba(0,0,0,0.05)]"
           >
             <div
               key={currentExample.id}
@@ -533,7 +558,7 @@ export default function UseCases() {
                         className="fixed inset-0 z-40"
                         onClick={() => setIsSourcesMenuOpen(false)}
                       />
-                      <div className="absolute left-0 md:left-10.5 bottom-full mb-2 z-50 w-72 sm:w-80 rounded-lg border border-[#e4e1d9] bg-white p-2 shadow-lg animate-fade-in">
+                      <div className="absolute left-0 md:left-10.5 bottom-full mb-2 z-50 w-72 sm:w-80 max-w-[calc(100vw-3rem)] rounded-lg border border-[#e4e1d9] bg-white p-2 shadow-lg animate-fade-in">
                         <div className="px-2 py-1 text-xs font-semibold text-[#827f73] uppercase tracking-wider border-b border-[#f1efe9] mb-1">
                           Connected Sources
                         </div>

@@ -105,8 +105,8 @@ export default function VoiceNotch() {
 
   if (needsKey && !isActive) {
     return (
-      <div ref={rootRef} className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-        <div className="bg-white rounded-2xl shadow-xl border border-border p-4 w-80 text-center">
+      <div ref={rootRef} className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-fade-in max-w-[calc(100vw-2rem)]">
+        <div className="bg-white rounded-2xl shadow-xl border border-border p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-80 text-center">
           <p className="text-sm font-semibold text-text-primary">Add your free Vapi key</p>
           <p className="text-xs text-text-secondary mt-1 leading-relaxed">
             Voice uses your own free VAPI key Takes 2 minutes.
@@ -137,8 +137,8 @@ export default function VoiceNotch() {
 
   if (status === 'error' && errorMsg && !isActive) {
     return (
-      <div ref={rootRef} className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-        <div className="bg-white rounded-2xl shadow-xl border border-border p-4 w-80 text-center">
+      <div ref={rootRef} className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-fade-in max-w-[calc(100vw-2rem)]">
+        <div className="bg-white rounded-2xl shadow-xl border border-border p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-80 text-center">
           <p className="text-sm font-semibold text-text-primary">Voice needs attention</p>
           <p className="text-xs text-text-secondary mt-1 leading-relaxed">{errorMsg}</p>
           <Link

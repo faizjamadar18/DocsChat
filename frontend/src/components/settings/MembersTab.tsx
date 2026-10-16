@@ -202,7 +202,7 @@ export default function MembersTab() {
               onChange={(e) => setEmails(e.target.value)}
               placeholder="alice@example.com, bob@example.com"
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-text-muted"
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-base sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-text-muted"
             />
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <select

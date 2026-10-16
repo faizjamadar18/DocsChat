@@ -268,7 +268,7 @@ export default function HomePage() {
           onChange={handleAskChange}
           onKeyDown={handleAskKeyDown}
           placeholder="Ask Quello anything... type @ to reference"
-          className="flex-1 bg-transparent text-xs sm:text-sm text-text-primary placeholder-text-muted focus:outline-none min-w-0"
+          className="flex-1 bg-transparent text-base sm:text-sm text-text-primary placeholder-text-muted focus:outline-none min-w-0"
         />
         <button
           type="button"
@@ -379,18 +379,18 @@ export default function HomePage() {
               href="/assets"
               className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
                   <FilenameIcon filename={asset.title} sourceType={asset.sourceType} className="w-4 h-4" />
                 </div>
-                <div>
-                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors truncate">
                     {asset.title}
                   </h4>
-                  <p className="text-[11px] text-text-muted">{asset.subtitle}</p>
+                  <p className="text-[11px] text-text-muted truncate">{asset.subtitle}</p>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors" />
+              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors shrink-0 ml-2" />
             </Link>
           ))}
         </div>
@@ -415,18 +415,18 @@ export default function HomePage() {
               href="/studio"
               className="flex items-center justify-between p-3 rounded-xl hover:bg-sidebar transition-colors group cursor-pointer"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center shrink-0">
                   <StudioDocIcon className="w-4 h-4" />
                 </div>
-                <div>
-                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-medium text-text-primary group-hover:text-accent-hover transition-colors truncate">
                     {doc.title}
                   </h4>
-                  <p className="text-[11px] text-text-muted">{doc.subtitle}</p>
+                  <p className="text-[11px] text-text-muted truncate">{doc.subtitle}</p>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors" />
+              <ChevronRight className="w-4 h-4 text-[#D1D5DB] group-hover:text-text-secondary transition-colors shrink-0 ml-2" />
             </Link>
           ))}
         </div>

@@ -111,7 +111,7 @@ export function StudioDocumentsSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search documents"
-            className="bg-transparent text-[13px] text-text-primary placeholder-text-muted focus:outline-none w-full min-w-0"
+            className="bg-transparent text-base sm:text-[13px] text-text-primary placeholder-text-muted focus:outline-none w-full min-w-0"
           />
           {searchQuery && (
             <button
@@ -195,7 +195,7 @@ export function StudioDocumentsSidebar({
                       }}
                       autoFocus
                       onClick={(e) => e.stopPropagation()}
-                      className="bg-white border border-accent rounded-md px-1.5 h-6 text-[13px] text-text-primary focus:outline-none w-full min-w-0"
+                      className="bg-white border border-accent rounded-md px-1.5 h-6 text-base sm:text-[13px] text-text-primary focus:outline-none w-full min-w-0"
                     />
                   ) : (
                     <span className="truncate flex-1 min-w-0 leading-tight">{doc.title}</span>
@@ -211,7 +211,7 @@ export function StudioDocumentsSidebar({
                           setMenuOpenId(isMenuOpen ? null : doc.id);
                         }}
                         className={`w-6 h-6 flex items-center justify-center rounded-md hover:bg-white hover:shadow-2xs text-text-muted hover:text-text-primary transition-all cursor-pointer ${
-                          isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+                          isMenuOpen ? 'opacity-100' : 'opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100'
                         }`}
                         title="Document options"
                       >

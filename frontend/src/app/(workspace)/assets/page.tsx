@@ -362,7 +362,7 @@ export default function AssetsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search assets..."
-              className="bg-transparent text-[13px] text-text-primary placeholder-text-muted focus:outline-none w-full min-w-0"
+              className="bg-transparent text-base sm:text-[13px] text-text-primary placeholder-text-muted focus:outline-none w-full min-w-0"
             />
             {search && (
               <button
@@ -512,11 +512,11 @@ export default function AssetsPage() {
                     {isSelected && (
                       <span className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-accent" />
                     )}
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                       <div className="w-9 h-9 rounded-lg bg-sidebar border border-border/60 flex items-center justify-center shrink-0">
                         <AssetTypeIcon source={source} />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <h4 className="text-[13px] font-medium text-text-primary truncate leading-tight">
                           {source.filename}
                         </h4>

@@ -317,7 +317,7 @@ export default function SettingsPage() {
   const userInitial = (user?.username || 'U').charAt(0).toUpperCase();
 
   return (
-    <div className="w-full px-3.5 sm:px-6 py-6 sm:py-8 space-y-6 animate-fade-in">
+    <div className="w-full px-3.5 sm:px-6 py-6 sm:py-8 space-y-6 animate-fade-in max-w-full overflow-x-hidden">
       {/* Hidden File Inputs */}
       <input
         ref={profileFileInputRef}
@@ -601,7 +601,7 @@ export default function SettingsPage() {
                       onChange={(e) => setDeleteConfirmEmail(e.target.value)}
                       placeholder={user?.email || 'you@example.com'}
                       disabled={deletingAccount}
-                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all placeholder:text-text-muted"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-base sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all placeholder:text-text-muted"
                     />
                   </div>
 
@@ -786,7 +786,7 @@ export default function SettingsPage() {
                 value={workspaceName}
                 onChange={(e) => setWorkspaceName(e.target.value)}
                 placeholder="Workspace name"
-                className="w-full sm:max-w-xl lg:max-w-2xl px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
+                className="w-full sm:max-w-xl lg:max-w-2xl px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-base sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
               />
             </div>
 
@@ -807,7 +807,7 @@ export default function SettingsPage() {
                   value={slug}
                   onChange={(e) => setSlug(sanitizeSlug(e.target.value))}
                   placeholder="my-workspace"
-                  className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm text-text-primary focus:outline-none bg-transparent placeholder:text-text-muted"
+                  className="flex-1 px-3.5 py-2.5 text-base sm:text-sm text-text-primary focus:outline-none bg-transparent placeholder:text-text-muted"
                 />
               </div>
             </div>
@@ -822,7 +822,7 @@ export default function SettingsPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What is this workspace used for?"
                 rows={3}
-                className="w-full sm:max-w-xl lg:max-w-2xl px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-text-muted"
+                className="w-full sm:max-w-xl lg:max-w-2xl px-4 py-2.5 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-base sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-text-muted"
               />
             </div>
 
@@ -923,7 +923,7 @@ export default function SettingsPage() {
                       onChange={(e) => setDeleteConfirmWsName(e.target.value)}
                       placeholder={currentWorkspace?.name}
                       disabled={deletingWorkspace}
-                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all placeholder:text-text-muted"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-base sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all placeholder:text-text-muted"
                     />
                   </div>
 
@@ -1016,7 +1016,7 @@ export default function SettingsPage() {
                           ? vapiStatus.hint || '•••••••• (Key is Set)'
                           : 'pk_... paste your public key'
                       }
-                      className="w-full px-4 py-2.5 pr-11 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
+                      className="w-full px-4 py-2.5 pr-11 rounded-xl border border-border bg-sidebar/40 focus:bg-surface text-base sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
                     />
                     <button
                       type="button"

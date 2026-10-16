@@ -433,7 +433,7 @@ function PlaygroundContent() {
                 data-gramm="false"
                 data-gramm_editor="false"
                 data-enable-grammarly="false"
-                className="w-full bg-transparent text-sm sm:text-base text-text-primary [-webkit-text-fill-color:#111827] placeholder:text-text-muted placeholder:[-webkit-text-fill-color:#9CA3AF] resize-none focus:outline-none leading-relaxed"
+                className="w-full bg-transparent text-base text-text-primary [-webkit-text-fill-color:#111827] placeholder:text-text-muted placeholder:[-webkit-text-fill-color:#9CA3AF] resize-none focus:outline-none leading-relaxed"
               />
 
               {/* Toolbar Row */}
@@ -760,7 +760,7 @@ function PlaygroundContent() {
                   data-gramm="false"
                   data-gramm_editor="false"
                   data-enable-grammarly="false"
-                  className="w-full bg-transparent text-sm text-text-primary [-webkit-text-fill-color:#111827] placeholder:text-text-muted placeholder:[-webkit-text-fill-color:#9CA3AF] resize-none focus:outline-none leading-relaxed"
+                  className="w-full bg-transparent text-base sm:text-sm text-text-primary [-webkit-text-fill-color:#111827] placeholder:text-text-muted placeholder:[-webkit-text-fill-color:#9CA3AF] resize-none focus:outline-none leading-relaxed"
                 />
 
                 <div className="flex items-center justify-between pt-2 mt-1">

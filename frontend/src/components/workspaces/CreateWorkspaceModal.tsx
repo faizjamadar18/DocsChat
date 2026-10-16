@@ -130,7 +130,7 @@ export default function CreateWorkspaceModal({
                 }
               }}
               placeholder="e.g. Design Team HQ"
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-base sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted"
             />
           </div>
 
@@ -145,7 +145,7 @@ export default function CreateWorkspaceModal({
                 value={slug}
                 onChange={(e) => setSlug(sanitizeSlug(e.target.value))}
                 placeholder="design-team"
-                className="flex-1 px-3 py-2 text-xs text-text-primary focus:outline-none bg-transparent"
+                className="flex-1 px-3 py-2 text-base sm:text-xs text-text-primary focus:outline-none bg-transparent"
               />
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function CreateWorkspaceModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What is this workspace for?"
-              className="w-full px-4 py-2 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-text-muted"
+              className="w-full px-4 py-2 rounded-xl border border-border bg-[#F9F9FA] focus:bg-white text-base sm:text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-text-muted"
             />
           </div>
 

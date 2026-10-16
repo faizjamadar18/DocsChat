@@ -785,7 +785,7 @@ export default function OraSidebar({
                                 e.stopPropagation();
                                 void handleDeleteThread(thread.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all cursor-pointer"
+                              className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all cursor-pointer"
                               title="Delete chat"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -834,7 +834,7 @@ export default function OraSidebar({
                                 e.stopPropagation();
                                 void handleDeleteThread(thread.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all cursor-pointer"
+                              className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-1 hover:text-red-600 rounded transition-all cursor-pointer"
                               title="Delete chat"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -1146,7 +1146,7 @@ export default function OraSidebar({
       )}
 
       {/* Input Form at Bottom (matching User Images 1 & 2) */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-border/80 bg-white shrink-0 relative">
+      <form onSubmit={handleSubmit} className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0))] border-t border-border/80 bg-white shrink-0 relative">
         {/* Assets scope chip: single All-chip + count, expands to multi-select */}
         {mode === 'assets' && assetsScopeLabel ? (
           <div className="mb-2 flex items-center gap-1.5">
@@ -1251,7 +1251,7 @@ export default function OraSidebar({
                 : 'Ask Quello... or type @'
             }
             disabled={streaming}
-            className="flex-1 bg-transparent text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
+            className="flex-1 bg-transparent text-base sm:text-[13px] text-text-primary placeholder:text-text-muted focus:outline-none"
           />
 
           {streaming ? (
