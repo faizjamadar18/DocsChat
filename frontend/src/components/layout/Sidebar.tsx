@@ -336,9 +336,11 @@ interface TooltipData {
 export default function Sidebar({
   mobileOpen,
   onCloseMobile,
+  onOpenMobile,
 }: {
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  onOpenMobile?: () => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -373,12 +375,20 @@ export default function Sidebar({
         }
         e.preventDefault();
         setTooltip(null);
-        toggleSidebar();
+        // ⌘B is responsive: on narrow viewports it toggles the mobile drawer,
+        // never the hidden desktop rail (whose collapse state would otherwise
+        // re-layout the desktop tree invisibly in the background).
+        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+          if (mobileOpen) onCloseMobile?.();
+          else onOpenMobile?.();
+        } else {
+          toggleSidebar();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleSidebar]);
+  }, [toggleSidebar, mobileOpen, onOpenMobile, onCloseMobile]);
 
   // Close menus on outside click or Escape
   useEffect(() => {
@@ -722,9 +732,9 @@ export default function Sidebar({
       );
     }
 
-    // Expanded Sidebar (Full w-64)
+    // Expanded Sidebar (Full w-64; fills the whole mobile drawer panel)
     return (
-      <aside className="h-full w-64 bg-sidebar flex flex-col justify-between select-none transition-[width] duration-200 ease-in-out relative overflow-hidden">
+      <aside className={`h-full ${mobile ? 'w-full' : 'w-64'} bg-sidebar flex flex-col justify-between select-none transition-[width] duration-200 ease-in-out relative overflow-hidden`}>
         {/* Top section: fixed header + New Chat, scrollable nav & history */}
         <div key={`${stateKey}-top`} className="flex flex-col flex-1 min-h-0 animate-fade-in">
           {/* Mobile drawer: explicit close affordance (ChatGPT/Claude pattern) */}
@@ -935,22 +945,30 @@ export default function Sidebar({
         {renderSidebar(sidebarCollapsed, userMenuRefDesktop)}
       </div>
 
-      {/* Mobile Off-Canvas Drawer with GPU slide transition (always expanded when opened) */}
+      {/* Mobile Off-Canvas Drawer — the wrapper NEVER animates opacity: an
+          ancestor with opacity<1 becomes a CSS "backdrop root", which makes the
+          scrim's backdrop-filter sample nothing mid-animation (the blur pop).
+          Instead the scrim interpolates its color + blur radius directly, and
+          the panel slides at full opacity, blur perfectly synced to the slide. */}
       <div
-        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ease-in-out ${
-          mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        className={`fixed inset-0 z-50 lg:hidden ${
+          mobileOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
         aria-hidden={!mobileOpen}
       >
         <div
-          className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+          className={`absolute inset-0 transition-[background-color,backdrop-filter] duration-300 ease-out ${
+            mobileOpen
+              ? 'bg-black/40 backdrop-blur-xs'
+              : 'bg-black/0 backdrop-blur-[0px]'
+          }`}
           onClick={onCloseMobile}
         />
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Workspace navigation"
-          className={`absolute left-0 top-0 bottom-0 z-10 w-72 max-w-[85vw] bg-sidebar shadow-2xl transition-transform duration-300 ease-out transform overscroll-contain ${
+          className={`absolute left-0 top-0 bottom-0 z-10 w-72 max-w-[85vw] bg-sidebar shadow-2xl transform-gpu transition-transform duration-300 ease-out overscroll-contain ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >

@@ -39,6 +39,7 @@ function AppShell({
       <Sidebar
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={onCloseMobile}
+        onOpenMobile={onOpenMobile}
       />
 
       {/* Main Content Area */}
