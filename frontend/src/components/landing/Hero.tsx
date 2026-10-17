@@ -38,7 +38,7 @@ export default function Hero() {
           </h1>
           <p className="text-sm sm:text-base md:text-[19px] leading-relaxed tracking-[-0.01em] text-[#63635e] max-w-2xl text-pretty">
             Bring what you already use into one workspace, for teams and for individuals. Ask in plain language, and every answer links to its evidence, one click away.
-            <br />If your data doesn't say it, neither does it.
+            <br />If your data doesn’t say it, neither does it.
           </p>
         </div>
 
