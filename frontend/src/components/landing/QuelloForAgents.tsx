@@ -291,7 +291,7 @@ export default function QuelloForAgents() {
             Use your workspace inside your AI app
           </h2>
           <p className="text-sm sm:text-[15px] md:text-base text-[#6b665e] max-w-2xl leading-normal">
-            Connect your workspace so your AI app can search your documents and answer with sources. Read-only — it can never edit or delete anything.
+            Connect your workspace so your AI app can search your documents and answer with sources. The juggling between tools, tabs, and files ends here.
           </p>
           <Link
             href="/mcp"

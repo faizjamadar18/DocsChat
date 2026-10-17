@@ -228,8 +228,9 @@ export default function UseCases() {
           <div data-section-anchor="true">
             <h2 className="text-2xl font-medium leading-[1.35] tracking-[-0.03em]">
               <span className="text-[#21201c]">
-                Reliable results.
+                Reliable results
                 <br aria-hidden="true" />
+                <p className='text-[#63635E]' >For everything</p>
               </span>
             </h2>
             <p className="mt-2 text-xs text-[#827f73] leading-relaxed">

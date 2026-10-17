@@ -32,12 +32,13 @@ export default function Hero() {
         {/* Left Column: Heading and Subtitle */}
         <div className="md:col-span-8 flex flex-col gap-3.5 sm:gap-4">
           <h1 className="text-3xl sm:text-4xl md:text-[50px] font-[550] tracking-[-0.03em] leading-[1.12] text-[#21201c] text-balance">
-            Your second brain,
+            One place to ask 
             <br />
-            backed by sources
+            across everything  
           </h1>
           <p className="text-sm sm:text-base md:text-[19px] leading-relaxed tracking-[-0.01em] text-[#63635e] max-w-2xl text-pretty">
-            Unified workspace for every tool, document and your code, with the evidence behind every claim one click away. When the answer isn&apos;t written down, it asks the source who knows it. If your files don’t say it, neither does it.
+            Bring what you already use into one workspace, for teams and for individuals. Ask in plain language, and every answer links to its evidence, one click away.
+            <br />If your data doesn't say it, neither does it.
           </p>
         </div>
 

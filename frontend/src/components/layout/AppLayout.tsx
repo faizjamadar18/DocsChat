@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import ProtectedRoute from '../ProtectedRoute';
 import { WorkspaceProvider, useWorkspace } from '../../context/WorkspaceContext';
 import { VoiceAgentProvider } from '../../context/VoiceAgentContext';
@@ -33,7 +33,7 @@ function AppShell({
     // mounted: no re-login, no reboot cost.
     <div
       key={currentWorkspace?.id ?? 'loading'}
-      className="flex h-dvh w-screen overflow-hidden bg-sidebar text-text-primary"
+      className="flex h-dvh w-full overflow-hidden bg-sidebar text-text-primary"
     >
       {/* Persistent Sidebar */}
       <Sidebar
@@ -57,6 +57,9 @@ function AppShell({
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  // Stable identities: Header/Sidebar props don't churn per render
+  const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
+  const openMobileSidebar = useCallback(() => setMobileSidebarOpen(true), []);
 
   return (
     <ProtectedRoute>
@@ -64,8 +67,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <VoiceAgentProvider>
           <AppShell
             mobileSidebarOpen={mobileSidebarOpen}
-            onCloseMobile={() => setMobileSidebarOpen(false)}
-            onOpenMobile={() => setMobileSidebarOpen(true)}
+            onCloseMobile={closeMobileSidebar}
+            onOpenMobile={openMobileSidebar}
           >
             {children}
           </AppShell>

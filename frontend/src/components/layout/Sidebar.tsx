@@ -14,6 +14,7 @@ import {
   Edit02Icon,
   Add01Icon,
   SlidersHorizontalIcon,
+  Cancel01Icon,
   ArrowDown01Icon,
   ArrowUpDownIcon,
   Delete02Icon,
@@ -419,6 +420,16 @@ export default function Sidebar({
     };
   }, [collapsedChatsOpen]);
 
+  // Close the mobile drawer on Escape (platform drawer behavior)
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCloseMobile?.();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [mobileOpen, onCloseMobile]);
+
   const showTooltip = (label: string, sublabel?: string, shortcut?: string) => {
     return (e: React.MouseEvent<HTMLElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -457,7 +468,8 @@ export default function Sidebar({
 
   const renderSidebar = (
     isCollapsed: boolean,
-    menuRef: React.RefObject<HTMLDivElement | null>
+    menuRef: React.RefObject<HTMLDivElement | null>,
+    mobile = false
   ) => {
     // Content is re-keyed so it remounts and fades in each switch, while the
     // rail/full width transitions — masks the instantaneous subtree swap.
@@ -715,6 +727,21 @@ export default function Sidebar({
       <aside className="h-full w-64 bg-sidebar flex flex-col justify-between select-none transition-[width] duration-200 ease-in-out relative overflow-hidden">
         {/* Top section: fixed header + New Chat, scrollable nav & history */}
         <div key={`${stateKey}-top`} className="flex flex-col flex-1 min-h-0 animate-fade-in">
+          {/* Mobile drawer: explicit close affordance (ChatGPT/Claude pattern) */}
+          {mobile && (
+            <div className="flex items-center justify-end px-3 pt-2 pb-1">
+              <button
+                type="button"
+                onClick={onCloseMobile}
+                title="Close menu"
+                aria-label="Close menu"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-accent-subtle transition-colors cursor-pointer"
+              >
+                <Cancel01Icon size={16} />
+              </button>
+            </div>
+          )}
+
           {/* Workspace Brand / Switcher */}
           <div className="px-4 py-3 shrink-0">
             <WorkspaceSwitcher onSwitch={onCloseMobile} />
@@ -920,11 +947,14 @@ export default function Sidebar({
           onClick={onCloseMobile}
         />
         <div
-          className={`absolute left-0 top-0 bottom-0 z-10 w-72 max-w-[85vw] bg-sidebar shadow-2xl transition-transform duration-300 ease-out transform ${
+          role="dialog"
+          aria-modal="true"
+          aria-label="Workspace navigation"
+          className={`absolute left-0 top-0 bottom-0 z-10 w-72 max-w-[85vw] bg-sidebar shadow-2xl transition-transform duration-300 ease-out transform overscroll-contain ${
             mobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          {renderSidebar(false, userMenuRefMobile)}
+          {renderSidebar(false, userMenuRefMobile, true)}
         </div>
       </div>
 
