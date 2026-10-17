@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { PanelLeft, Search, Bell } from 'lucide-react';
+import { PanelLeft, PanelLeftOpen, Search, Bell } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useVoiceAgent } from '../../context/VoiceAgentContext';
@@ -13,7 +13,7 @@ export default function Header({
   onToggleMobileSidebar?: () => void;
 }) {
   const pathname = usePathname();
-  const { currentWorkspace, toggleSidebar, activeDocTitle, workspaces, loading } = useWorkspace();
+  const { currentWorkspace, toggleSidebar, sidebarCollapsed, activeDocTitle, workspaces, loading } = useWorkspace();
   const { user } = useAuth();
   const { startVoice, status: voiceStatus } = useVoiceAgent();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -72,10 +72,11 @@ export default function Header({
         <button
           type="button"
           onClick={toggleSidebar}
-          title="Toggle sidebar"
+          title={sidebarCollapsed ? 'Expand sidebar (⌘B)' : 'Collapse sidebar (⌘B)'}
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className="hidden lg:flex p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-[#F3F4F6] transition-colors cursor-pointer"
         >
-          <PanelLeft className="w-4 h-4" />
+          {sidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
         </button>
 
         {/* Mobile Sidebar Toggle (40px touch target) */}

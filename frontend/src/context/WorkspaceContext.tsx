@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
 
@@ -31,12 +31,54 @@ interface WorkspaceContextType {
 
 const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
 
+// --- Hydration-safe sidebar collapse preference (localStorage) ---
+// Mirrors AuthContext's pattern: server and first client paint see the
+// default (expanded); the sync localStorage snapshot applies right after
+// hydration, so reloads restore the rail/full choice without a hydration
+// mismatch or a controlled-state warning.
+const SIDEBAR_COLLAPSED_KEY = 'quello_sidebar_collapsed';
+const SIDEBAR_COLLAPSED_EVENT = 'quello:sidebar-collapsed';
+
+function subscribeSidebarCollapsed(cb: () => void) {
+  window.addEventListener(SIDEBAR_COLLAPSED_EVENT, cb);
+  window.addEventListener('storage', cb);
+  return () => {
+    window.removeEventListener(SIDEBAR_COLLAPSED_EVENT, cb);
+    window.removeEventListener('storage', cb);
+  };
+}
+
+function getSidebarCollapsedSnapshot() {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function getSidebarCollapsedServerSnapshot() {
+  return false;
+}
+
+function writeSidebarCollapsed(collapsed: boolean) {
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+  } catch {
+    // Storage unavailable (private mode / quota): the toggle still works in-memory.
+  }
+  window.dispatchEvent(new Event(SIDEBAR_COLLAPSED_EVENT));
+}
+
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuth();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const sidebarCollapsed = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    getSidebarCollapsedSnapshot,
+    getSidebarCollapsedServerSnapshot,
+  );
   const [activeDocTitle, setActiveDocTitle] = useState<string | null>(null);
 
   const fetchWorkspacesData = useCallback(async () => {
@@ -154,9 +196,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const toggleSidebar = () => {
-    setSidebarCollapsed((prev) => !prev);
-  };
+  const toggleSidebar = useCallback(() => {
+    writeSidebarCollapsed(!getSidebarCollapsedSnapshot());
+  }, []);
+
+  const setSidebarCollapsed = useCallback((collapsed: boolean) => {
+    writeSidebarCollapsed(collapsed);
+  }, []);
 
   return (
     <WorkspaceContext.Provider

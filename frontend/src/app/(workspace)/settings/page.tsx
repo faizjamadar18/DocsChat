@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback, useSyncExternalStore } from 'react';
+import React, { Suspense, useEffect, useState, useRef, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'next/navigation';
 import {
   LogOut,
   Trash2,
@@ -83,8 +84,18 @@ const sanitizeSlug = (val: string) => {
     .replace(/^-|-$/g, '');
 };
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'account' | 'workspace' | 'members' | 'voice'>('account');
+type SettingsTab = 'account' | 'workspace' | 'members' | 'voice';
+
+const isSettingsTab = (value: string | null): value is SettingsTab =>
+  value === 'account' || value === 'workspace' || value === 'members' || value === 'voice';
+
+function SettingsContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  // Deep-link support: /settings?tab=workspace|members|voice|account
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    isSettingsTab(tabParam) ? tabParam : 'account'
+  );
   const { currentWorkspace, refreshWorkspaces, workspaces, switchWorkspace } = useWorkspace();
   const { user, logout, setUser } = useAuth();
   const { status: vapiStatus, saving: vapiSaving, error: vapiError, saveKey, deleteKey } = useVapiKey();
@@ -1188,5 +1199,20 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// useSearchParams() requires a Suspense boundary for static prerendering.
+export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full w-full items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-text-primary" />
+        </div>
+      }
+    >
+      <SettingsContent />
+    </Suspense>
   );
 }
